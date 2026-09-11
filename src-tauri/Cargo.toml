@@ -1,0 +1,60 @@
+[package]
+name = "nankiv"
+version = "0.1.0"
+description = "Placement shortlist analysis for students. Offline, local-only."
+authors = ["nankiv"]
+edition = "2021"
+rust-version = "1.77"
+license = "MIT"
+
+[lib]
+name = "nankiv_core"
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[[bin]]
+name = "nankiv"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Spreadsheet parsing: data only, no macro or formula evaluation.
+calamine = "0.26"
+
+# Storage
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Matching
+strsim = "0.11"
+rphonetic = "3"
+
+# Utilities
+sha2 = "0.10"
+unicode-normalization = "0.1"
+thiserror = "2"
+time = { version = "0.3", features = ["formatting", "parsing", "macros"] }
+regex = "1"
+once_cell = "1"
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
+
+[features]
+# Tauri v2 custom protocol for production builds
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

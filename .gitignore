@@ -1,0 +1,52 @@
+# ---------------------------------------------------------------------------
+# SENSITIVE DATA — never commit
+# ---------------------------------------------------------------------------
+# Real student reference sheets (names, CGPA, phone, email, resume links).
+# These stay on the maintainer's machine only. See docs/PRIVACY.md.
+Global/
+private-data/
+*.xlsx
+*.xls
+*.ods
+!src-tauri/tests/fixtures/**/*.xlsx
+# Anything a developer dumps while exploring real data
+scratch/
+*.real.json
+
+# ---------------------------------------------------------------------------
+# Build output
+# ---------------------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+build/
+target/
+src-tauri/target/
+src-tauri/gen/
+*.local
+
+# ---------------------------------------------------------------------------
+# Tooling
+# ---------------------------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# ---------------------------------------------------------------------------
+# Secrets — signing keys, release credentials
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.keystore
+tauri-signing-key*
+*.asc
