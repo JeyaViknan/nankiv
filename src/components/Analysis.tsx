@@ -42,7 +42,7 @@ export function InsufficientSample({ analysis }: { analysis: DriveAnalysis }) {
         academic records ({pct(analysis.coverage)}). That's too few to say
         anything honest about a CGPA cutoff, so nankiv isn't going to guess.
       </div>
-      <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>
+      <p style={{ fontSize: 13, color: "var(--text-3)", margin: 0 }}>
         Membership above is exact and unaffected — it comes straight from the
         file. Only the statistics need a bigger sample.
       </p>
@@ -65,12 +65,12 @@ export function CutoffCard({ report }: { report: CutoffReport }) {
         <h2>{headline}</h2>
         <span className="pill quiet">estimate</span>
       </div>
-      <p style={{ fontSize: 13.5, color: "var(--ink-2)", margin: "0 0 14px" }}>
+      <p style={{ fontSize: 13.5, color: "var(--text-2)", margin: "0 0 14px" }}>
         {report.statement}
       </p>
 
       <h3 style={{ marginTop: 18 }}>How this was worked out</h3>
-      <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 10px" }}>
+      <p style={{ fontSize: 12.5, color: "var(--text-3)", margin: "0 0 10px" }}>
         A cutoff shows up as a floor: almost nobody on the shortlist below it,
         while a real share of the batch sits below it. Comparing against the
         batch is what stops "most people are above 8.5" being mistaken for a
@@ -110,7 +110,26 @@ export function DistributionCard({
   yourCgpa: number | null;
 }) {
   const max = Math.max(1, ...dist.buckets.map((b) => b.count));
-  const shown = dist.buckets.filter((b) => b.lower >= 6.5);
+
+  // Show only the occupied range, padded by one empty bucket either side, so a
+  // tight distribution isn't squashed into a corner of an empty 6-to-10 axis.
+  const firstUsed = dist.buckets.findIndex((b) => b.count > 0);
+  const lastUsed =
+    dist.buckets.length -
+    1 -
+    [...dist.buckets].reverse().findIndex((b) => b.count > 0);
+  const from = Math.max(0, (firstUsed < 0 ? 0 : firstUsed) - 1);
+  const to = Math.min(
+    dist.buckets.length - 1,
+    (firstUsed < 0 ? dist.buckets.length - 1 : lastUsed) + 1,
+  );
+  const shown = dist.buckets.slice(from, to + 1);
+
+  // Axis labels are derived from the buckets actually drawn. Hardcoding them
+  // produced a "8.5, 8.0, 9.0" axis that ran backwards.
+  const axisLo = shown[0]?.lower ?? 6.0;
+  const axisHi = shown[shown.length - 1]?.upper ?? 10.0;
+  const ticks = [0, 0.5, 1].map((f) => axisLo + (axisHi - axisLo) * f);
 
   return (
     <div className="card">
@@ -118,7 +137,7 @@ export function DistributionCard({
         <h2>CGPA spread</h2>
         <span
           className="mono"
-          style={{ fontSize: 11.5, color: "var(--muted)" }}
+          style={{ fontSize: 11.5, color: "var(--text-faint)" }}
         >
           n={dist.n}
         </span>
@@ -143,10 +162,16 @@ export function DistributionCard({
         ))}
       </div>
       <div className="hist-axis">
-        <span>{shown[0]?.lower.toFixed(1) ?? "6.5"}</span>
-        <span>8.0</span>
-        <span>9.0</span>
-        <span>10.0</span>
+        {ticks.map((t, i) => (
+          <span
+            key={t}
+            style={{
+              textAlign: i === 0 ? "left" : i === 1 ? "center" : "right",
+            }}
+          >
+            {t.toFixed(2)}
+          </span>
+        ))}
       </div>
 
       <div className="stats" style={{ marginTop: 16 }}>
@@ -185,7 +210,7 @@ export function BranchCard({ report }: { report: BranchReport }) {
         <h2>Branches</h2>
         <span className="pill quiet">estimate</span>
       </div>
-      <p style={{ fontSize: 13.5, color: "var(--ink-2)", margin: "0 0 14px" }}>
+      <p style={{ fontSize: 13.5, color: "var(--text-2)", margin: "0 0 14px" }}>
         {report.statement}
       </p>
       <div className="table-wrap">
@@ -244,7 +269,7 @@ export function StandingCard({
   return (
     <div className="card">
       <h2>Where you stand</h2>
-      <p style={{ fontSize: 13.5, color: "var(--ink-2)", margin: 0 }}>
+      <p style={{ fontSize: 13.5, color: "var(--text-2)", margin: 0 }}>
         Your CGPA is higher than <strong>{pct(percentile.value)}</strong> of the
         shortlisted students we could match ({percentile.matched} of{" "}
         {percentile.total}).

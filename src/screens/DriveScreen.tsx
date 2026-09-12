@@ -38,7 +38,7 @@ function FriendRow({
         {showCgpa && person.cgpa !== null && (
           <span
             className="mono"
-            style={{ fontSize: 11.5, color: "var(--muted)" }}
+            style={{ fontSize: 11.5, color: "var(--text-3)" }}
           >
             {person.cgpa.toFixed(2)}
           </span>
@@ -88,7 +88,7 @@ export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
       <div className="card">
         <div className="card-head">
           <h2>Your circle</h2>
-          <span style={{ fontSize: 12, color: "var(--muted)" }}>
+          <span style={{ fontSize: 12, color: "var(--text-3)" }}>
             {outcome.friends.length === 0
               ? "nobody added yet"
               : `${shortlistedFriends} of ${outcome.friends.length} shortlisted`}

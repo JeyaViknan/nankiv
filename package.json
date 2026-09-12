@@ -22,7 +22,8 @@
     "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
     "rust:lint": "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings",
     "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
-    "check:all": "npm run typecheck && npm run lint && npm run test && npm run rust:lint && npm run rust:test"
+    "check:all": "npm run typecheck && npm run lint && npm run test && npm run rust:lint && npm run rust:test",
+    "preview:design": "vite --port 1425"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",

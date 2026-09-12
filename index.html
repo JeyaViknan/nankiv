@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>nankiv</title>
+    <script>
+      // Applied before the first paint so the window never flashes the wrong
+      // theme on open. Mirrors src/lib/theme.ts; kept inline deliberately,
+      // because a module import would be too late.
+      (function () {
+        try {
+          var c = localStorage.getItem("nankiv.theme");
+          if (c === "light" || c === "dark") {
+            document.documentElement.setAttribute("data-theme", c);
+            document.documentElement.style.colorScheme = c;
+          }
+        } catch (e) {
+          /* fall through to the system theme */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,38 +1,33 @@
 /**
  * Application shell.
  *
- * A persistent sidebar and one screen at a time. The drop target lives on the
- * home screen and the window accepts a dropped file from anywhere, because
- * importing is the only thing a student does every day.
+ * The sidebar lists things you *do*. Settings is not one of them — it is
+ * configured once and then left alone, so it lives behind Cmd+, as an overlay
+ * instead of taking up a permanent slot in the navigation.
  */
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useStore } from "./lib/store";
+import { getThemeChoice, watchSystemTheme, applyTheme } from "./lib/theme";
 import { DriveScreen } from "./screens/DriveScreen";
+import { SettingsPanel } from "./screens/Settings";
 import {
   CircleScreen,
   HistoryScreen,
   HomeScreen,
   OnboardingScreen,
   SearchScreen,
-  SettingsScreen,
 } from "./screens/Screens";
 
-function NavIcon({ name }: { name: string }) {
-  const paths: Record<string, JSX.Element> = {
-    home: (
-      <path d="M3 9.5L10 4l7 5.5V16a1 1 0 0 1-1 1h-3v-4H7v4H4a1 1 0 0 1-1-1V9.5z" />
-    ),
-    circle: (
-      <path d="M7 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm6.5 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM2 16c0-2.5 2.2-4 5-4s5 1.5 5 4M13 12c2.5.2 5 1.4 5 4" />
-    ),
-    search: <path d="M9 15A6 6 0 1 0 9 3a6 6 0 0 0 0 12zm4.5-1.5L17.5 17.5" />,
-    history: (
-      <path d="M3.5 10a6.5 6.5 0 1 0 1.9-4.6M3.5 4v3h3M10 6.5V10l2.5 1.5" />
-    ),
-    settings: (
-      <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z M10 2.5l1.2 2 2.3-.3.6 2.2 2 1.2-1.1 2 1.1 2-2 1.2-.6 2.2-2.3-.3L10 17.5l-1.2-2-2.3.3-.6-2.2-2-1.2 1.1-2-1.1-2 2-1.2.6-2.2 2.3.3z" />
-    ),
+type IconName = "home" | "circle" | "search" | "history";
+
+function NavIcon({ name }: { name: IconName }) {
+  const d: Record<IconName, string> = {
+    home: "M3 8.6L10 3.2l7 5.4V16a1.2 1.2 0 0 1-1.2 1.2h-2.9v-4.6H7.1v4.6H4.2A1.2 1.2 0 0 1 3 16V8.6z",
+    circle:
+      "M7 9.2a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2zM13.6 9a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2zM1.8 16.4c0-2.6 2.3-4.2 5.2-4.2s5.2 1.6 5.2 4.2M13.4 12.3c2.6.2 5 1.5 5 4.1",
+    search: "M8.8 15.1a6.3 6.3 0 1 0 0-12.6 6.3 6.3 0 0 0 0 12.6zm4.6-1.6l4 4",
+    history: "M3.2 10a6.8 6.8 0 1 0 2-4.8M3.2 3.8v3.4h3.4M10 6.2V10l2.6 1.6",
   };
   return (
     <svg
@@ -41,12 +36,12 @@ function NavIcon({ name }: { name: string }) {
       viewBox="0 0 20 20"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="1.55"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {paths[name]}
+      <path d={d[name]} />
     </svg>
   );
 }
@@ -63,27 +58,54 @@ export default function App() {
     clearError,
     toast,
     importing,
+    openDrive,
   } = useStore();
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
 
+  // Follow the operating system live, but only while the user is on "System".
+  useEffect(() => {
+    return watchSystemTheme(() => {
+      if (getThemeChoice() === "system") applyTheme("system");
+    });
+  }, []);
+
+  // Cmd+, on macOS, Ctrl+, elsewhere — the platform convention for preferences.
+  const toggleSettings = useCallback(() => setSettingsOpen((v) => !v), []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+        e.preventDefault();
+        toggleSettings();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleSettings]);
+
   if (screen === "onboarding") {
     return (
       <div className="main">
         <OnboardingScreen />
+        {toast && (
+          <div className="toast" role="status">
+            {toast}
+          </div>
+        )}
       </div>
     );
   }
 
-  const nav = [
-    { id: "home", label: "Home", icon: "home" },
-    { id: "circle", label: "Circle", icon: "circle", count: friends.length },
-    { id: "search", label: "Search", icon: "search" },
-    { id: "history", label: "History", icon: "history", count: drives.length },
-    { id: "settings", label: "Settings", icon: "settings" },
-  ] as const;
+  const nav: { id: IconName; label: string; count?: number }[] = [
+    { id: "home", label: "Home" },
+    { id: "circle", label: "Circle", count: friends.length },
+    { id: "search", label: "Search" },
+    { id: "history", label: "History", count: drives.length },
+  ];
 
   return (
     <div className="shell">
@@ -100,7 +122,7 @@ export default function App() {
               <path
                 d="M5 12.5l4.5 4.5L19 7"
                 stroke="white"
-                strokeWidth="3"
+                strokeWidth="3.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -116,9 +138,9 @@ export default function App() {
             aria-current={screen === item.id ? "page" : undefined}
             onClick={() => go(item.id)}
           >
-            <NavIcon name={item.icon} />
+            <NavIcon name={item.id} />
             {item.label}
-            {"count" in item && item.count > 0 && (
+            {item.count !== undefined && item.count > 0 && (
               <span className="count">{item.count}</span>
             )}
           </button>
@@ -129,20 +151,24 @@ export default function App() {
             <span className="offline-dot" />
             Works offline
           </span>
-          <span>Nothing leaves this machine.</span>
+          <span className="kbd-hint">
+            <kbd>⌘</kbd>
+            <kbd>,</kbd>
+            <span style={{ marginLeft: 2 }}>Settings</span>
+          </span>
         </div>
       </nav>
 
       <main className="main">
         {error && (
-          <div className="notice danger" style={{ marginBottom: 18 }}>
+          <div className="notice danger">
             <strong>{error.message}</strong>
             {error.detail && (
               <p style={{ margin: "6px 0 0", fontSize: 12.5 }}>
                 {error.detail}
               </p>
             )}
-            <div className="btn-row" style={{ marginTop: 10 }}>
+            <div className="btn-row" style={{ marginTop: 11 }}>
               <button className="btn small" onClick={clearError}>
                 Dismiss
               </button>
@@ -152,8 +178,7 @@ export default function App() {
                   onClick={() => {
                     const id = Number(error.detail);
                     clearError();
-                    if (!Number.isNaN(id))
-                      void useStore.getState().openDrive(id);
+                    if (!Number.isNaN(id)) void openDrive(id);
                   }}
                 >
                   Open the one you already have
@@ -177,8 +202,9 @@ export default function App() {
         {screen === "circle" && <CircleScreen />}
         {screen === "search" && <SearchScreen />}
         {screen === "history" && <HistoryScreen />}
-        {screen === "settings" && <SettingsScreen />}
       </main>
+
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
 
       {toast && (
         <div className="toast" role="status">

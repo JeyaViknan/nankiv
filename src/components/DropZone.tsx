@@ -118,7 +118,7 @@ export function DropZone({ onFile, busy, title, subtitle, compact }: Props) {
         </>
       ) : (
         <>
-          <span style={{ color: over ? "var(--accent)" : "var(--muted)" }}>
+          <span className="dropzone-icon">
             <FileIcon />
           </span>
           <p className="dropzone-title">

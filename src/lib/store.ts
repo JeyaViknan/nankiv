@@ -19,13 +19,7 @@ import {
 } from "./api";
 
 export type Screen =
-  | "home"
-  | "drive"
-  | "circle"
-  | "search"
-  | "history"
-  | "settings"
-  | "onboarding";
+  "home" | "drive" | "circle" | "search" | "history" | "onboarding";
 
 interface State {
   screen: Screen;
