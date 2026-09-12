@@ -241,6 +241,29 @@ pub fn import_shortlist(
     let s = store(&state);
     let profile = s.profile()?;
 
+    // One drop target has to work for both kinds of spreadsheet a student
+    // receives. Without this, dropping the batch CGPA sheet — which is keyed by
+    // registration number — silently created a nonsense "drive" of 2,500
+    // students, while the reference import stayed hidden behind a button in
+    // Settings that nobody found.
+    //
+    // The test is a CGPA column: shortlists never carry one, reference sheets
+    // always do. A file with both is recorded as a drive *and* mined for
+    // academics, because it genuinely is both.
+    let academic_rows = crate::parse::academic::parse_academic_sheet(&p).unwrap_or_default();
+    if academic_rows.iter().any(|r| r.cgpa.is_some()) {
+        let learned = engine::ingest_academics(&s, &academic_rows, &filename)?;
+        if parsed.neo_ids.is_empty() {
+            return Err(CommandError::new(
+                "imported_reference",
+                format!(
+                    "Added academic records for {learned} students. That's a reference sheet rather than a shortlist — it improves the analysis on every drive you've imported."
+                ),
+            )
+            .with_detail(filename));
+        }
+    }
+
     // A file we cannot key on tells us nothing. Report it as such rather than
     // recording an empty drive that would read as a rejection.
     if !parsed.shape.is_usable() {
@@ -496,11 +519,7 @@ pub fn rename_drive(state: tauri::State<AppState>, id: i64, company: String) -> 
 /// Links a drive as a later round of another, so the comparison can be offered
 /// where it is relevant rather than through manual selection.
 #[tauri::command]
-pub fn set_drive_round(
-    state: tauri::State<AppState>,
-    id: i64,
-    parent_id: Option<i64>,
-) -> R<()> {
+pub fn set_drive_round(state: tauri::State<AppState>, id: i64, parent_id: Option<i64>) -> R<()> {
     if parent_id == Some(id) {
         return Err(CommandError::new(
             "self_reference",

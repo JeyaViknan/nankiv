@@ -397,8 +397,16 @@ impl Store {
 
     /// Puts a snapshot back. Returns the new drive id.
     pub fn restore_drive(&self, snap: &DriveSnapshot) -> Result<i64, StoreError> {
-        let neo: BTreeSet<NeoId> = snap.neo_ids.iter().filter_map(|s| NeoId::parse(s)).collect();
-        let reg: BTreeSet<RegNo> = snap.reg_nos.iter().filter_map(|s| RegNo::parse(s)).collect();
+        let neo: BTreeSet<NeoId> = snap
+            .neo_ids
+            .iter()
+            .filter_map(|s| NeoId::parse(s))
+            .collect();
+        let reg: BTreeSet<RegNo> = snap
+            .reg_nos
+            .iter()
+            .filter_map(|s| RegNo::parse(s))
+            .collect();
         self.insert_drive(
             &snap.company,
             snap.drive_date.as_deref(),
@@ -887,8 +895,15 @@ mod tests {
         let ids: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
         let id = s
             .insert_drive(
-                "Unnamed drive", None, "a.xlsx", "H", "neo_id_only",
-                Some("neo_id"), &ids, &BTreeSet::new(), None,
+                "Unnamed drive",
+                None,
+                "a.xlsx",
+                "H",
+                "neo_id_only",
+                Some("neo_id"),
+                &ids,
+                &BTreeSet::new(),
+                None,
             )
             .unwrap();
         s.rename_drive(id, "  Siemens SISW  ").unwrap();
@@ -903,8 +918,15 @@ mod tests {
         let regs: BTreeSet<RegNo> = ["23BAI0001"].iter().map(|x| reg(x)).collect();
         let id = s
             .insert_drive(
-                "Siemens", Some("28-07-26"), "s.xlsx", "HASH", "linked",
-                Some("neo_id"), &ids, &regs, Some("Round 1"),
+                "Siemens",
+                Some("28-07-26"),
+                "s.xlsx",
+                "HASH",
+                "linked",
+                Some("neo_id"),
+                &ids,
+                &regs,
+                Some("Round 1"),
             )
             .unwrap();
 
@@ -928,7 +950,17 @@ mod tests {
         let s = store();
         let ids: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
         let id = s
-            .insert_drive("X", None, "a.xlsx", "H", "neo_id_only", Some("neo_id"), &ids, &BTreeSet::new(), None)
+            .insert_drive(
+                "X",
+                None,
+                "a.xlsx",
+                "H",
+                "neo_id_only",
+                Some("neo_id"),
+                &ids,
+                &BTreeSet::new(),
+                None,
+            )
             .unwrap();
         let snap = s.snapshot_drive(id).unwrap().unwrap();
         s.delete_drive(id).unwrap();
@@ -946,8 +978,32 @@ mod tests {
         let s = store();
         let a: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
         let b: BTreeSet<NeoId> = ["C5U6K1E7"].iter().map(|x| neo(x)).collect();
-        let r1 = s.insert_drive("T", None, "1.xlsx", "H1", "neo_id_only", Some("neo_id"), &a, &BTreeSet::new(), None).unwrap();
-        let r2 = s.insert_drive("T", None, "2.xlsx", "H2", "neo_id_only", Some("neo_id"), &b, &BTreeSet::new(), None).unwrap();
+        let r1 = s
+            .insert_drive(
+                "T",
+                None,
+                "1.xlsx",
+                "H1",
+                "neo_id_only",
+                Some("neo_id"),
+                &a,
+                &BTreeSet::new(),
+                None,
+            )
+            .unwrap();
+        let r2 = s
+            .insert_drive(
+                "T",
+                None,
+                "2.xlsx",
+                "H2",
+                "neo_id_only",
+                Some("neo_id"),
+                &b,
+                &BTreeSet::new(),
+                None,
+            )
+            .unwrap();
 
         s.set_drive_parent(r2, Some(r1)).unwrap();
         assert_eq!(s.drive(r2).unwrap().unwrap().parent_drive_id, Some(r1));
@@ -962,8 +1018,32 @@ mod tests {
         let s = store();
         let a: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
         let b: BTreeSet<NeoId> = ["C5U6K1E7"].iter().map(|x| neo(x)).collect();
-        let r1 = s.insert_drive("T", None, "1.xlsx", "H1", "neo_id_only", Some("neo_id"), &a, &BTreeSet::new(), None).unwrap();
-        let r2 = s.insert_drive("T", None, "2.xlsx", "H2", "neo_id_only", Some("neo_id"), &b, &BTreeSet::new(), None).unwrap();
+        let r1 = s
+            .insert_drive(
+                "T",
+                None,
+                "1.xlsx",
+                "H1",
+                "neo_id_only",
+                Some("neo_id"),
+                &a,
+                &BTreeSet::new(),
+                None,
+            )
+            .unwrap();
+        let r2 = s
+            .insert_drive(
+                "T",
+                None,
+                "2.xlsx",
+                "H2",
+                "neo_id_only",
+                Some("neo_id"),
+                &b,
+                &BTreeSet::new(),
+                None,
+            )
+            .unwrap();
         s.set_drive_parent(r2, Some(r1)).unwrap();
 
         s.delete_drive(r1).unwrap();

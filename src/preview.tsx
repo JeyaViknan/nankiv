@@ -20,6 +20,7 @@ import {
   InsufficientSample,
   StandingCard,
 } from "./components/Analysis";
+import { NeedsReference } from "./components/NeedsReference";
 import { applyTheme, getThemeChoice, type ThemeChoice } from "./lib/theme";
 import type {
   BranchReport,
@@ -309,7 +310,15 @@ function Preview() {
             <BranchCard report={branches} />
           </Section>
 
-          <Section title="Gated sample">
+          <Section title="Not set up — no academic data at all">
+            <NeedsReference />
+          </Section>
+
+          <Section title="Not set up — compact">
+            <NeedsReference compact />
+          </Section>
+
+          <Section title="Thin sample — reference data exists, coverage is low">
             <InsufficientSample analysis={gated} />
           </Section>
 

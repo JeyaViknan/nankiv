@@ -32,16 +32,25 @@ pub fn parse_academic_sheet(path: &Path) -> Result<Vec<AcademicRow>, ParseError>
     if meta.len() > MAX_FILE_BYTES {
         return Err(ParseError::TooLarge(meta.len()));
     }
-    let mut wb = open_workbook_auto(path).map_err(|e| ParseError::Open(e.to_string()))?;
-    let names: Vec<String> = wb.sheet_names().to_vec();
+    // A reference sheet exported from Google Sheets arrives as CSV as often as
+    // not, so it gets the same treatment as a shortlist.
+    let sheets: Vec<Vec<Vec<Data>>> = if super::csv::is_csv(path) {
+        let text = std::fs::read_to_string(path).map_err(|e| ParseError::Io(e.to_string()))?;
+        vec![super::csv::parse_grid(&text)]
+    } else {
+        let mut wb = open_workbook_auto(path).map_err(|e| ParseError::Open(e.to_string()))?;
+        let names: Vec<String> = wb.sheet_names().to_vec();
+        names
+            .iter()
+            .filter_map(|n| wb.worksheet_range(n).ok())
+            .map(|range| range.rows().map(|r| r.to_vec()).collect())
+            .collect()
+    };
 
     let mut out: Vec<AcademicRow> = Vec::new();
 
-    for sheet in &names {
-        let Ok(range) = wb.worksheet_range(sheet) else {
-            continue;
-        };
-        let rows: Vec<Vec<Data>> = range.rows().map(|r| r.to_vec()).collect();
+    for rows in &sheets {
+        let rows = rows.clone();
         if rows.len() < 2 {
             continue;
         }

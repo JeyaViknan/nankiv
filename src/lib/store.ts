@@ -51,6 +51,7 @@ interface State {
   refreshStats: () => Promise<void>;
   saveProfile: (p: Profile) => Promise<boolean>;
   importFile: (path: string) => Promise<void>;
+  importReferenceFile: (path: string) => Promise<void>;
   openDrive: (id: number) => Promise<void>;
   renameDrive: (id: number, company: string) => Promise<void>;
   deleteDrive: (id: number, label: string) => Promise<void>;
@@ -144,6 +145,17 @@ export const useStore = create<State>((set, get) => ({
     } catch (e) {
       const err = toApiError(e);
 
+      // Dropping a reference sheet is a success, not a failure — the file was
+      // the right kind of thing to give nankiv, just not a shortlist.
+      if (err.code === "imported_reference") {
+        set({ importStage: { phase: "idle" } });
+        await Promise.all([get().refreshStats(), get().refreshDrives()]);
+        const cur = get().current;
+        if (cur) await get().openDrive(cur.drive_id);
+        get().showToast(err.message);
+        return;
+      }
+
       // Re-dropping a file you already imported is ordinary behaviour, not a
       // failure. Open the drive that exists and say so quietly.
       if (err.code === "duplicate_drive" && err.detail) {
@@ -158,6 +170,25 @@ export const useStore = create<State>((set, get) => ({
 
       set({ importStage: { phase: "failed", filename, error: err } });
     }
+  },
+
+  /**
+   * Ingests a reference sheet and re-runs whatever is on screen.
+   *
+   * Without the refresh the student adds their CGPA sheet, watches the toast
+   * confirm it, and sees the same "not set up" panel — because the open drive
+   * was analysed before the data existed.
+   */
+  importReferenceFile: async (path) => {
+    const r = await api.importReference(path);
+    await Promise.all([get().refreshStats(), get().refreshDrives()]);
+    const cur = get().current;
+    if (cur) await get().openDrive(cur.drive_id);
+    get().showToast(
+      r.kind === "academic"
+        ? `Added academic records for ${r.academics_learned.toLocaleString()} students`
+        : `Learned ${r.verified_links.toLocaleString()} identity links`,
+    );
   },
 
   openDrive: async (id) => {

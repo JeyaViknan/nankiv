@@ -268,3 +268,73 @@ fn every_fixture_parses_without_panicking() {
     }
     assert_eq!(count, 15, "expected all fifteen fixtures present");
 }
+
+// ---------------------------------------------------------------------------
+// CSV — advertised in the interface, so it has to work
+// ---------------------------------------------------------------------------
+
+/// Writes a temporary file and returns its path.
+fn temp_file(name: &str, contents: &str) -> PathBuf {
+    let dir = std::env::temp_dir().join("nankiv_csv_regression");
+    std::fs::create_dir_all(&dir).expect("temp dir");
+    let p = dir.join(name);
+    std::fs::write(&p, contents).expect("write temp file");
+    p
+}
+
+#[test]
+fn a_csv_shortlist_parses_like_a_spreadsheet_one() {
+    // The drag overlay and the file dialog both offer .csv. Before this the
+    // import failed with "Cannot detect file format" — a promise not kept.
+    let p = temp_file("shortlist.csv", "Neo ID\nV9H0G6C4\nC5U6K1E7\nT2D4R9N9\n");
+    let f = parse_file(&p).expect("csv should parse");
+    assert_eq!(f.neo_ids.len(), 3);
+    assert_eq!(f.shape, FileShape::NeoIdOnly);
+    assert_eq!(f.primary_key, Some(KeyKind::NeoId));
+    let _ = std::fs::remove_file(&p);
+}
+
+#[test]
+fn a_csv_keeps_the_linked_shape_when_it_carries_both_keys() {
+    let p = temp_file(
+        "linked.csv",
+        "S.No,NEO ID,Register Number,Name\n1,E2S8L9L8,23BCE1473,Monish D\n2,X2K9T4U5,23BCE1633,Dhruv Sahni\n",
+    );
+    let f = parse_file(&p).expect("csv should parse");
+    assert_eq!(f.shape, FileShape::Linked);
+    assert_eq!(f.neo_ids.len(), 2);
+    assert_eq!(f.reg_nos.len(), 2);
+    let _ = std::fs::remove_file(&p);
+}
+
+#[test]
+fn a_csv_with_quoted_names_does_not_lose_columns() {
+    // `Gupta, Shresth` inside quotes must not split into two fields, or the
+    // identifier column shifts and detection collapses.
+    let p = temp_file(
+        "quoted.csv",
+        "Neo ID,Name\nV9H0G6C4,\"Gupta, Shresth\"\nC5U6K1E7,\"Rao, Divya\"\n",
+    );
+    let f = parse_file(&p).expect("csv should parse");
+    assert_eq!(f.neo_ids.len(), 2);
+    let _ = std::fs::remove_file(&p);
+}
+
+#[test]
+fn an_empty_csv_is_an_error_not_a_silent_empty_shortlist() {
+    let p = temp_file("empty.csv", "");
+    assert!(parse_file(&p).is_err());
+    let _ = std::fs::remove_file(&p);
+}
+
+#[test]
+fn a_csv_of_foreign_identifiers_is_still_refused() {
+    let p = temp_file(
+        "foreign.csv",
+        "REFERENCE_ID,Interview Date\nCT20264996884,27th Aug\nDT20268151988,27th Aug\n",
+    );
+    let f = parse_file(&p).expect("parses structurally");
+    assert_eq!(f.shape, FileShape::Unrecognised);
+    assert!(!f.shape.is_usable());
+    let _ = std::fs::remove_file(&p);
+}

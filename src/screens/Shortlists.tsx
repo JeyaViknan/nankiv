@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DriveRecord } from "../lib/api";
 import { useStore } from "../lib/store";
 import { ImportStatus } from "../components/ImportStatus";
+import { NeedsReference } from "../components/NeedsReference";
 
 function relativeDay(iso: string): string {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -107,7 +108,8 @@ function DriveRow({
 }
 
 export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
-  const { drives, openDrive, deleteDrive, importStage, profile } = useStore();
+  const { drives, openDrive, deleteDrive, importStage, profile, stats } =
+    useStore();
   // -1 until the keyboard is actually used: a highlight nobody asked for
   // reads as a selection and is just noise.
   const [cursor, setCursor] = useState(-1);
@@ -165,6 +167,10 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
       </button>
 
       <ImportStatus />
+
+      {/* Removing the reference step from onboarding left this feature with no
+          way to be found. It belongs where the gap is felt, not in Settings. */}
+      {stats?.academics_known === 0 && !empty && <NeedsReference compact />}
 
       {profile && !profile.reg_no && !empty && (
         <p className="hint-line">

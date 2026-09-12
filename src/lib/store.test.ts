@@ -230,3 +230,39 @@ describe("renaming", () => {
     expect(useStore.getState().current?.company).toBe("Siemens");
   });
 });
+
+describe("dropping a reference sheet", () => {
+  it("treats it as a success, not a failed import", async () => {
+    // The batch CGPA sheet is the right kind of thing to hand nankiv — it just
+    // isn't a shortlist. Dropping it used to create a nonsense drive.
+    vi.mocked(api.importShortlist).mockRejectedValue({
+      code: "imported_reference",
+      message: "Added academic records for 2,506 students.",
+      detail: "name_cgpa_resume.xlsx",
+    });
+
+    await useStore.getState().importFile("/tmp/name_cgpa_resume.xlsx");
+
+    const s = useStore.getState();
+    expect(s.importStage.phase).toBe("idle");
+    expect(s.toast?.message).toMatch(/Added academic records/);
+    // Nothing was opened, and crucially nothing failed.
+    expect(s.current).toBeNull();
+    expect(s.error).toBeNull();
+  });
+
+  it("re-runs the open drive so the analysis appears immediately", async () => {
+    useStore.setState({ current: outcome(5, "Tredence"), view: "drive" });
+    vi.mocked(api.importShortlist).mockRejectedValue({
+      code: "imported_reference",
+      message: "Added academic records for 2,506 students.",
+      detail: "sheet.xlsx",
+    });
+    vi.mocked(api.getDriveDetail).mockResolvedValue(outcome(5, "Tredence"));
+
+    await useStore.getState().importFile("/tmp/sheet.xlsx");
+
+    // Without this the student adds the data and still sees "not set up".
+    expect(vi.mocked(api.getDriveDetail)).toHaveBeenCalledWith(5);
+  });
+});

@@ -15,6 +15,7 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 pub mod academic;
+pub mod csv;
 pub mod shape;
 pub use shape::FileShape;
 
@@ -103,34 +104,50 @@ pub fn parse_file(path: &Path) -> Result<ParsedFile, ParseError> {
         return Err(ParseError::TooLarge(meta.len()));
     }
 
-    let mut workbook =
-        open_workbook_auto(path).map_err(|e| ParseError::Open(friendly_open_error(&e)))?;
+    // A CSV has no workbook structure, so it is read separately and presented
+    // to the rest of the pipeline as a single sheet.
+    let sheets: Vec<(String, Vec<Vec<Data>>)> = if csv::is_csv(path) {
+        let text = std::fs::read_to_string(path).map_err(|e| ParseError::Io(e.to_string()))?;
+        let grid = csv::parse_grid(&text);
+        if grid.is_empty() {
+            return Err(ParseError::Empty);
+        }
+        vec![("Sheet1".to_string(), grid)]
+    } else {
+        let mut workbook =
+            open_workbook_auto(path).map_err(|e| ParseError::Open(friendly_open_error(&e)))?;
+        let names: Vec<String> = workbook.sheet_names().to_vec();
+        if names.is_empty() {
+            return Err(ParseError::Empty);
+        }
+        names
+            .into_iter()
+            .filter_map(|name| {
+                let range = workbook.worksheet_range(&name).ok()?;
+                let grid: Vec<Vec<Data>> = range
+                    .rows()
+                    .take(MAX_ROWS)
+                    .map(|r| r.iter().take(MAX_COLS).cloned().collect())
+                    .collect();
+                Some((name, grid))
+            })
+            .collect()
+    };
 
-    let sheet_names: Vec<String> = workbook.sheet_names().to_vec();
-    if sheet_names.is_empty() {
-        return Err(ParseError::Empty);
-    }
-
+    let sheet_names: Vec<String> = sheets.iter().map(|(n, _)| n.clone()).collect();
     let mut all_rows: Vec<ParsedRow> = Vec::new();
     let mut headers: Vec<String> = Vec::new();
 
     // Every sheet is scanned. One sampled file keeps its data on `Sheet2` with
     // `Sheet1` empty; another carries two empty trailing sheets. Assuming the
     // first sheet would silently return nothing for both.
-    for name in &sheet_names {
-        let Ok(range) = workbook.worksheet_range(name) else {
-            continue;
-        };
-        let grid: Vec<Vec<Data>> = range
-            .rows()
-            .take(MAX_ROWS)
-            .map(|r| r.iter().take(MAX_COLS).cloned().collect())
-            .collect();
+    for (_name, grid) in &sheets {
         if grid.is_empty() {
             continue;
         }
+        let grid = grid.as_slice();
 
-        let layout = shape::elect_columns(&grid);
+        let layout = shape::elect_columns(grid);
         if layout.is_barren() {
             // Remember the header text so an unreadable file can explain itself.
             if let Some(first) = grid.first() {
@@ -144,13 +161,13 @@ pub fn parse_file(path: &Path) -> Result<ParsedFile, ParseError> {
             continue;
         }
 
-        for row in &grid {
+        for row in grid {
             let parsed = layout.extract(row);
             if !parsed.is_empty() {
                 all_rows.push(parsed);
             }
         }
-        for h in layout.header_labels(&grid) {
+        for h in layout.header_labels(grid) {
             if !headers.contains(&h) {
                 headers.push(h);
             }

@@ -18,6 +18,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, type ImportOutcome, type PersonResult } from "../lib/api";
 import { useStore } from "../lib/store";
+import { NeedsReference } from "../components/NeedsReference";
 import { VerdictBanner, VerdictPill } from "../components/Verdict";
 import {
   BranchCard,
@@ -111,7 +112,7 @@ function EditableName({ id, name }: { id: number; name: string }) {
 }
 
 export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
-  const { showToast, profile, drives, openDrive } = useStore();
+  const { showToast, profile, drives, openDrive, stats } = useStore();
   const [copied, setCopied] = useState(false);
   const a = outcome.analysis;
 
@@ -263,7 +264,11 @@ export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
           <span className="eyebrow">What this shortlist suggests</span>
         </div>
 
-        {!a.sufficient ? (
+        {/* Two different situations that were being shown as one. No academic
+            records at all is a setup step, not a thin sample. */}
+        {stats?.academics_known === 0 ? (
+          <NeedsReference />
+        ) : !a.sufficient ? (
           <InsufficientSample analysis={a} />
         ) : (
           <>
