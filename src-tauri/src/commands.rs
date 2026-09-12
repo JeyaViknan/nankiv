@@ -803,9 +803,19 @@ pub fn data_inventory(state: tauri::State<AppState>) -> R<Vec<(String, usize)>> 
     Ok(store(&state).inventory()?)
 }
 
+/// Deletes everything the student has imported.
+///
+/// The bundled reference data is restored afterwards, because it is something
+/// the application ships rather than something they gave it — leaving analysis
+/// permanently broken with no way back would be a strange thing for a "clear my
+/// data" control to do. The wording in Settings says so plainly.
 #[tauri::command]
 pub fn wipe_all_data(state: tauri::State<AppState>) -> R<()> {
-    store(&state).wipe()?;
+    let s = store(&state);
+    s.wipe()?;
+    if let Err(e) = crate::reference::seed(&s) {
+        eprintln!("could not restore bundled reference data: {e}");
+    }
     Ok(())
 }
 

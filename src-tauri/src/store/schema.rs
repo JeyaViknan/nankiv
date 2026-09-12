@@ -7,9 +7,10 @@
 use rusqlite::{Connection, Result};
 
 /// Ordered migrations. Append only — never edit one that has shipped.
-const MIGRATIONS: &[(&str, &str)] = &[(
-    "0001_initial",
-    r#"
+const MIGRATIONS: &[(&str, &str)] = &[
+    (
+        "0001_initial",
+        r#"
     -- The person using the application.
     CREATE TABLE profile (
         id              INTEGER PRIMARY KEY CHECK (id = 1),
@@ -103,7 +104,20 @@ const MIGRATIONS: &[(&str, &str)] = &[(
     );
     CREATE INDEX idx_baseline_cohort ON baseline_values(cohort);
     "#,
-)];
+    ),
+    (
+        "0002_app_meta",
+        r#"
+    -- Small key/value store for things about the installation itself, as
+    -- distinct from anything about a student. Currently just which version of
+    -- the bundled reference pack has been seeded.
+    CREATE TABLE app_meta (
+        key     TEXT PRIMARY KEY,
+        value   TEXT NOT NULL
+    );
+    "#,
+    ),
+];
 
 /// Applies any migrations the database has not seen.
 pub fn migrate(conn: &Connection) -> Result<()> {

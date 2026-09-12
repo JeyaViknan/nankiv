@@ -259,6 +259,100 @@ pub fn ingest_academics(
     Ok(n)
 }
 
+/// Bridges Neo IDs to registration numbers through the names attached to each.
+///
+/// Names are attributes rather than graph nodes — deliberately, so that three
+/// students called `Naveen` never collapse into one. The consequence is that a
+/// name alone never joins anything, and until this pass ran the whole
+/// name-matching apparatus contributed nothing to identity: coverage came only
+/// from files that happened to print both identifiers in the same row.
+///
+/// So the join is made explicitly, and only where it is safe. Every candidate
+/// goes through the ambiguity gate; anything the evidence cannot separate is
+/// left unresolved. An exact name is recorded as `High` and may be shown; a
+/// phonetic or typo-level match is `Probable`, which counts toward statistics
+/// but is never allowed to put a name on screen next to a person.
+pub fn link_by_name(store: &Store) -> Result<NameLinkReport, StoreError> {
+    // Candidates: every registration number we hold academic data for, indexed
+    // by the names seen for it.
+    let mut corpus = CorpusIndex::new();
+    let spellings = store.spellings()?;
+    let by_key: std::collections::HashMap<&str, &str> = spellings
+        .iter()
+        .map(|(k, d)| (k.as_str(), d.as_str()))
+        .collect();
+
+    for (a, b, _, _) in store.edges()? {
+        if let (Identifier::RegNo(r), Identifier::NameKey(k))
+        | (Identifier::NameKey(k), Identifier::RegNo(r)) = (&a, &b)
+        {
+            let display = by_key.get(k.as_str()).copied().unwrap_or(k.as_str());
+            corpus.insert(display, r.as_str());
+        }
+    }
+    if corpus.is_empty() {
+        return Ok(NameLinkReport::default());
+    }
+
+    // Queries: every Neo ID that has a name but no registration number yet.
+    let identity = build_graph(store)?;
+    let mut report = NameLinkReport::default();
+
+    for (neo, (display, conf)) in &identity.neo_to_name {
+        if identity.neo_to_reg.contains_key(neo) {
+            continue; // already resolved, and by something stronger
+        }
+        if !conf.can_aggregate() {
+            continue;
+        }
+        let Some(neo_id) = NeoId::parse(neo) else {
+            continue;
+        };
+
+        match corpus.match_name(display) {
+            MatchOutcome::Matched {
+                candidate,
+                confidence,
+            } => {
+                let Some(reg) = RegNo::parse(&candidate.payload) else {
+                    continue;
+                };
+                // The link is only as strong as the weaker of the two claims.
+                let strength = confidence.min(*conf);
+                if !strength.can_aggregate() {
+                    continue;
+                }
+                store.add_edge(
+                    &Identifier::NeoId(neo_id),
+                    &Identifier::RegNo(reg),
+                    strength,
+                    "name-match",
+                )?;
+                if strength == Confidence::High {
+                    report.exact += 1;
+                } else {
+                    report.approximate += 1;
+                }
+            }
+            MatchOutcome::Ambiguous { .. } => report.ambiguous += 1,
+            MatchOutcome::NoMatch => report.unmatched += 1,
+        }
+    }
+
+    Ok(report)
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct NameLinkReport {
+    /// Exact name agreement, unique on both sides.
+    pub exact: usize,
+    /// Phonetic or typo-level agreement. Counts toward statistics only.
+    pub approximate: usize,
+    /// More than one candidate. Deliberately left unresolved.
+    pub ambiguous: usize,
+    pub unmatched: usize,
+}
+
 /// Builds a name-search index from everything the graph can safely name.
 pub fn search_index(store: &Store, identity: &ResolvedIdentity) -> Result<CorpusIndex, StoreError> {
     let mut idx = CorpusIndex::new();

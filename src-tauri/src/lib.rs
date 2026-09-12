@@ -10,6 +10,7 @@ pub mod engine;
 pub mod identity;
 pub mod model;
 pub mod parse;
+pub mod reference;
 pub mod store;
 
 use commands::AppState;
@@ -32,6 +33,20 @@ pub fn run() {
             std::fs::create_dir_all(&dir)?;
             let store = store::Store::open(&dir.join("nankiv.db"))
                 .map_err(|e| format!("could not open the local database: {e}"))?;
+
+            // nankiv ships knowing the cohort, so a student gets an analysis on
+            // their first import rather than being asked to supply a sheet the
+            // maintainer already has.
+            match reference::seed(&store) {
+                Ok(r) if !r.already_seeded && r.students > 0 => {
+                    println!(
+                        "seeded reference data: {} students, {} academic records",
+                        r.students, r.academics
+                    );
+                }
+                Err(e) => eprintln!("reference seeding failed, continuing: {e}"),
+                _ => {}
+            }
             app.manage(AppState {
                 store: Mutex::new(store),
             });

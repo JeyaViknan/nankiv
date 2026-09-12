@@ -91,18 +91,38 @@ pub fn parse_academic_sheet(path: &Path) -> Result<Vec<AcademicRow>, ParseError>
             continue;
         }
 
-        // A name column: mostly-alphabetic, not the branch column.
+        // The name column, chosen by how *distinct* its values are.
+        //
+        // `Name`, `Gender`, `Degree` and `Campus` all pass the "looks like a
+        // name" test on every row of the real reference sheet, so counting
+        // matches ties four ways and the tie-break silently picked the last
+        // column — assigning every student the name "vellore" and killing the
+        // name bridge entirely. Names are nearly all different; categories are
+        // nearly all the same.
         let name_col = (0..rows[0].len())
             .filter(|i| Some(*i) != branch_col && *i != reg_col)
-            .max_by_key(|&i| {
-                rows.iter()
+            .filter(|&i| {
+                let hits = rows
+                    .iter()
                     .filter(|r| {
                         r.get(i)
                             .map(|c| super::shape::looks_like_name(&cell_text(c)))
                             .unwrap_or(false)
                     })
-                    .count()
-            });
+                    .count();
+                hits * 2 >= rows.len()
+            })
+            .map(|i| {
+                let values: Vec<String> = rows
+                    .iter()
+                    .filter_map(|r| r.get(i))
+                    .map(cell_text)
+                    .collect();
+                (i, super::shape::distinctness(&values))
+            })
+            .filter(|(_, d)| *d >= 0.35)
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .map(|(i, _)| i);
 
         for row in rows.iter().skip(1) {
             let Some(reg) = row

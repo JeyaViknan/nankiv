@@ -621,6 +621,24 @@ impl Store {
         Ok((cgpas, branches))
     }
 
+    pub fn meta(&self, key: &str) -> Result<Option<String>, StoreError> {
+        Ok(self
+            .conn
+            .query_row("SELECT value FROM app_meta WHERE key = ?1", [key], |r| {
+                r.get(0)
+            })
+            .optional()?)
+    }
+
+    pub fn set_meta(&self, key: &str, value: &str) -> Result<(), StoreError> {
+        self.conn.execute(
+            "INSERT INTO app_meta (key, value) VALUES (?1, ?2)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![key, value],
+        )?;
+        Ok(())
+    }
+
     /// Removes everything. Backs the "wipe all data" control in settings.
     pub fn wipe(&self) -> Result<(), StoreError> {
         self.conn.execute_batch(
@@ -631,7 +649,8 @@ impl Store {
              DELETE FROM name_spellings;
              DELETE FROM academics;
              DELETE FROM baseline_values;
-             DELETE FROM profile;",
+             DELETE FROM profile;
+             DELETE FROM app_meta;",
         )?;
         Ok(())
     }

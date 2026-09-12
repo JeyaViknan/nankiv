@@ -13,16 +13,27 @@ few thousand classmates' personal data.
 
 Three decisions keep that from happening.
 
-## 1. The application ships empty
+## 1. The application ships with the cohort's academic data
 
-No student data is bundled into the installer. nankiv arrives knowing nothing;
-the student imports the reference sheets they already received through official
-channels.
+This reverses an earlier decision, and the reasoning is worth recording.
 
-This costs about forty seconds of one-time setup. In exchange, whoever publishes
-the application is not redistributing anyone's personal data — a materially
-different act from a file circulating inside the cohort, and one with real
-exposure under India's DPDP Act 2023.
+The original design shipped empty: each student would import the reference
+sheets they had already received, so whoever published the app redistributed
+nothing. In practice that meant every student was asked to go and find a
+spreadsheet before the app could tell them anything — two thousand separate
+efforts to avoid one act of publication, imposed on people with no way to
+anticipate it and no reason to accept it. The maintainer already holds the sheet.
+
+So the pack ships. What ships is the *resolved* result rather than the source:
+registration number, name, CGPA, branch, and the Neo ID links that name matching
+could establish safely. Nothing else survives the generator.
+
+The trade is real and should be stated plainly rather than buried. Publishing
+the application now distributes roughly 2,500 classmates' names and CGPAs. That
+is a materially different act from a file circulating inside the cohort, and it
+carries exposure under India's DPDP Act 2023. Anyone deploying this should have
+their placement cell's agreement first, and should decide deliberately whether
+the repository holding `reference/pack.json` ought to be public.
 
 ## 2. Minimisation is structural, not procedural
 
@@ -98,6 +109,11 @@ Stated plainly, because a security claim that overreaches is worse than none:
   reduces what it keeps, but it cannot control what the student was sent.
 
 ## For maintainers
+
+The bundled pack at `src-tauri/reference/pack.json` is generated from `Global/`
+by `cargo run --bin build_reference`, and is the one committed artefact that
+carries real names and CGPAs. Regenerate it whenever the source sheets change.
+A test asserts it contains no email address, phone number or document link.
 
 Real spreadsheets must never be committed. `.gitignore` excludes `*.xlsx` and
 the `Global/` directory, and CI fails if a spreadsheet appears outside the

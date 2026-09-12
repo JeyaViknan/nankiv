@@ -172,11 +172,14 @@ spreadsheets are gitignored and CI fails if one is ever committed.
 nankiv is built so that the careless path is also the safe one. See
 [docs/PRIVACY.md](docs/PRIVACY.md) for the full reasoning.
 
-- **Ships empty.** No student data is distributed with the application.
-- **Minimises at ingestion.** Only registration number, name, CGPA and branch
-  are read from a reference sheet. Phone numbers, email addresses, dates of
-  birth and resume links are never extracted — and the database has no column
-  for them, so they could not be stored even by mistake.
+- **Ships with the cohort's academic data**, so a student gets an answer on
+  their first import rather than being asked to supply a sheet the maintainer
+  already holds. Only registration number, name, CGPA and branch are included.
+- **Minimises at ingestion.** Phone numbers, email addresses, dates of birth,
+  gender and resume links are never extracted — from the bundled sheets or from
+  anything a student imports — and the database has no column for them, so they
+  could not be stored even by mistake. A test asserts the shipped pack contains
+  no address, phone number or document link.
 - **No bulk export.** You can export your own history and nothing else. This is
   the single most effective control available, because it removes the payoff
   from the obvious misuse.

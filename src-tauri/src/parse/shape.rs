@@ -17,6 +17,9 @@ const MIN_DENSITY: f64 = 0.5;
 /// And must contain at least this many, so a two-row file cannot elect a column
 /// off a single lucky cell.
 const MIN_HITS: usize = 2;
+/// A name column's values are mostly different from one another. Anything below
+/// this is a category — gender, campus, degree, venue — not a person.
+const MIN_DISTINCTNESS: f64 = 0.35;
 
 /// The four shapes observed across the real corpus.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -144,17 +147,26 @@ pub fn elect_columns(grid: &[Vec<Data>]) -> ColumnLayout {
     // A name column is only meaningful next to an identifier, and must not be a
     // column we already elected.
     let name_col = if neo_col.is_some() || reg_col.is_some() {
-        name_hits
-            .iter()
-            .enumerate()
-            .filter(|(i, &h)| {
+        // Among the plausible columns, the one whose values are actually
+        // distinct. A tie on raw hit count is exactly how `Campus` once won.
+        (0..width)
+            .filter(|i| {
                 Some(*i) != neo_col
                     && Some(*i) != reg_col
-                    && h >= MIN_HITS
+                    && name_hits[*i] >= MIN_HITS
                     && filled[*i] > 0
-                    && (h as f64 / filled[*i] as f64) >= MIN_DENSITY
+                    && (name_hits[*i] as f64 / filled[*i] as f64) >= MIN_DENSITY
             })
-            .max_by_key(|(_, &h)| h)
+            .map(|i| {
+                let values: Vec<String> = grid
+                    .iter()
+                    .filter_map(|r| r.get(i))
+                    .map(cell_text)
+                    .collect();
+                (i, distinctness(&values))
+            })
+            .filter(|(_, d)| *d >= MIN_DISTINCTNESS)
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, _)| i)
     } else {
         None
@@ -165,6 +177,26 @@ pub fn elect_columns(grid: &[Vec<Data>]) -> ColumnLayout {
         reg_col,
         name_col,
     }
+}
+
+/// How many distinct values a column holds, as a share of its filled cells.
+///
+/// This is what separates a name column from the decoys around it. In the real
+/// reference sheet, `Name`, `Gender`, `Degree` and `Campus` all satisfy the
+/// "looks like a name" test equally — every value is alphabetic and unhyphenated
+/// — and a plain count of matches ties between them. Distinctness does not tie:
+/// 2,500 names are nearly all different, while `Gender` holds two values and
+/// `Campus` holds one.
+///
+/// Before this, column election fell through to the last tied candidate and
+/// assigned every student the name "vellore".
+pub fn distinctness(values: &[String]) -> f64 {
+    let filled: Vec<&String> = values.iter().filter(|v| !v.is_empty()).collect();
+    if filled.is_empty() {
+        return 0.0;
+    }
+    let unique: std::collections::HashSet<&str> = filled.iter().map(|v| v.as_str()).collect();
+    unique.len() as f64 / filled.len() as f64
 }
 
 /// A loose test for "this cell holds a person's name".
