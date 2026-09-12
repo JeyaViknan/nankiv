@@ -192,7 +192,7 @@ export default function App() {
               <BackIcon />
             </button>
           ) : (
-            <span className="wordmark">nankiv</span>
+            <span className="wordmark">Shortlists</span>
           )}
         </div>
 

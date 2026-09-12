@@ -20,7 +20,7 @@ import {
   InsufficientSample,
   StandingCard,
 } from "./components/Analysis";
-import { applyTheme, type ThemeChoice } from "./lib/theme";
+import { applyTheme, getThemeChoice, type ThemeChoice } from "./lib/theme";
 import type {
   BranchReport,
   CutoffReport,
@@ -167,10 +167,11 @@ function Section({
 }
 
 function Preview() {
-  const [theme, setTheme] = useState<ThemeChoice>("dark");
+  const [theme, setTheme] = useState<ThemeChoice>(getThemeChoice);
 
   function pick(t: ThemeChoice) {
     setTheme(t);
+    localStorage.setItem("nankiv.theme", t);
     applyTheme(t);
   }
 
@@ -394,7 +395,7 @@ function Preview() {
   );
 }
 
-applyTheme("dark");
+applyTheme(getThemeChoice());
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <Preview />,
 );

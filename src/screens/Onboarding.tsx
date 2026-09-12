@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
 
 export function OnboardingScreen() {
-  const { saveProfile, error, clearError } = useStore();
+  const { saveProfile, error, clearError, go } = useStore();
   const [neoId, setNeoId] = useState("");
   const [regNo, setRegNo] = useState("");
   const first = useRef<HTMLInputElement>(null);
@@ -25,15 +25,22 @@ export function OnboardingScreen() {
     first.current?.focus();
   }, []);
 
+  const [saving, setSaving] = useState(false);
+
   async function save() {
     clearError();
-    await saveProfile({
+    setSaving(true);
+    const ok = await saveProfile({
       neo_id: neoId.trim() || null,
       reg_no: regNo.trim() || null,
       display_name: null,
       cohort: null,
       show_friend_cgpa: false,
     });
+    setSaving(false);
+    // Saving used to leave the student sitting here with no way forward; the
+    // app only recovered on the next launch.
+    if (ok) go("shortlists");
   }
 
   const ready = neoId.trim().length > 0 || regNo.trim().length > 0;
@@ -96,9 +103,21 @@ export function OnboardingScreen() {
 
       {error && <p className="field-error">{error.message}</p>}
 
-      <button className="btn primary wide" onClick={save} disabled={!ready}>
-        Continue
+      <button
+        className="btn primary wide"
+        onClick={save}
+        disabled={!ready || saving}
+      >
+        {saving ? "Saving…" : "Continue"}
       </button>
+
+      <button className="btn plain wide" onClick={() => go("shortlists")}>
+        Set this up later
+      </button>
+      <p className="onboard-note">
+        You can import shortlists without this — nankiv just won't be able to
+        say whether any of them include you.
+      </p>
     </div>
   );
 }

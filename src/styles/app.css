@@ -24,47 +24,49 @@
    =========================================================================== */
 
 :root {
-  /* Neutral ramp. Pure greys, no hue. */
-  --bg: #f7f7f8;
-  --bg-sunken: #efeff1;
+  /* Greys follow the macOS system ramp rather than an invented one. People
+     already read these surfaces as "window", "control" and "separator", which
+     is familiarity doing work no custom palette can. */
+  --bg: #f2f2f7;
+  --bg-sunken: #e8e8ed;
   --surface: #ffffff;
   --surface-2: #fafafa;
-  --surface-3: #f4f4f5;
-  --surface-hover: #f4f4f5;
+  --surface-3: #f0f0f4;
+  --surface-hover: #ededf2;
 
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
-  --border-subtle: #ededef;
+  --border: #dededf;
+  --border-strong: #c7c7cc;
+  --border-subtle: #ebebed;
 
-  --text: #18181b;
-  --text-2: #52525b;
-  --text-3: #71717a;
-  --text-faint: #a1a1aa;
+  --text: #1d1d1f;
+  --text-2: #4b4b50;
+  --text-3: #6e6e73;
+  --text-faint: #8e8e93;
 
-  /* Brand / interactive. Never used for state. */
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
+  /* System blue. The platform accent, so it needs no learning. */
+  --accent: #007aff;
+  --accent-hover: #0062cc;
   --accent-fg: #ffffff;
-  --accent-subtle: #eef2ff;
-  --accent-border: #c7d2fe;
+  --accent-subtle: #e8f1ff;
+  --accent-border: #b8d8ff;
 
-  /* Semantic: success means "you are on the list", and nothing else. */
-  --ok: #047857;
+  /* System green, darkened to the shade that actually passes contrast when
+     white sits on it. */
+  --ok: #1d8a4c;
   --ok-fg: #ffffff;
-  --ok-subtle: #ecfdf5;
-  --ok-border: #a7f3d0;
-  --ok-grad-a: #059669;
-  --ok-grad-b: #047857;
+  --ok-subtle: #e7f7ed;
+  --ok-border: #a6e0bd;
+  --ok-solid: #34c759;
 
-  /* Semantic: we don't know. */
-  --warn: #b45309;
-  --warn-subtle: #fffbeb;
-  --warn-border: #fde68a;
+  --warn: #9a6400;
+  --warn-subtle: #fff8e8;
+  --warn-border: #f0d9a0;
+  --warn-solid: #ff9500;
 
-  /* Semantic: destructive. */
-  --danger: #be123c;
-  --danger-subtle: #fff1f2;
-  --danger-border: #fecdd3;
+  --danger: #d70015;
+  --danger-subtle: #ffeceb;
+  --danger-border: #ffc9c5;
+  --danger-solid: #ff3b30;
 
   --shadow-xs: 0 1px 2px rgb(24 24 27 / 5%);
   --shadow-sm: 0 1px 3px rgb(24 24 27 / 7%), 0 1px 2px rgb(24 24 27 / 4%);
@@ -72,8 +74,8 @@
     0 4px 12px -2px rgb(24 24 27 / 8%), 0 2px 6px -2px rgb(24 24 27 / 5%);
   --shadow-lg:
     0 16px 40px -8px rgb(24 24 27 / 16%), 0 4px 12px -4px rgb(24 24 27 / 8%);
-  --shadow-accent: 0 1px 2px rgb(79 70 229 / 24%);
-  --shadow-ok: 0 8px 24px -8px rgb(4 120 87 / 32%);
+  --shadow-accent: 0 1px 2px rgb(0 122 255 / 22%);
+  --shadow-ok: 0 6px 20px -8px rgb(29 138 76 / 26%);
 
   --r-sm: 6px;
   --r: 9px;
@@ -100,42 +102,45 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #09090b;
-    --bg-sunken: #060607;
-    --surface: #131316;
-    --surface-2: #18181b;
-    --surface-3: #1f1f23;
-    --surface-hover: #232328;
+    /* Not pure black: macOS windows sit around #1c1c1e, and true black reads
+       as an OLED phone rather than a desktop window. */
+    --bg: #1c1c1e;
+    --bg-sunken: #161618;
+    --surface: #2c2c2e;
+    --surface-2: #252527;
+    --surface-3: #3a3a3c;
+    --surface-hover: #3a3a3c;
 
-    --border: #27272a;
-    --border-strong: #3f3f46;
-    --border-subtle: #1f1f23;
+    --border: #3a3a3c;
+    --border-strong: #48484a;
+    --border-subtle: #323234;
 
-    --text: #fafafa;
-    --text-2: #a1a1aa;
-    --text-3: #8b8b93;
-    --text-faint: #6b6b73;
+    --text: #f5f5f7;
+    --text-2: #a1a1a6;
+    --text-3: #98989d;
+    --text-faint: #7c7c81;
 
-    --accent: #818cf8;
-    --accent-hover: #a5b4fc;
-    --accent-fg: #0b0b18;
-    --accent-subtle: #1e1b40;
-    --accent-border: #3730a3;
+    --accent: #0a84ff;
+    --accent-hover: #409cff;
+    --accent-fg: #ffffff;
+    --accent-subtle: #1b2b40;
+    --accent-border: #2f5a8a;
 
-    --ok: #34d399;
-    --ok-fg: #022c22;
-    --ok-subtle: #052e24;
-    --ok-border: #115e48;
-    --ok-grad-a: #10b981;
-    --ok-grad-b: #059669;
+    --ok: #30d158;
+    --ok-fg: #04240f;
+    --ok-subtle: #16301f;
+    --ok-border: #2c5c3c;
+    --ok-solid: #30d158;
 
-    --warn: #fbbf24;
-    --warn-subtle: #1b1a16;
-    --warn-border: #4c3f1c;
+    --warn: #ff9f0a;
+    --warn-subtle: #2e2612;
+    --warn-border: #5c4a1e;
+    --warn-solid: #ff9f0a;
 
-    --danger: #fb7185;
-    --danger-subtle: #2c1016;
-    --danger-border: #6b2333;
+    --danger: #ff453a;
+    --danger-subtle: #341c1b;
+    --danger-border: #6b2f2b;
+    --danger-solid: #ff453a;
 
     --shadow-xs: 0 1px 2px rgb(0 0 0 / 40%);
     --shadow-sm: 0 1px 3px rgb(0 0 0 / 50%), 0 1px 2px rgb(0 0 0 / 40%);
@@ -144,7 +149,7 @@
     --shadow-lg:
       0 16px 40px -8px rgb(0 0 0 / 75%), 0 4px 12px -4px rgb(0 0 0 / 55%);
     --shadow-accent: 0 1px 2px rgb(0 0 0 / 50%);
-    --shadow-ok: 0 8px 28px -10px rgb(16 185 129 / 40%);
+    --shadow-ok: 0 6px 22px -10px rgb(48 209 88 / 30%);
 
     color-scheme: dark;
   }
@@ -195,7 +200,7 @@
   --shadow-lg:
     0 16px 40px -8px rgb(0 0 0 / 75%), 0 4px 12px -4px rgb(0 0 0 / 55%);
   --shadow-accent: 0 1px 2px rgb(0 0 0 / 50%);
-  --shadow-ok: 0 8px 28px -10px rgb(16 185 129 / 40%);
+  --shadow-ok: 0 6px 22px -10px rgb(48 209 88 / 30%);
 
   color-scheme: dark;
 }
@@ -338,79 +343,74 @@ p {
 
 /* ===========================================================================
    Verdict — the one thing the product exists to say
-   =========================================================================== */
+   ===========================================================================
+
+   The three states share one structure and differ only in the element that
+   carries meaning: a single filled glyph. Colour is a precise signal rather
+   than a wash across a whole panel.
+
+   This also fixes a real contrast problem. White text on system green fails
+   at every shade bright enough to feel positive; text at full strength on the
+   normal surface passes everywhere, and the green does its job in the glyph.
+*/
 
 .verdict {
-  border-radius: var(--r-xl);
-  padding: 26px 28px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  border: 1px solid transparent;
-  margin-bottom: 16px;
+  gap: 18px;
+  padding: 24px 26px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
 }
 
 .verdict-icon {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   flex: none;
+  color: #fff;
 }
 
 .verdict-title {
   font-family: var(--display);
-  font-size: 28px;
-  font-weight: 710;
-  letter-spacing: -0.036em;
-  line-height: 1.07;
+  font-size: 27px;
+  font-weight: 680;
+  letter-spacing: -0.034em;
+  line-height: 1.1;
   margin: 0;
+  color: var(--text);
 }
 
 .verdict-detail {
   font-size: 13.5px;
-  margin: 6px 0 0;
-  opacity: 0.82;
-  font-weight: 450;
-}
-
-/* The only place emerald appears at full strength in the whole application. */
-.verdict.yes {
-  background: linear-gradient(135deg, var(--ok-grad-a), var(--ok-grad-b));
-  color: var(--ok-fg);
-  box-shadow: var(--shadow-ok);
+  margin: 5px 0 0;
+  color: var(--text-3);
+  font-weight: 440;
 }
 
 .verdict.yes .verdict-icon {
-  background: rgb(255 255 255 / 18%);
+  background: var(--ok-solid);
+  /* The one flourish in the app, and only on the answer people hope for. */
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--ok-solid) 16%, transparent);
 }
 
-.verdict.yes .verdict-detail {
-  opacity: 0.9;
-}
-
-/* A rejection is not an error, and is never styled like one. */
-.verdict.no {
-  background: var(--surface);
-  color: var(--text);
-  border-color: var(--border);
-}
-
+/* A rejection is not an error and is never styled like one. */
 .verdict.no .verdict-icon {
   background: var(--surface-3);
   color: var(--text-3);
 }
 
-.verdict.unknown {
-  background: var(--warn-subtle);
-  color: var(--text);
-  border-color: var(--warn-border);
+.verdict.unknown .verdict-icon {
+  background: var(--warn-solid);
 }
 
-.verdict.unknown .verdict-icon {
-  background: color-mix(in srgb, var(--warn) 16%, transparent);
-  color: var(--warn);
+.verdict.unknown {
+  border-color: var(--warn-border);
+  background: var(--warn-subtle);
 }
 
 /* ===========================================================================
@@ -493,12 +493,13 @@ kbd {
   grid-template-columns: 1fr minmax(180px, 340px) 1fr;
   align-items: center;
   gap: 12px;
-  height: 46px;
+  height: 52px;
   padding: 0 12px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   flex: none;
-  /* Leaves room for the macOS traffic lights. */
+  /* The traffic lights float over this bar (titleBarStyle: Overlay), so the
+     leading edge is reserved for them. */
   padding-left: 78px;
 }
 
@@ -1538,7 +1539,11 @@ tr.signal td {
   line-height: 1.5;
 }
 
-input[type="text"] {
+/* Base input styling, wrapped in :where() so it carries zero specificity.
+   A component class then always wins no matter which is declared first —
+   previously this rule silently overrode .search-input's padding and slid the
+   placeholder underneath the search glyph. */
+:where(input[type="text"]) {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
@@ -1552,19 +1557,19 @@ input[type="text"] {
     box-shadow 0.13s ease;
 }
 
-input.mono-input {
+:where(input).mono-input {
   font-family: var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-input[type="text"]:focus {
+:where(input[type="text"]):focus {
   border-color: var(--accent);
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
-input[type="text"]::placeholder {
+:where(input[type="text"])::placeholder {
   color: var(--text-faint);
   text-transform: none;
   letter-spacing: normal;
@@ -1802,4 +1807,25 @@ input[type="text"]::placeholder {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.btn.plain {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-3);
+  margin-top: 8px;
+}
+
+.btn.plain:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: transparent;
+  color: var(--text);
+}
+
+.onboard-note {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  text-align: center;
+  margin: 12px 0 0;
+  line-height: 1.55;
 }

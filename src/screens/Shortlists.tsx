@@ -108,7 +108,9 @@ function DriveRow({
 
 export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
   const { drives, openDrive, deleteDrive, importStage, profile } = useStore();
-  const [cursor, setCursor] = useState(0);
+  // -1 until the keyboard is actually used: a highlight nobody asked for
+  // reads as a selection and is just noise.
+  const [cursor, setCursor] = useState(-1);
   const listRef = useRef<HTMLDivElement>(null);
 
   const busy = importStage.phase === "reading";
@@ -124,7 +126,7 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setCursor((c) => Math.max(c - 1, 0));
-      } else if (e.key === "Enter") {
+      } else if (e.key === "Enter" && cursor >= 0) {
         e.preventDefault();
         const d = drives[cursor];
         if (d) void openDrive(d.id);
@@ -134,7 +136,7 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
   );
 
   useEffect(() => {
-    if (cursor > drives.length - 1) setCursor(Math.max(0, drives.length - 1));
+    if (cursor > drives.length - 1) setCursor(drives.length - 1);
   }, [drives.length, cursor]);
 
   const empty = drives.length === 0;
@@ -186,6 +188,7 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
             tabIndex={0}
             ref={listRef}
             onKeyDown={onKeyDown}
+            onBlur={() => setCursor(-1)}
           >
             {drives.map((d, i) => (
               <DriveRow
