@@ -17,6 +17,7 @@ import type { DriveRecord } from "../lib/api";
 import { useStore } from "../lib/store";
 import { ImportStatus } from "../components/ImportStatus";
 import { NeedsReference } from "../components/NeedsReference";
+import { Icon } from "../components/Icon";
 
 function relativeDay(iso: string): string {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -31,43 +32,6 @@ function relativeDay(iso: string): string {
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-}
-
-function TrayIcon() {
-  return (
-    <svg
-      width="34"
-      height="34"
-      viewBox="0 0 40 40"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M20 7v17M13.5 17.5L20 24l6.5-6.5" />
-      <path d="M7 26v4.5A2.5 2.5 0 0 0 9.5 33h21a2.5 2.5 0 0 0 2.5-2.5V26" />
-    </svg>
-  );
-}
-
-function DeleteIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M2.5 4h11M6 4V2.5h4V4M4 4l.6 9a1 1 0 0 0 1 1h4.8a1 1 0 0 0 1-1L12 4" />
-    </svg>
-  );
 }
 
 function DriveRow({
@@ -101,7 +65,7 @@ function DriveRow({
           onDelete();
         }}
       >
-        <DeleteIcon />
+        <Icon name="trash" size={15} />
       </button>
     </div>
   );
@@ -153,7 +117,7 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
         disabled={busy}
       >
         <span className="invite-icon">
-          <TrayIcon />
+          <Icon name="tray" size={32} />
         </span>
         <span className="invite-text">
           <span className="invite-title">

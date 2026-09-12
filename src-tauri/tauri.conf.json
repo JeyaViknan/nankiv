@@ -13,15 +13,19 @@
     "windows": [
       {
         "title": "nankiv",
-        "width": 1100,
-        "height": 780,
-        "minWidth": 880,
+        "width": 1080,
+        "height": 760,
+        "minWidth": 860,
         "minHeight": 620,
         "resizable": true,
         "fullscreen": false,
         "dragDropEnabled": true,
         "titleBarStyle": "Overlay",
-        "hiddenTitle": true
+        "hiddenTitle": true,
+        "maxWidth": 1280,
+        "maxHeight": 980,
+        "maximizable": false,
+        "center": true
       }
     ],
     "security": {

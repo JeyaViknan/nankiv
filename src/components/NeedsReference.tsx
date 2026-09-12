@@ -13,28 +13,10 @@
  */
 
 import { useState } from "react";
+import { Icon } from "./Icon";
 import { open } from "@tauri-apps/plugin-dialog";
 import { toApiError } from "../lib/api";
 import { useStore } from "../lib/store";
-
-function SheetIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3.5" y="3" width="17" height="18" rx="2.5" />
-      <path d="M3.5 9h17M9 9v12M3.5 15h17" />
-    </svg>
-  );
-}
 
 export function NeedsReference({ compact }: { compact?: boolean }) {
   const { importReferenceFile } = useStore();
@@ -80,7 +62,7 @@ export function NeedsReference({ compact }: { compact?: boolean }) {
   return (
     <div className="setup-card">
       <span className="setup-icon">
-        <SheetIcon />
+        <Icon name="sheet" size={21} />
       </span>
       <div className="setup-body">
         <h3>Analysis isn't set up yet</h3>

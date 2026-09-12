@@ -50,3 +50,8 @@ playwright-report/
 *.keystore
 tauri-signing-key*
 *.asc
+
+# Apple developer resources — licensed for local use only, never committed.
+# SF Pro and SF Symbols may not be embedded or redistributed (see docs/DESIGN.md).
+*.dmg
+!src-tauri/target/**/bundle/dmg/*.dmg

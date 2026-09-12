@@ -15,46 +15,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, toApiError, type SearchResult } from "../lib/api";
 import { useStore } from "../lib/store";
 import { Sheet } from "../components/Sheet";
+import { Icon } from "../components/Icon";
 
 const NEO = /^(?:[A-Za-z][0-9]){4}$/;
 const REG = /^\d{2}[A-Za-z]{3}\d{4,5}$/;
 
 function looksLikeIdentifier(q: string): boolean {
   return NEO.test(q.trim()) || REG.test(q.trim());
-}
-
-function PlusIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M8 3.5v9M3.5 8h9" />
-    </svg>
-  );
-}
-
-function RemoveIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />
-    </svg>
-  );
 }
 
 export function CircleSheet({ onClose }: { onClose: () => void }) {
@@ -167,7 +134,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
               <span className="person-id">{result.neo_id}</span>
             </span>
             <span className="result-add">
-              <PlusIcon /> Add
+              <Icon name="plus" size={14} /> Add
             </span>
           </button>
         </div>
@@ -191,7 +158,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
                   <span className="person-id">{c.neo_id}</span>
                 </span>
                 <span className="result-add">
-                  <PlusIcon /> Add
+                  <Icon name="plus" size={14} /> Add
                 </span>
               </button>
             ))}
@@ -233,7 +200,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
                   title="Remove"
                   onClick={() => void remove(f.id, f.label)}
                 >
-                  <RemoveIcon />
+                  <Icon name="close" size={14} />
                 </button>
               </div>
             ))}

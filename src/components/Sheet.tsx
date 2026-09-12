@@ -11,23 +11,7 @@
  */
 
 import { useEffect, useRef, type ReactNode } from "react";
-
-function CloseIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4 4l8 8M12 4l-8 8" />
-    </svg>
-  );
-}
+import { Icon } from "./Icon";
 
 export function Sheet({
   title,
@@ -85,7 +69,7 @@ export function Sheet({
             onClick={onClose}
             aria-label={`Close ${title}`}
           >
-            <CloseIcon />
+            <Icon name="close" size={15} />
           </button>
         </header>
         <div className="sheet-body">{children}</div>

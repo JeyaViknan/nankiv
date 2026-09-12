@@ -6,6 +6,7 @@
 
 pub mod analytics;
 pub mod commands;
+pub mod desktop;
 pub mod engine;
 pub mod identity;
 pub mod model;
@@ -47,9 +48,29 @@ pub fn run() {
                 Err(e) => eprintln!("reference seeding failed, continuing: {e}"),
                 _ => {}
             }
+            // Geometry has to be read before the store moves into managed state.
+            if let Some(window) = app.get_webview_window("main") {
+                // A remembered size wins; a first run gets one chosen for the
+                // display it is actually on.
+                if store.meta("window_geometry").ok().flatten().is_some() {
+                    desktop::restore_geometry(&window, &store);
+                } else {
+                    desktop::apply_default_geometry(&window);
+                }
+            }
+
             app.manage(AppState {
                 store: Mutex::new(store),
             });
+
+            if let Some(window) = app.get_webview_window("main") {
+                desktop::persist_geometry(&window);
+            }
+
+            if let Err(e) = desktop::build_menu(app.handle()) {
+                eprintln!("could not build the application menu: {e}");
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

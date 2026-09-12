@@ -17,9 +17,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { listen } from "@tauri-apps/api/event";
 import { useStore } from "./lib/store";
 import { applyTheme, getThemeChoice, watchSystemTheme } from "./lib/theme";
 import { DropSurface } from "./components/DropSurface";
+import { Icon } from "./components/Icon";
 import { SearchField } from "./components/SearchField";
 import { Toast } from "./components/Toast";
 import { CircleSheet } from "./screens/CircleSheet";
@@ -27,63 +29,6 @@ import { DriveScreen } from "./screens/DriveScreen";
 import { OnboardingScreen } from "./screens/Onboarding";
 import { SettingsSheet } from "./screens/Settings";
 import { Shortlists } from "./screens/Shortlists";
-
-function BackIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M10 3l-5 5 5 5" />
-    </svg>
-  );
-}
-
-function PeopleIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="7.4" cy="6.6" r="2.6" />
-      <path d="M2.3 16c0-2.6 2.3-4.2 5.1-4.2s5.1 1.6 5.1 4.2" />
-      <path d="M13.4 5.1a2.1 2.1 0 0 1 0 4.1M14.2 11.9c2.3.3 3.5 1.6 3.5 4.1" />
-    </svg>
-  );
-}
-
-function GearIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="10" r="2.4" />
-      <path d="M10 2.6l.9 1.9 2.1-.3.5 2 1.9.9-.9 1.9.9 1.9-1.9.9-.5 2-2.1-.3-.9 1.9-.9-1.9-2.1.3-.5-2-1.9-.9.9-1.9-.9-1.9 1.9-.9.5-2 2.1.3z" />
-    </svg>
-  );
-}
 
 export default function App() {
   const {
@@ -129,7 +74,58 @@ export default function App() {
     }
   }, [importFile]);
 
+  const browseReference = useCallback(async () => {
+    try {
+      const picked = await open({
+        multiple: false,
+        filters: [
+          {
+            name: "Spreadsheet",
+            extensions: ["xlsx", "xls", "xlsm", "ods", "csv"],
+          },
+        ],
+      });
+      // Import routes on content, so a reference sheet and a shortlist go
+      // through the same door and land in the right place either way.
+      if (typeof picked === "string") void importFile(picked);
+    } catch {
+      /* the dialog was dismissed */
+    }
+  }, [importFile]);
+
   const goBack = useCallback(() => go("shortlists"), [go]);
+
+  // The menu bar drives the same behaviours as the shortcuts rather than
+  // duplicating them, so there is one implementation of each and the two can
+  // never drift apart.
+  useEffect(() => {
+    const p = listen<string>("menu", (e) => {
+      switch (e.payload) {
+        case "settings":
+          setSettingsOpen((v) => !v);
+          break;
+        case "circle":
+          setCircleOpen((v) => !v);
+          break;
+        case "open":
+          void browse();
+          break;
+        case "open_reference":
+          void browseReference();
+          break;
+        case "search":
+          searchRef.current?.focus();
+          searchRef.current?.select();
+          break;
+        case "back":
+          goBack();
+          break;
+      }
+    });
+    return () => {
+      void p.then((un) => un());
+    };
+  });
 
   // The desktop keyboard model. A tool used several times a day should be
   // operable without reaching for the mouse.
@@ -189,7 +185,7 @@ export default function App() {
               aria-label="Back to shortlists"
               title="Back (Esc)"
             >
-              <BackIcon />
+              <Icon name="back" size={16} />
             </button>
           ) : (
             <span className="wordmark">Shortlists</span>
@@ -205,7 +201,7 @@ export default function App() {
             aria-label="Circle"
             title="Circle (⌘D)"
           >
-            <PeopleIcon />
+            <Icon name="people" size={17} />
           </button>
           <button
             className="icon-btn"
@@ -213,7 +209,7 @@ export default function App() {
             aria-label="Settings"
             title="Settings (⌘,)"
           >
-            <GearIcon />
+            <Icon name="gear" size={17} />
           </button>
         </div>
       </header>
@@ -229,9 +225,13 @@ export default function App() {
         )}
 
         {inDrive ? (
-          <DriveScreen outcome={current} />
+          <div className="view-drive" key={current.drive_id}>
+            <DriveScreen outcome={current} />
+          </div>
         ) : (
-          <Shortlists onBrowse={browse} />
+          <div className="view-root">
+            <Shortlists onBrowse={browse} />
+          </div>
         )}
       </main>
 

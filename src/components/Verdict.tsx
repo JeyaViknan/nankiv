@@ -8,6 +8,7 @@
  */
 
 import type { Verdict, UndeterminedReason } from "../lib/api";
+import { Icon } from "./Icon";
 
 /** Plain-language explanation for why we can't answer. */
 export function undeterminedText(r: UndeterminedReason): {
@@ -41,66 +42,6 @@ export function undeterminedText(r: UndeterminedReason): {
   }
 }
 
-function CheckIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M5 12.5l4.5 4.5L19 7"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function DashIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M6 12h12"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function QuestionIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M9 9a3 3 0 1 1 4.5 2.6c-.9.5-1.5 1.2-1.5 2.2v.4"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="18" r="1.3" fill="currentColor" />
-    </svg>
-  );
-}
-
 interface BannerProps {
   verdict: Verdict;
   company: string;
@@ -117,7 +58,7 @@ export function VerdictBanner({
     return (
       <div className="verdict yes" role="status">
         <div className="verdict-icon">
-          <CheckIcon />
+          <Icon name="check" size={24} />
         </div>
         <div>
           <p className="verdict-title">You're in</p>
@@ -133,7 +74,7 @@ export function VerdictBanner({
     return (
       <div className="verdict no" role="status">
         <div className="verdict-icon">
-          <DashIcon />
+          <Icon name="dash" size={24} />
         </div>
         <div>
           <p className="verdict-title">Not this time</p>
@@ -150,7 +91,7 @@ export function VerdictBanner({
   return (
     <div className="verdict unknown" role="status">
       <div className="verdict-icon">
-        <QuestionIcon />
+        <Icon name="question" size={24} />
       </div>
       <div>
         <p className="verdict-title">{title}</p>
@@ -169,7 +110,7 @@ export function VerdictPill({ verdict }: { verdict: Verdict }) {
   if (verdict.status === "shortlisted") {
     return (
       <span className="pill yes">
-        <CheckIcon /> In
+        <Icon name="check" size={24} /> In
       </span>
     );
   }

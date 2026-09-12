@@ -14,9 +14,17 @@
  *   the list — and appears nowhere else. That separation is what lets a single
  *   green banner carry real weight.
  *
- * Type is a native stack. SF Pro on macOS and Segoe UI Variable on Windows 11
- * are both excellent, and a downloaded webfont would break the offline promise.
- * The refinement comes from the scale, the tracking and the optical sizes.
+ * Type is SF Pro on macOS, supplied by the operating system rather than bundled
+ * with the app. `-apple-system` already resolves to it, and the named families
+ * below pick up the standalone install when a developer has one. Apple's licence
+ * permits neither embedding the font nor shipping it to a non-Apple OS, so
+ * Windows gets Segoe UI Variable — which is the right answer there anyway.
+ *
+ * SF Pro is two families, not one, and using them interchangeably is the most
+ * common way to get Apple typography subtly wrong. Display is drawn for large
+ * sizes: tighter spacing, finer detail, meant for headlines. Text is drawn for
+ * small: looser spacing, larger apertures, built to stay legible at 13px. macOS
+ * switches at 20pt, so this file does too.
  */
 
 /* ===========================================================================
@@ -82,15 +90,18 @@
   --r-lg: 13px;
   --r-xl: 18px;
 
+  /* Below 20px. */
   --sans:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text",
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    "SF Pro Text", -apple-system, BlinkMacSystemFont, "SF Pro",
+    "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  /* 20px and above. */
   --display:
-    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Display", -apple-system, BlinkMacSystemFont, "SF Pro",
     "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
   --mono:
-    ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono",
+    "SF Mono", ui-monospace, SFMono-Regular, "Cascadia Mono", "JetBrains Mono",
     Menlo, Consolas, monospace;
 
   color-scheme: light;
@@ -230,6 +241,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* SF ships a variable optical-size axis; letting the browser drive it is
+     what makes small text hold up and large text tighten correctly. */
+  font-optical-sizing: auto;
+  /* `ss01` swaps SF's single-storey 'a' out for the two-storey form used in
+     running text, and `cv01`/`tnum` keep digits unambiguous in identifiers. */
+  font-feature-settings: "ss01", "cv01";
   font-variant-numeric: tabular-nums;
   overflow: hidden;
   user-select: none;
@@ -1880,4 +1897,68 @@ tr.signal td {
   justify-content: space-between;
   gap: 14px;
   margin-top: 14px;
+}
+
+/* ===========================================================================
+   Motion
+   ===========================================================================
+
+   Two rules. Motion explains hierarchy — a detail view arrives from the
+   direction you would push it and leaves the way you came — and it is never
+   decorative. Everything here is under 200ms, because a transition you notice
+   as a transition is already too slow for something used several times a day.
+
+   All of it is suppressed under prefers-reduced-motion by the global rule near
+   the top of this file.
+*/
+
+@keyframes push-in {
+  from {
+    opacity: 0;
+    transform: translate3d(10px, 0, 0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-6px, 0, 0);
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+}
+
+.view-drive {
+  animation: push-in 0.17s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.view-root {
+  animation: pop-in 0.17s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* The answer earns a moment of its own: it settles a beat after the surface
+   arrives, so the eye lands on it rather than on the chrome. */
+.verdict {
+  animation: settle 0.26s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.icon-btn:active:not(:disabled),
+.btn:active:not(:disabled),
+.row-main:active {
+  transform: scale(0.975);
+}
+
+.icon-btn,
+.btn,
+.row-main {
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.07s ease;
 }

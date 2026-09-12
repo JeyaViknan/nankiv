@@ -15,25 +15,7 @@
  */
 
 import { useStore } from "../lib/store";
-
-function AlertIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="10" r="7.5" />
-      <path d="M10 6.2v4.4" />
-      <circle cx="10" cy="13.8" r="0.9" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
+import { Icon } from "./Icon";
 
 export function ImportStatus() {
   const { importStage, dismissImport } = useStore();
@@ -56,7 +38,7 @@ export function ImportStatus() {
     return (
       <div className="import-status failed" role="alert">
         <span className="import-icon">
-          <AlertIcon />
+          <Icon name="warning" size={17} />
         </span>
         <div className="import-body">
           <p className="import-headline">{error.message}</p>

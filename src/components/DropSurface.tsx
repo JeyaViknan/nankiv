@@ -20,6 +20,7 @@
 
 import { useEffect, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { Icon } from "./Icon";
 
 const SPREADSHEET = ["xlsx", "xls", "xlsm", "ods", "csv"];
 
@@ -36,43 +37,6 @@ type DragState =
   | { phase: "idle" }
   | { phase: "valid"; name: string }
   | { phase: "invalid"; name: string };
-
-function TrayIcon() {
-  return (
-    <svg
-      width="40"
-      height="40"
-      viewBox="0 0 40 40"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M20 6v18M13.5 17.5L20 24l6.5-6.5" />
-      <path d="M7 26v4.5A2.5 2.5 0 0 0 9.5 33h21a2.5 2.5 0 0 0 2.5-2.5V26" />
-    </svg>
-  );
-}
-
-function BlockedIcon() {
-  return (
-    <svg
-      width="40"
-      height="40"
-      viewBox="0 0 40 40"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <circle cx="20" cy="20" r="13" />
-      <path d="M11 11l18 18" />
-    </svg>
-  );
-}
 
 /**
  * Registers the window-level drag handling and renders the overlay.
@@ -141,7 +105,7 @@ export function DropSurface({
     <div className={`drag-veil${invalid ? " invalid" : ""}`} aria-hidden="true">
       <div className="drag-card">
         <span className="drag-icon">
-          {invalid ? <BlockedIcon /> : <TrayIcon />}
+          <Icon name={invalid ? "close" : "tray"} size={38} />
         </span>
         <p className="drag-title">
           {invalid ? "That file won't work" : "Drop to analyse"}

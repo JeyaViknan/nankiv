@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "../components/Icon";
 import { useStore } from "../lib/store";
 
 export function OnboardingScreen() {
@@ -48,15 +49,7 @@ export function OnboardingScreen() {
   return (
     <div className="onboard">
       <div className="onboard-mark" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M5 12.5l4.5 4.5L19 7"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Icon name="check" size={20} strokeWidth={2.4} />
       </div>
 
       <h1>Who are you?</h1>

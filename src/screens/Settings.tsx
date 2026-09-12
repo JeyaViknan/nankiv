@@ -14,25 +14,6 @@ import { useStore } from "../lib/store";
 import { getThemeChoice, setThemeChoice, type ThemeChoice } from "../lib/theme";
 import { Sheet } from "../components/Sheet";
 
-function MonitorIcon() {
-  return (
-    <svg
-      width="19"
-      height="19"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="2.5" y="4" width="19" height="12.5" rx="2" />
-      <path d="M8.5 20.5h7M12 16.5v4" />
-    </svg>
-  );
-}
-
 const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: "system", label: "System" },
   { id: "light", label: "Light" },
@@ -313,7 +294,6 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
           gap: 7,
         }}
       >
-        <MonitorIcon />
         nankiv 0.1.0 — works offline
       </p>
     </Sheet>

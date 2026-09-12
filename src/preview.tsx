@@ -21,6 +21,7 @@ import {
   StandingCard,
 } from "./components/Analysis";
 import { NeedsReference } from "./components/NeedsReference";
+import { Icon, type IconName } from "./components/Icon";
 import { applyTheme, getThemeChoice, type ThemeChoice } from "./lib/theme";
 import type {
   BranchReport,
@@ -204,6 +205,72 @@ function Preview() {
 
       <main className="content">
         <div className="surface">
+          <Section title="Icon set — one grid, one optical weight">
+            <div className="card">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(78px, 1fr))",
+                  gap: 14,
+                }}
+              >
+                {(
+                  [
+                    "back",
+                    "check",
+                    "chevronRight",
+                    "close",
+                    "compare",
+                    "dash",
+                    "gear",
+                    "people",
+                    "plus",
+                    "question",
+                    "search",
+                    "sheet",
+                    "trash",
+                    "tray",
+                    "warning",
+                  ] as IconName[]
+                ).map((n) => (
+                  <div key={n} style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        placeItems: "center",
+                        height: 40,
+                        color: "var(--text-2)",
+                      }}
+                    >
+                      <Icon name={n} size={20} />
+                    </div>
+                    <div style={{ fontSize: 10, color: "var(--text-faint)" }}>
+                      {n}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 20,
+                  marginTop: 20,
+                  paddingTop: 16,
+                  borderTop: "1px solid var(--border)",
+                  color: "var(--text-2)",
+                }}
+              >
+                {[14, 17, 20, 26, 34, 44].map((sz) => (
+                  <Icon key={sz} name="tray" size={sz} />
+                ))}
+                <span style={{ fontSize: 11, color: "var(--text-faint)" }}>
+                  optical weight held across sizes
+                </span>
+              </div>
+            </div>
+          </Section>
+
           <Section title="Verdict — shortlisted">
             <VerdictBanner
               verdict={IN}

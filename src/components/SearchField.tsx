@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
+import { Icon } from "./Icon";
 import {
   api,
   toApiError,
@@ -22,24 +23,6 @@ import { useStore } from "../lib/store";
 
 const NEO = /^(?:[A-Za-z][0-9]){4}$/;
 const REG = /^\d{2}[A-Za-z]{3}\d{4,5}$/;
-
-function SearchIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <circle cx="7" cy="7" r="4.6" />
-      <path d="M10.5 10.5L14 14" />
-    </svg>
-  );
-}
 
 export function SearchField({
   inputRef,
@@ -107,7 +90,7 @@ export function SearchField({
   return (
     <div className="search-wrap" ref={wrapRef}>
       <span className="search-icon" aria-hidden="true">
-        <SearchIcon />
+        <Icon name="search" size={14} />
       </span>
       <input
         ref={inputRef}
