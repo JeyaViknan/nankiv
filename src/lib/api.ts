@@ -195,6 +195,19 @@ export interface RoundDiff {
   dropped_friends: string[];
 }
 
+/** A deleted drive, held just long enough to undo. */
+export interface DriveSnapshot {
+  company: string;
+  drive_date: string | null;
+  source_filename: string;
+  content_hash: string;
+  shape: string;
+  primary_key: string | null;
+  round_label: string | null;
+  neo_ids: string[];
+  reg_nos: string[];
+}
+
 export interface ReferenceImportResult {
   students_learned: number;
   academics_learned: number;
@@ -258,7 +271,14 @@ export const api = {
     invoke<ReferenceImportResult>("import_reference", { path }),
 
   listDrives: () => invoke<DriveRecord[]>("list_drives"),
-  deleteDrive: (id: number) => invoke<void>("delete_drive", { id }),
+  deleteDrive: (id: number) =>
+    invoke<DriveSnapshot | null>("delete_drive", { id }),
+  restoreDrive: (snapshot: DriveSnapshot) =>
+    invoke<number>("restore_drive", { snapshot }),
+  renameDrive: (id: number, company: string) =>
+    invoke<void>("rename_drive", { id, company }),
+  setDriveRound: (id: number, parentId: number | null) =>
+    invoke<void>("set_drive_round", { id, parentId }),
   getDriveDetail: (id: number) =>
     invoke<ImportOutcome>("get_drive_detail", { id }),
 

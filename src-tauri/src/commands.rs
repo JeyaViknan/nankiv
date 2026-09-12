@@ -11,7 +11,7 @@ use crate::engine::{self, ResolvedIdentity};
 use crate::identity::matcher::MatchOutcome;
 use crate::model::*;
 use crate::parse::{self, FileShape};
-use crate::store::{DriveRecord, Friend, Profile, Store, StoreError};
+use crate::store::{DriveRecord, DriveSnapshot, Friend, Profile, Store, StoreError};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -461,9 +461,53 @@ pub fn list_drives(state: tauri::State<AppState>) -> R<Vec<DriveRecord>> {
     Ok(store(&state).drives()?)
 }
 
+/// Deletes a drive and hands back everything needed to put it back.
+///
+/// Returning the snapshot is what lets the interface offer Undo instead of a
+/// confirmation dialog: the common case costs nothing, and the rare mistake is
+/// still recoverable.
 #[tauri::command]
-pub fn delete_drive(state: tauri::State<AppState>, id: i64) -> R<()> {
-    store(&state).delete_drive(id)?;
+pub fn delete_drive(state: tauri::State<AppState>, id: i64) -> R<Option<DriveSnapshot>> {
+    let s = store(&state);
+    let snap = s.snapshot_drive(id)?;
+    s.delete_drive(id)?;
+    Ok(snap)
+}
+
+#[tauri::command]
+pub fn restore_drive(state: tauri::State<AppState>, snapshot: DriveSnapshot) -> R<i64> {
+    Ok(store(&state).restore_drive(&snapshot)?)
+}
+
+/// Corrects the company name inferred from the filename.
+#[tauri::command]
+pub fn rename_drive(state: tauri::State<AppState>, id: i64, company: String) -> R<()> {
+    let name = company.trim();
+    if name.is_empty() {
+        return Err(CommandError::new(
+            "empty_name",
+            "A drive needs a name — otherwise it can't be told apart in your history.",
+        ));
+    }
+    store(&state).rename_drive(id, name)?;
+    Ok(())
+}
+
+/// Links a drive as a later round of another, so the comparison can be offered
+/// where it is relevant rather than through manual selection.
+#[tauri::command]
+pub fn set_drive_round(
+    state: tauri::State<AppState>,
+    id: i64,
+    parent_id: Option<i64>,
+) -> R<()> {
+    if parent_id == Some(id) {
+        return Err(CommandError::new(
+            "self_reference",
+            "A drive can't be a later round of itself.",
+        ));
+    }
+    store(&state).set_drive_parent(id, parent_id)?;
     Ok(())
 }
 

@@ -71,6 +71,20 @@ pub struct Friend {
 /// column to live in.
 pub type AcademicFacts = (Option<f64>, Option<String>);
 
+/// A deleted drive, held just long enough to undo.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DriveSnapshot {
+    pub company: String,
+    pub drive_date: Option<String>,
+    pub source_filename: String,
+    pub content_hash: String,
+    pub shape: String,
+    pub primary_key: Option<String>,
+    pub round_label: Option<String>,
+    pub neo_ids: Vec<String>,
+    pub reg_nos: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DriveRecord {
     pub id: i64,
@@ -327,6 +341,75 @@ impl Store {
         self.conn
             .execute("DELETE FROM drives WHERE id = ?1", params![id])?;
         Ok(())
+    }
+
+    /// Renames a drive.
+    ///
+    /// The company is inferred from the filename at import, and a filename is
+    /// not a promise. Without this the first guess would be permanent.
+    pub fn rename_drive(&self, id: i64, company: &str) -> Result<(), StoreError> {
+        self.conn.execute(
+            "UPDATE drives SET company = ?2 WHERE id = ?1",
+            params![id, company.trim()],
+        )?;
+        Ok(())
+    }
+
+    /// Records that one drive is a later round of another.
+    pub fn set_drive_parent(&self, id: i64, parent: Option<i64>) -> Result<(), StoreError> {
+        self.conn.execute(
+            "UPDATE drives SET parent_drive_id = ?2 WHERE id = ?1",
+            params![id, parent],
+        )?;
+        Ok(())
+    }
+
+    /// Everything needed to put a deleted drive back.
+    ///
+    /// Deleting is offered without a confirmation dialog, which is only humane
+    /// if it can be undone. Identity edges are keyed by source file and live in
+    /// their own table, so they survive the delete and need no restoring — what
+    /// the student loses, and gets back, is the drive and its membership.
+    pub fn snapshot_drive(&self, id: i64) -> Result<Option<DriveSnapshot>, StoreError> {
+        let Some(d) = self.drive(id)? else {
+            return Ok(None);
+        };
+        Ok(Some(DriveSnapshot {
+            company: d.company,
+            drive_date: d.drive_date,
+            source_filename: d.source_filename,
+            content_hash: d.content_hash,
+            shape: d.shape,
+            primary_key: d.primary_key,
+            round_label: d.round_label,
+            neo_ids: self
+                .drive_neo_ids(id)?
+                .into_iter()
+                .map(|n| n.as_str().to_string())
+                .collect(),
+            reg_nos: self
+                .drive_reg_nos(id)?
+                .into_iter()
+                .map(|r| r.as_str().to_string())
+                .collect(),
+        }))
+    }
+
+    /// Puts a snapshot back. Returns the new drive id.
+    pub fn restore_drive(&self, snap: &DriveSnapshot) -> Result<i64, StoreError> {
+        let neo: BTreeSet<NeoId> = snap.neo_ids.iter().filter_map(|s| NeoId::parse(s)).collect();
+        let reg: BTreeSet<RegNo> = snap.reg_nos.iter().filter_map(|s| RegNo::parse(s)).collect();
+        self.insert_drive(
+            &snap.company,
+            snap.drive_date.as_deref(),
+            &snap.source_filename,
+            &snap.content_hash,
+            &snap.shape,
+            snap.primary_key.as_deref(),
+            &neo,
+            &reg,
+            snap.round_label.as_deref(),
+        )
     }
 
     pub fn drive_neo_ids(&self, drive_id: i64) -> Result<BTreeSet<NeoId>, StoreError> {
@@ -796,6 +879,96 @@ mod tests {
         let inv = s.inventory().unwrap();
         let friends = inv.iter().find(|(t, _)| t == "friends").unwrap();
         assert_eq!(friends.1, 1);
+    }
+
+    #[test]
+    fn renaming_a_drive_sticks() {
+        let s = store();
+        let ids: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
+        let id = s
+            .insert_drive(
+                "Unnamed drive", None, "a.xlsx", "H", "neo_id_only",
+                Some("neo_id"), &ids, &BTreeSet::new(), None,
+            )
+            .unwrap();
+        s.rename_drive(id, "  Siemens SISW  ").unwrap();
+        assert_eq!(s.drive(id).unwrap().unwrap().company, "Siemens SISW");
+    }
+
+    #[test]
+    fn a_deleted_drive_can_be_restored_exactly() {
+        // Undo has to be faithful, or it is worse than a confirmation dialog.
+        let s = store();
+        let ids: BTreeSet<NeoId> = ["V9H0G6C4", "C5U6K1E7"].iter().map(|x| neo(x)).collect();
+        let regs: BTreeSet<RegNo> = ["23BAI0001"].iter().map(|x| reg(x)).collect();
+        let id = s
+            .insert_drive(
+                "Siemens", Some("28-07-26"), "s.xlsx", "HASH", "linked",
+                Some("neo_id"), &ids, &regs, Some("Round 1"),
+            )
+            .unwrap();
+
+        let snap = s.snapshot_drive(id).unwrap().expect("snapshot");
+        s.delete_drive(id).unwrap();
+        assert!(s.drives().unwrap().is_empty());
+
+        let new_id = s.restore_drive(&snap).unwrap();
+        let d = s.drive(new_id).unwrap().unwrap();
+        assert_eq!(d.company, "Siemens");
+        assert_eq!(d.drive_date.as_deref(), Some("28-07-26"));
+        assert_eq!(d.content_hash, "HASH");
+        assert_eq!(d.round_label.as_deref(), Some("Round 1"));
+        assert_eq!(s.drive_neo_ids(new_id).unwrap().len(), 2);
+        assert_eq!(s.drive_reg_nos(new_id).unwrap().len(), 1);
+        assert!(s.drive_contains_neo(new_id, "V9H0G6C4").unwrap());
+    }
+
+    #[test]
+    fn restoring_frees_the_hash_so_it_is_not_a_duplicate() {
+        let s = store();
+        let ids: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
+        let id = s
+            .insert_drive("X", None, "a.xlsx", "H", "neo_id_only", Some("neo_id"), &ids, &BTreeSet::new(), None)
+            .unwrap();
+        let snap = s.snapshot_drive(id).unwrap().unwrap();
+        s.delete_drive(id).unwrap();
+        // The unique content hash must have been released by the delete.
+        assert!(s.restore_drive(&snap).is_ok());
+    }
+
+    #[test]
+    fn snapshotting_a_missing_drive_yields_nothing() {
+        assert!(store().snapshot_drive(999).unwrap().is_none());
+    }
+
+    #[test]
+    fn rounds_can_be_linked_and_unlinked() {
+        let s = store();
+        let a: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
+        let b: BTreeSet<NeoId> = ["C5U6K1E7"].iter().map(|x| neo(x)).collect();
+        let r1 = s.insert_drive("T", None, "1.xlsx", "H1", "neo_id_only", Some("neo_id"), &a, &BTreeSet::new(), None).unwrap();
+        let r2 = s.insert_drive("T", None, "2.xlsx", "H2", "neo_id_only", Some("neo_id"), &b, &BTreeSet::new(), None).unwrap();
+
+        s.set_drive_parent(r2, Some(r1)).unwrap();
+        assert_eq!(s.drive(r2).unwrap().unwrap().parent_drive_id, Some(r1));
+
+        s.set_drive_parent(r2, None).unwrap();
+        assert_eq!(s.drive(r2).unwrap().unwrap().parent_drive_id, None);
+    }
+
+    #[test]
+    fn deleting_a_parent_leaves_the_child_intact() {
+        // ON DELETE SET NULL: removing round one must not take round two with it.
+        let s = store();
+        let a: BTreeSet<NeoId> = ["V9H0G6C4"].iter().map(|x| neo(x)).collect();
+        let b: BTreeSet<NeoId> = ["C5U6K1E7"].iter().map(|x| neo(x)).collect();
+        let r1 = s.insert_drive("T", None, "1.xlsx", "H1", "neo_id_only", Some("neo_id"), &a, &BTreeSet::new(), None).unwrap();
+        let r2 = s.insert_drive("T", None, "2.xlsx", "H2", "neo_id_only", Some("neo_id"), &b, &BTreeSet::new(), None).unwrap();
+        s.set_drive_parent(r2, Some(r1)).unwrap();
+
+        s.delete_drive(r1).unwrap();
+        let child = s.drive(r2).unwrap().expect("child survives");
+        assert_eq!(child.parent_drive_id, None);
     }
 
     #[test]

@@ -1,216 +1,249 @@
 /**
- * Application shell.
+ * The shell.
  *
- * The sidebar lists things you *do*. Settings is not one of them — it is
- * configured once and then left alone, so it lives behind Cmd+, as an overlay
- * instead of taking up a permanent slot in the navigation.
+ * The sidebar is gone. It listed five destinations — Home, Circle, Search,
+ * History, Settings — which was the database schema wearing a navigation bar.
+ * The student's model is "a file arrives, I need to know, sometimes I look
+ * back": one recurring act and a few occasional side tasks.
+ *
+ * So: one surface (Shortlists, which is both the drop target and the history),
+ * one detail view (a drive), and two sheets (Circle, Settings). Search is a
+ * field that is always visible rather than a destination or a hidden shortcut —
+ * discoverable *and* fast.
+ *
+ * The whole window is the drop target, handled once here, so every view accepts
+ * a file without knowing anything about dragging.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useStore } from "./lib/store";
-import { getThemeChoice, watchSystemTheme, applyTheme } from "./lib/theme";
+import { applyTheme, getThemeChoice, watchSystemTheme } from "./lib/theme";
+import { DropSurface } from "./components/DropSurface";
+import { SearchField } from "./components/SearchField";
+import { Toast } from "./components/Toast";
+import { CircleSheet } from "./screens/CircleSheet";
 import { DriveScreen } from "./screens/DriveScreen";
-import { SettingsPanel } from "./screens/Settings";
-import {
-  CircleScreen,
-  HistoryScreen,
-  HomeScreen,
-  OnboardingScreen,
-  SearchScreen,
-} from "./screens/Screens";
+import { OnboardingScreen } from "./screens/Onboarding";
+import { SettingsSheet } from "./screens/Settings";
+import { Shortlists } from "./screens/Shortlists";
 
-type IconName = "home" | "circle" | "search" | "history";
-
-function NavIcon({ name }: { name: IconName }) {
-  const d: Record<IconName, string> = {
-    home: "M3 8.6L10 3.2l7 5.4V16a1.2 1.2 0 0 1-1.2 1.2h-2.9v-4.6H7.1v4.6H4.2A1.2 1.2 0 0 1 3 16V8.6z",
-    circle:
-      "M7 9.2a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2zM13.6 9a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2zM1.8 16.4c0-2.6 2.3-4.2 5.2-4.2s5.2 1.6 5.2 4.2M13.4 12.3c2.6.2 5 1.5 5 4.1",
-    search: "M8.8 15.1a6.3 6.3 0 1 0 0-12.6 6.3 6.3 0 0 0 0 12.6zm4.6-1.6l4 4",
-    history: "M3.2 10a6.8 6.8 0 1 0 2-4.8M3.2 3.8v3.4h3.4M10 6.2V10l2.6 1.6",
-  };
+function BackIcon() {
   return (
     <svg
-      width="17"
-      height="17"
-      viewBox="0 0 20 20"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.55"
+      strokeWidth="1.7"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d={d[name]} />
+      <path d="M10 3l-5 5 5 5" />
+    </svg>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="7.4" cy="6.6" r="2.6" />
+      <path d="M2.3 16c0-2.6 2.3-4.2 5.1-4.2s5.1 1.6 5.1 4.2" />
+      <path d="M13.4 5.1a2.1 2.1 0 0 1 0 4.1M14.2 11.9c2.3.3 3.5 1.6 3.5 4.1" />
+    </svg>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="10" r="2.4" />
+      <path d="M10 2.6l.9 1.9 2.1-.3.5 2 1.9.9-.9 1.9.9 1.9-1.9.9-.5 2-2.1-.3-.9 1.9-.9-1.9-2.1.3-.5-2-1.9-.9.9-1.9-.9-1.9 1.9-.9.5-2 2.1.3z" />
     </svg>
   );
 }
 
 export default function App() {
   const {
-    screen,
+    view,
     go,
     bootstrap,
     current,
-    drives,
-    friends,
     error,
     clearError,
-    toast,
-    importing,
-    openDrive,
+    importFile,
+    importStage,
   } = useStore();
 
+  const [circleOpen, setCircleOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
 
-  // Follow the operating system live, but only while the user is on "System".
+  // Follow the operating system live, but only while the choice is "System".
   useEffect(() => {
     return watchSystemTheme(() => {
       if (getThemeChoice() === "system") applyTheme("system");
     });
   }, []);
 
-  // Cmd+, on macOS, Ctrl+, elsewhere — the platform convention for preferences.
-  const toggleSettings = useCallback(() => setSettingsOpen((v) => !v), []);
+  const browse = useCallback(async () => {
+    try {
+      const picked = await open({
+        multiple: false,
+        filters: [
+          {
+            name: "Spreadsheet",
+            extensions: ["xlsx", "xls", "xlsm", "ods", "csv"],
+          },
+        ],
+      });
+      if (typeof picked === "string") void importFile(picked);
+    } catch {
+      /* the dialog was dismissed */
+    }
+  }, [importFile]);
+
+  const goBack = useCallback(() => go("shortlists"), [go]);
+
+  // The desktop keyboard model. A tool used several times a day should be
+  // operable without reaching for the mouse.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+      const meta = e.metaKey || e.ctrlKey;
+      const typing =
+        e.target instanceof HTMLElement &&
+        (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
+
+      if (meta && e.key === ",") {
         e.preventDefault();
-        toggleSettings();
+        setSettingsOpen((v) => !v);
+      } else if (meta && e.key.toLowerCase() === "o") {
+        e.preventDefault();
+        void browse();
+      } else if (meta && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      } else if (meta && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        setCircleOpen((v) => !v);
+      } else if (e.key === "Escape" && !typing) {
+        // Sheets handle their own Escape; this is the view stack.
+        if (!circleOpen && !settingsOpen && view === "drive") {
+          e.preventDefault();
+          goBack();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggleSettings]);
+  }, [browse, goBack, view, circleOpen, settingsOpen]);
 
-  if (screen === "onboarding") {
+  if (view === "onboarding") {
     return (
-      <div className="main">
+      <div className="app">
         <OnboardingScreen />
-        {toast && (
-          <div className="toast" role="status">
-            {toast}
-          </div>
-        )}
+        <Toast />
       </div>
     );
   }
 
-  const nav: { id: IconName; label: string; count?: number }[] = [
-    { id: "home", label: "Home" },
-    { id: "circle", label: "Circle", count: friends.length },
-    { id: "search", label: "Search" },
-    { id: "history", label: "History", count: drives.length },
-  ];
+  const inDrive = view === "drive" && current;
 
   return (
-    <div className="shell">
-      <nav className="sidebar" aria-label="Main">
-        <div className="brand">
-          <span className="brand-mark">
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
+    <div className="app">
+      {/* The toolbar doubles as the window drag region, which is what makes a
+          chrome-less window feel native rather than like a page. */}
+      <header className="toolbar" data-tauri-drag-region>
+        <div className="toolbar-left">
+          {inDrive ? (
+            <button
+              className="icon-btn"
+              onClick={goBack}
+              aria-label="Back to shortlists"
+              title="Back (Esc)"
             >
-              <path
-                d="M5 12.5l4.5 4.5L19 7"
-                stroke="white"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span className="brand-name">nankiv</span>
+              <BackIcon />
+            </button>
+          ) : (
+            <span className="wordmark">nankiv</span>
+          )}
         </div>
 
-        {nav.map((item) => (
+        <SearchField inputRef={searchRef} />
+
+        <div className="toolbar-right">
           <button
-            key={item.id}
-            className="nav-item"
-            aria-current={screen === item.id ? "page" : undefined}
-            onClick={() => go(item.id)}
+            className="icon-btn"
+            onClick={() => setCircleOpen(true)}
+            aria-label="Circle"
+            title="Circle (⌘D)"
           >
-            <NavIcon name={item.id} />
-            {item.label}
-            {item.count !== undefined && item.count > 0 && (
-              <span className="count">{item.count}</span>
-            )}
+            <PeopleIcon />
           </button>
-        ))}
-
-        <div className="sidebar-foot">
-          <span className="offline-badge">
-            <span className="offline-dot" />
-            Works offline
-          </span>
-          <span className="kbd-hint">
-            <kbd>⌘</kbd>
-            <kbd>,</kbd>
-            <span style={{ marginLeft: 2 }}>Settings</span>
-          </span>
+          <button
+            className="icon-btn"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            title="Settings (⌘,)"
+          >
+            <GearIcon />
+          </button>
         </div>
-      </nav>
+      </header>
 
-      <main className="main">
+      <main className="content">
         {error && (
-          <div className="notice danger">
-            <strong>{error.message}</strong>
-            {error.detail && (
-              <p style={{ margin: "6px 0 0", fontSize: 12.5 }}>
-                {error.detail}
-              </p>
-            )}
-            <div className="btn-row" style={{ marginTop: 11 }}>
-              <button className="btn small" onClick={clearError}>
-                Dismiss
-              </button>
-              {error.code === "duplicate_drive" && error.detail && (
-                <button
-                  className="btn small"
-                  onClick={() => {
-                    const id = Number(error.detail);
-                    clearError();
-                    if (!Number.isNaN(id)) void openDrive(id);
-                  }}
-                >
-                  Open the one you already have
-                </button>
-              )}
-            </div>
+          <div className="banner" role="alert">
+            <span>{error.message}</span>
+            <button className="btn small" onClick={clearError}>
+              Dismiss
+            </button>
           </div>
         )}
 
-        {screen === "home" && <HomeScreen />}
-        {screen === "drive" &&
-          (current ? (
-            <DriveScreen outcome={current} />
-          ) : importing ? (
-            <div className="empty">
-              <span className="spinner" />
-            </div>
-          ) : (
-            <HomeScreen />
-          ))}
-        {screen === "circle" && <CircleScreen />}
-        {screen === "search" && <SearchScreen />}
-        {screen === "history" && <HistoryScreen />}
+        {inDrive ? (
+          <DriveScreen outcome={current} />
+        ) : (
+          <Shortlists onBrowse={browse} />
+        )}
       </main>
 
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      <DropSurface
+        onFile={(p) => void importFile(p)}
+        disabled={importStage.phase === "reading"}
+      />
 
-      {toast && (
-        <div className="toast" role="status">
-          {toast}
-        </div>
-      )}
+      {circleOpen && <CircleSheet onClose={() => setCircleOpen(false)} />}
+      {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
+
+      <Toast />
     </div>
   );
 }

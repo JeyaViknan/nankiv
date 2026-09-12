@@ -175,65 +175,46 @@ function Preview() {
   }
 
   return (
-    <div className="shell">
-      <nav className="sidebar" aria-label="Main">
-        <div className="brand">
-          <span className="brand-mark">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 12.5l4.5 4.5L19 7"
-                stroke="white"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span className="brand-name">nankiv</span>
+    <div className="app">
+      <header className="toolbar">
+        <div className="toolbar-left">
+          <span className="wordmark">nankiv</span>
         </div>
-        <button className="nav-item" aria-current="page">
-          Home
-        </button>
-        <button className="nav-item">
-          Circle <span className="count">4</span>
-        </button>
-        <button className="nav-item">Search</button>
-        <button className="nav-item">
-          History <span className="count">12</span>
-        </button>
-        <div className="sidebar-foot">
-          <span className="offline-badge">
-            <span className="offline-dot" />
-            Works offline
-          </span>
-          <span className="kbd-hint">
-            <kbd>⌘</kbd>
-            <kbd>,</kbd>
-            <span style={{ marginLeft: 2 }}>Settings</span>
-          </span>
+        <div className="search-wrap">
+          <input
+            className="search-input"
+            placeholder="Search a name or Neo ID"
+            readOnly
+          />
         </div>
-      </nav>
+        <div className="toolbar-right">
+          {(["system", "light", "dark"] as ThemeChoice[]).map((t) => (
+            <button
+              key={t}
+              className={`btn small${theme === t ? " primary" : ""}`}
+              onClick={() => pick(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </header>
 
-      <main className="main">
-        <div className="main-narrow">
-          <div className="btn-row" style={{ marginBottom: 28 }}>
-            {(["system", "light", "dark"] as ThemeChoice[]).map((t) => (
-              <button
-                key={t}
-                className={`btn small${theme === t ? " primary" : ""}`}
-                onClick={() => pick(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
+      <main className="content">
+        <div className="surface">
           <Section title="Verdict — shortlisted">
             <VerdictBanner
               verdict={IN}
               company="Siemens SISW"
               totalStudents={166}
             />
+            <div className="provenance">
+              <span className="name-button">Siemens SISW</span>
+              <span className="row-dot">·</span>
+              <span>166 shortlisted</span>
+              <span className="row-dot">·</span>
+              <span className="prov-key">keyed by Neo ID</span>
+            </div>
           </Section>
 
           <Section title="Verdict — not shortlisted">
@@ -252,35 +233,70 @@ function Preview() {
             />
           </Section>
 
-          <Section title="Circle">
-            <div className="card">
-              <div className="card-head">
-                <h2>Your circle</h2>
-                <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                  2 of 4 shortlisted
+          <Section title="The invitation">
+            <button className="invite">
+              <span className="invite-icon">
+                <svg
+                  width="34"
+                  height="34"
+                  viewBox="0 0 40 40"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 7v17M13.5 17.5L20 24l6.5-6.5" />
+                  <path d="M7 26v4.5A2.5 2.5 0 0 0 9.5 33h21a2.5 2.5 0 0 0 2.5-2.5V26" />
+                </svg>
+              </span>
+              <span className="invite-text">
+                <span className="invite-title">Drop a shortlist</span>
+                <span className="invite-sub">
+                  Anywhere in this window — or press <kbd>⌘</kbd>
+                  <kbd>O</kbd> to choose a file
                 </span>
-              </div>
-              <div className="person-list">
-                {friends.map((f) => (
-                  <div className="person" key={f.id}>
-                    <div>
-                      <span className="person-name">{f.label}</span>
-                      <span className="person-id">{f.id}</span>
-                    </div>
-                    <div className="person-status">
-                      {f.cgpa && (
-                        <span
-                          className="mono"
-                          style={{ fontSize: 11.5, color: "var(--text-faint)" }}
-                        >
-                          {f.cgpa.toFixed(2)}
-                        </span>
-                      )}
-                      <VerdictPill verdict={f.v} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              </span>
+            </button>
+          </Section>
+
+          <Section title="Timeline">
+            <div className="list">
+              {[
+                ["Siemens SISW", "166 shortlisted", "Today"],
+                ["Tredence", "819 shortlisted", "Yesterday"],
+                ["Amazon", "527 shortlisted", "3 days ago"],
+              ].map(([a, b, c]) => (
+                <div className="row" key={a}>
+                  <button className="row-main">
+                    <span className="row-title">{a}</span>
+                    <span className="row-meta">
+                      {b}
+                      <span className="row-dot">·</span>
+                      {c}
+                    </span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Circle">
+            <div className="list">
+              {friends.map((f) => (
+                <div className="row" key={f.id}>
+                  <span className="row-main static">
+                    <span className="row-title">{f.label}</span>
+                    <span className="row-meta mono">{f.id}</span>
+                  </span>
+                  <span className="row-trail">
+                    {f.cgpa && (
+                      <span className="row-figure">{f.cgpa.toFixed(2)}</span>
+                    )}
+                    <VerdictPill verdict={f.v} />
+                  </span>
+                </div>
+              ))}
             </div>
           </Section>
 
@@ -296,35 +312,84 @@ function Preview() {
             <InsufficientSample analysis={gated} />
           </Section>
 
+          <Section title="Import — reading">
+            <div className="import-status reading">
+              <span className="progress-bar">
+                <span className="progress-fill" />
+              </span>
+              <span className="import-text">
+                Reading{" "}
+                <span className="import-file">
+                  Siemens SISW shortlist 2027.xlsx
+                </span>
+              </span>
+            </div>
+          </Section>
+
+          <Section title="Import — unreadable file">
+            <div className="import-status failed">
+              <span className="import-icon">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                >
+                  <circle cx="10" cy="10" r="7.5" />
+                  <path d="M10 6.2v4.4" />
+                  <circle
+                    cx="10"
+                    cy="13.8"
+                    r="0.9"
+                    fill="currentColor"
+                    stroke="none"
+                  />
+                </svg>
+              </span>
+              <div className="import-body">
+                <p className="import-headline">
+                  This file doesn't use Neo IDs or registration numbers.
+                </p>
+                <p className="import-file-line">
+                  TCS Shortlist 27th (Cognizant).xlsx
+                </p>
+                <p className="import-detail">
+                  Columns found: REFERENCE_ID, Interview Date
+                </p>
+                <p className="import-reassure">
+                  This isn't a result — it says nothing about whether you were
+                  shortlisted.
+                </p>
+              </div>
+              <button className="btn small">Dismiss</button>
+            </div>
+          </Section>
+
           <Section title="Controls">
             <div className="card">
-              <div className="btn-row" style={{ marginBottom: 16 }}>
+              <div className="btn-row" style={{ marginBottom: 14 }}>
                 <button className="btn primary">Primary</button>
                 <button className="btn">Secondary</button>
-                <button className="btn ghost">Ghost</button>
                 <button className="btn danger">Danger</button>
-                <button className="btn small">Small</button>
               </div>
-              <div className="btn-row" style={{ marginBottom: 16 }}>
+              <div className="btn-row">
                 <span className="pill yes">In</span>
                 <span className="pill no">Not in</span>
                 <span className="pill unknown">Unknown</span>
-                <span className="pill accent">verified</span>
                 <span className="pill quiet">estimate</span>
-              </div>
-              <div className="field">
-                <label htmlFor="p-neo">Neo ID</label>
-                <input
-                  id="p-neo"
-                  type="text"
-                  className="mono-input"
-                  defaultValue="V9H0G6C4"
-                />
               </div>
             </div>
           </Section>
         </div>
       </main>
+
+      <div className="toast">
+        <span>Removed Amazon</span>
+        <button className="toast-action">Undo</button>
+      </div>
     </div>
   );
 }
