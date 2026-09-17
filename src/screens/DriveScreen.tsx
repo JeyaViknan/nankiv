@@ -16,9 +16,15 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { api, type ImportOutcome, type PersonResult } from "../lib/api";
+import {
+  api,
+  type ExportFormat,
+  type ImportOutcome,
+  type PersonResult,
+} from "../lib/api";
 import { useStore } from "../lib/store";
 import { NeedsReference } from "../components/NeedsReference";
+import { MenuButton } from "../components/MenuButton";
 import { VerdictBanner, VerdictPill } from "../components/Verdict";
 import {
   BranchCard,
@@ -112,7 +118,8 @@ function EditableName({ id, name }: { id: number; name: string }) {
 }
 
 export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
-  const { showToast, profile, drives, openDrive, stats } = useStore();
+  const { showToast, profile, drives, openDrive, stats, exportNames } =
+    useStore();
   const [copied, setCopied] = useState(false);
   const a = outcome.analysis;
 
@@ -289,9 +296,19 @@ export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
       </section>
 
       <footer className="drive-foot">
-        <button className="btn" onClick={copySummary}>
-          {copied ? "Copied" : "Copy summary for the group chat"}
-        </button>
+        <div className="btn-row">
+          <MenuButton
+            label="Download names"
+            choices={[
+              { id: "xlsx", label: "Excel workbook", hint: ".xlsx  ⌘E" },
+              { id: "csv", label: "CSV", hint: ".csv  ⇧⌘E" },
+            ]}
+            onChoose={(id) => void exportNames(id as ExportFormat)}
+          />
+          <button className="btn" onClick={copySummary}>
+            {copied ? "Copied" : "Copy summary for the group chat"}
+          </button>
+        </div>
         {outcome.learned_verified > 0 && (
           <p className="foot-note">
             This file taught nankiv {outcome.learned_verified.toLocaleString()}{" "}

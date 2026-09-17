@@ -21,6 +21,7 @@ import {
   StandingCard,
 } from "./components/Analysis";
 import { NeedsReference } from "./components/NeedsReference";
+import { MenuButton } from "./components/MenuButton";
 import { Icon, type IconName } from "./components/Icon";
 import { applyTheme, getThemeChoice, type ThemeChoice } from "./lib/theme";
 import type {
@@ -347,6 +348,25 @@ function Preview() {
                   </button>
                 </div>
               ))}
+            </div>
+          </Section>
+
+          <Section title="Download names">
+            <div
+              className="drive-foot"
+              style={{ marginTop: 150, borderTop: "none" }}
+            >
+              <div className="btn-row">
+                <MenuButton
+                  label="Download names"
+                  choices={[
+                    { id: "xlsx", label: "Excel workbook", hint: ".xlsx  ⌘E" },
+                    { id: "csv", label: "CSV", hint: ".csv  ⇧⌘E" },
+                  ]}
+                  onChoose={() => {}}
+                />
+                <button className="btn">Copy summary for the group chat</button>
+              </div>
             </div>
           </Section>
 

@@ -294,4 +294,15 @@ export const api = {
   wipeAllData: () => invoke<void>("wipe_all_data"),
   shareSummary: (driveId: number) =>
     invoke<string>("share_summary", { driveId }),
+  exportShortlist: (driveId: number, path: string, format: ExportFormat) =>
+    invoke<ExportSummary>("export_shortlist", { driveId, path, format }),
 };
+
+/** `xlsx` is the Excel format every current spreadsheet app opens natively. */
+export type ExportFormat = "xlsx" | "csv";
+
+export interface ExportSummary {
+  path: string;
+  rows: number;
+  named: number;
+}

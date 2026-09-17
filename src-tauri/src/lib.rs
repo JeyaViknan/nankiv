@@ -8,6 +8,7 @@ pub mod analytics;
 pub mod commands;
 pub mod desktop;
 pub mod engine;
+pub mod export;
 pub mod identity;
 pub mod model;
 pub mod parse;
@@ -94,6 +95,7 @@ pub fn run() {
             commands::data_inventory,
             commands::wipe_all_data,
             commands::share_summary,
+            commands::export_shortlist,
         ])
         .run(tauri::generate_context!())
         .expect("error while running nankiv");

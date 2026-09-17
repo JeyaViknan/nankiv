@@ -7,17 +7,36 @@
  */
 
 import { create } from "zustand";
+import { save } from "@tauri-apps/plugin-dialog";
 import {
   api,
   toApiError,
   type ApiError,
   type DriveRecord,
   type DriveSnapshot,
+  type ExportFormat,
   type Friend,
   type ImportOutcome,
   type IdentityStats,
   type Profile,
 } from "./api";
+
+/** A default filename that is legal on both macOS and Windows. */
+export function exportFilename(company: string, format: ExportFormat): string {
+  const safe = company
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return `${safe || "Shortlist"} shortlist.${format}`;
+}
+
+/** What the confirmation says, so a partly named list is never oversold. */
+export function exportMessage(rows: number, named: number): string {
+  const total = `${rows.toLocaleString()} ${rows === 1 ? "student" : "students"}`;
+  if (named === rows) return `Saved ${total}, all named`;
+  if (named === 0) return `Saved ${total} — none could be named yet`;
+  return `Saved ${total} — ${named.toLocaleString()} named, the rest by ID`;
+}
 
 export type View = "shortlists" | "drive" | "onboarding";
 
@@ -55,6 +74,7 @@ interface State {
   openDrive: (id: number) => Promise<void>;
   renameDrive: (id: number, company: string) => Promise<void>;
   deleteDrive: (id: number, label: string) => Promise<void>;
+  exportNames: (format: ExportFormat) => Promise<void>;
   dismissImport: () => void;
   clearError: () => void;
   showToast: (message: string, undo?: () => void) => void;
@@ -235,6 +255,42 @@ export const useStore = create<State>((set, get) => ({
             }
           : undefined,
       );
+    } catch (e) {
+      get().showToast(toApiError(e).message);
+    }
+  },
+
+  /**
+   * Saves the names on the open shortlist.
+   *
+   * One implementation behind both the on-screen control and the menu bar, so
+   * the two can never disagree about what gets written. The native save panel
+   * chooses the location; dismissing it is a normal outcome and says nothing.
+   */
+  exportNames: async (format) => {
+    const cur = get().current;
+    if (!cur) {
+      get().showToast("Open a shortlist to download its names");
+      return;
+    }
+    let path: string | null;
+    try {
+      path = await save({
+        defaultPath: exportFilename(cur.company, format),
+        filters: [
+          format === "xlsx"
+            ? { name: "Excel Workbook", extensions: ["xlsx"] }
+            : { name: "CSV", extensions: ["csv"] },
+        ],
+      });
+    } catch {
+      return;
+    }
+    if (typeof path !== "string") return;
+
+    try {
+      const r = await api.exportShortlist(cur.drive_id, path, format);
+      get().showToast(exportMessage(r.rows, r.named));
     } catch (e) {
       get().showToast(toApiError(e).message);
     }

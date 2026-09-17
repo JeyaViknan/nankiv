@@ -53,9 +53,25 @@ minimisation enforced by developer discipline does not.
 
 ## 3. The interface removes the payoff from misuse
 
-- **No bulk export.** A student can export their own history. There is no
-  "export all students" anywhere, which is the single most effective control
-  available: it removes the reason to extract the data in the first place.
+- **Names can be exported; records cannot.** This was originally "no bulk
+  export at all". It now allows exactly one thing: downloading the list of who
+  is on a shortlist, as Excel or CSV. The reasoning is that the shortlist itself
+  already reaches every student in the batch, and turning its column of codes
+  into names is the job people were doing by hand in the group chat. What the
+  file may contain is deliberately narrow:
+  - the identifier the shortlist already carried, and a name;
+  - a name **only** where the identity link is strong enough to show a person —
+    a probable match would attach the wrong student to a list that is about to
+    be forwarded;
+  - a row for **every** student, so an unidentified student stays visible
+    rather than silently disappearing from what looks like a complete list;
+  - **no** CGPA, branch, or registration number the file did not already have.
+
+  Two injection hazards are handled in the writer: names are quoted so a comma
+  cannot split a column, and a cell starting with `=`, `+`, `-` or `@` is
+  prefixed so a spreadsheet opens it as text rather than running it as a
+  formula. The academic data behind the analysis has no export path at all.
+  Tests in `src-tauri/src/export.rs` assert all of the above.
 - **Search returns a person, not a table.** One deliberate query at a time. No
   browsable roster view exists.
 - **Individual CGPA is opt-in and off by default.** Aggregate analysis needs no
@@ -75,13 +91,17 @@ system browser:
 core:default
 core:window:allow-start-dragging
 dialog:allow-open
+dialog:allow-save
 opener:allow-open-url
 ```
 
-No HTTP capability. No shell capability. No filesystem-write capability. A
-spreadsheet is read through a file path the user chose, parsed as data — no
-macros, no formula evaluation, no external references — and the results are
-written to a local SQLite database.
+No HTTP capability. No shell capability. No filesystem capability of any kind
+in the webview. A spreadsheet is read through a path the user chose in the
+native open panel, parsed as data — no macros, no formula evaluation, no
+external references — and the results are written to a local SQLite database.
+The one file nankiv writes elsewhere is a names export, and only to the path the
+user chose in the native save panel; the write is done by the Rust core, not the
+webview.
 
 ## Where the data lives
 

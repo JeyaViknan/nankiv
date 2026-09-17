@@ -90,6 +90,21 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 .build(app)?,
         )
         .separator()
+        // Only ever handled here, never also in a webview keydown listener: if
+        // both fired, one keypress would open two save panels.
+        .item(
+            &MenuItemBuilder::new("Download Names as Excel…")
+                .id("export_xlsx")
+                .accelerator("CmdOrCtrl+E")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::new("Download Names as CSV…")
+                .id("export_csv")
+                .accelerator("CmdOrCtrl+Shift+E")
+                .build(app)?,
+        )
+        .separator()
         .close_window()
         .build()?;
 
@@ -149,7 +164,14 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         let id = event.id().0.as_str();
         if matches!(
             id,
-            "settings" | "open" | "open_reference" | "search" | "circle" | "back"
+            "settings"
+                | "open"
+                | "open_reference"
+                | "search"
+                | "circle"
+                | "back"
+                | "export_xlsx"
+                | "export_csv"
         ) {
             let _ = handle.emit("menu", id);
         }

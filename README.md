@@ -180,9 +180,12 @@ nankiv is built so that the careless path is also the safe one. See
   anything a student imports — and the database has no column for them, so they
   could not be stored even by mistake. A test asserts the shipped pack contains
   no address, phone number or document link.
-- **No bulk export.** You can export your own history and nothing else. This is
-  the single most effective control available, because it removes the payoff
-  from the obvious misuse.
+- **Exports names, never records.** A shortlist can be downloaded as a list of
+  who is on it, as Excel or CSV. That list carries the identifier from the file
+  and a name — no CGPA, no branch, and no registration number the file did not
+  already contain — and a name only where the match is confident. Every student
+  still gets a row, so a partly named list cannot pass for a complete one. There
+  is no export of the underlying academic data anywhere in the app.
 - **Friends' CGPA is off by default.** The cutoff analysis needs aggregates, not
   per-person disclosure.
 - **One-click wipe**, with a visible inventory of exactly what is stored.

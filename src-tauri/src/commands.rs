@@ -13,7 +13,7 @@ use crate::model::*;
 use crate::parse::{self, FileShape};
 use crate::store::{DriveRecord, DriveSnapshot, Friend, Profile, Store, StoreError};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 pub struct AppState {
@@ -852,6 +852,35 @@ pub fn share_summary(state: tauri::State<AppState>, drive_id: i64) -> R<String> 
     }
     out.push_str("\nvia nankiv");
     Ok(out)
+}
+
+/// Writes the names on a shortlist to a file the student chose.
+///
+/// The path comes from the native save panel, so the file lands exactly where
+/// they asked and nowhere else; the webview itself holds no filesystem-write
+/// permission. See `export.rs` for what goes into the file and why.
+#[tauri::command]
+pub fn export_shortlist(
+    state: tauri::State<AppState>,
+    drive_id: i64,
+    path: String,
+    format: crate::export::ExportFormat,
+) -> R<crate::export::ExportSummary> {
+    let s = store(&state);
+    let identity = engine::build_graph(&s)?;
+    crate::export::export_drive(&s, drive_id, &identity, Path::new(&path), format).map_err(
+        |e| match e {
+            crate::export::ExportError::NotFound => {
+                CommandError::new("not_found", "That shortlist is no longer stored.")
+            }
+            crate::export::ExportError::Io(io) => CommandError::new(
+                "export_failed",
+                "Couldn't save the file there. Check that the folder still exists and that you can write to it.",
+            )
+            .with_detail(io.to_string()),
+            other => CommandError::new("export_failed", format!("Couldn't create the file — {other}")),
+        },
+    )
 }
 
 #[cfg(test)]

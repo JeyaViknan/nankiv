@@ -135,6 +135,16 @@ impl ResolvedIdentity {
             .map(|(n, _)| n.as_str())
     }
 
+    /// The name for a registration number, under the same rule as
+    /// [`name_of_neo`](Self::name_of_neo): nothing short of a link strong
+    /// enough to show a person.
+    pub fn name_of_reg(&self, reg: &str) -> Option<&str> {
+        self.reg_to_name
+            .get(reg)
+            .filter(|(_, c)| c.can_name_person())
+            .map(|(n, _)| n.as_str())
+    }
+
     /// Registration number for a Neo ID, at any confidence that may aggregate.
     pub fn reg_of_neo(&self, neo: &str) -> Option<&str> {
         self.neo_to_reg

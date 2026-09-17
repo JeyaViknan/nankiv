@@ -1144,6 +1144,75 @@ kbd {
   margin: 0;
 }
 
+/* Pop-up menu: one action with a couple of variants behind it, drawn like the
+   native menu it stands in for. It opens upward because it lives in the footer
+   at the bottom of a scroll, where a downward menu would be cut off. */
+
+.menu-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-chevron {
+  transform: rotate(90deg);
+  opacity: 0.6;
+  margin-left: 1px;
+}
+
+.btn[aria-expanded="true"] .menu-chevron {
+  transform: rotate(-90deg);
+}
+
+.menu-pop {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  min-width: 220px;
+  padding: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  animation: settle 0.12s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--accent);
+  color: var(--accent-fg);
+  outline: none;
+}
+
+.menu-hint {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.menu-item:hover .menu-hint,
+.menu-item:focus-visible .menu-hint {
+  color: inherit;
+  opacity: 0.8;
+}
+
 .hint-line {
   font-size: 12.5px;
   color: var(--text-3);

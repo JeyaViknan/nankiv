@@ -1,12 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Minimal permissions: a window, a file-open dialog, and nothing else. There is no HTTP, shell, or filesystem-write capability in this application.",
+  "description": "Minimal permissions: a window, the native open and save panels, and nothing else. There is no HTTP, shell, or filesystem capability in the webview; files are only ever read or written by the Rust core, at a path the user chose in a native panel.",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
     "dialog:allow-open",
+    "dialog:allow-save",
     "opener:allow-open-url"
   ]
 }

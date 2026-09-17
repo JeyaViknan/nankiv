@@ -120,6 +120,12 @@ export default function App() {
         case "back":
           goBack();
           break;
+        case "export_xlsx":
+          void useStore.getState().exportNames("xlsx");
+          break;
+        case "export_csv":
+          void useStore.getState().exportNames("csv");
+          break;
       }
     });
     return () => {
