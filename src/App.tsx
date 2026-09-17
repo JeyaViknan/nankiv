@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { listen } from "@tauri-apps/api/event";
+import { useShortcuts } from "./lib/shortcuts";
 import { useStore } from "./lib/store";
 import { applyTheme, getThemeChoice, watchSystemTheme } from "./lib/theme";
 import { DropSurface } from "./components/DropSurface";
@@ -95,77 +95,39 @@ export default function App() {
 
   const goBack = useCallback(() => go("shortlists"), [go]);
 
-  // The menu bar drives the same behaviours as the shortcuts rather than
-  // duplicating them, so there is one implementation of each and the two can
-  // never drift apart.
-  useEffect(() => {
-    const p = listen<string>("menu", (e) => {
-      switch (e.payload) {
-        case "settings":
-          setSettingsOpen((v) => !v);
-          break;
-        case "circle":
-          setCircleOpen((v) => !v);
-          break;
-        case "open":
-          void browse();
-          break;
-        case "open_reference":
-          void browseReference();
-          break;
-        case "search":
-          searchRef.current?.focus();
-          searchRef.current?.select();
-          break;
-        case "back":
-          goBack();
-          break;
-        case "export_xlsx":
-          void useStore.getState().exportNames("xlsx");
-          break;
-        case "export_csv":
-          void useStore.getState().exportNames("csv");
-          break;
-      }
-    });
-    return () => {
-      void p.then((un) => un());
-    };
+  // One implementation per shortcut, reachable from the menu bar and the
+  // keyboard alike. The hook guarantees each runs once per press, however many
+  // of those paths deliver it on the platform the app happens to be running on.
+  useShortcuts({
+    settings: () => setSettingsOpen((v) => !v),
+    circle: () => setCircleOpen((v) => !v),
+    open: () => void browse(),
+    open_reference: () => void browseReference(),
+    search: () => {
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    },
+    back: goBack,
+    export_xlsx: () => void useStore.getState().exportNames("xlsx"),
+    export_csv: () => void useStore.getState().exportNames("csv"),
   });
 
-  // The desktop keyboard model. A tool used several times a day should be
-  // operable without reaching for the mouse.
+  // Escape is not a menu accelerator, so it has only the one path and needs no
+  // deduplication. Sheets handle their own Escape; this one is the view stack.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const meta = e.metaKey || e.ctrlKey;
+      if (e.key !== "Escape") return;
       const typing =
         e.target instanceof HTMLElement &&
         (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
-
-      if (meta && e.key === ",") {
+      if (!typing && !circleOpen && !settingsOpen && view === "drive") {
         e.preventDefault();
-        setSettingsOpen((v) => !v);
-      } else if (meta && e.key.toLowerCase() === "o") {
-        e.preventDefault();
-        void browse();
-      } else if (meta && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        searchRef.current?.focus();
-        searchRef.current?.select();
-      } else if (meta && e.key.toLowerCase() === "d") {
-        e.preventDefault();
-        setCircleOpen((v) => !v);
-      } else if (e.key === "Escape" && !typing) {
-        // Sheets handle their own Escape; this is the view stack.
-        if (!circleOpen && !settingsOpen && view === "drive") {
-          e.preventDefault();
-          goBack();
-        }
+        goBack();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [browse, goBack, view, circleOpen, settingsOpen]);
+  }, [goBack, view, circleOpen, settingsOpen]);
 
   if (view === "onboarding") {
     return (

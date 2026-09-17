@@ -90,8 +90,10 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 .build(app)?,
         )
         .separator()
-        // Only ever handled here, never also in a webview keydown listener: if
-        // both fired, one keypress would open two save panels.
+        // These, like every accelerator here, may also arrive as a keydown in
+        // the webview depending on the platform. src/lib/shortcuts.ts runs each
+        // action once per press either way, so one keypress can never open two
+        // save panels.
         .item(
             &MenuItemBuilder::new("Download Names as Excel…")
                 .id("export_xlsx")
@@ -159,7 +161,9 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     app.set_menu(menu)?;
 
     // The menu does not act; it forwards. The interface already owns these
-    // behaviours, so there is exactly one implementation of each.
+    // behaviours, so there is exactly one implementation of each. The id list
+    // and accelerators above are checked against the interface's chord table
+    // by a test in src/lib/shortcuts.test.ts, so the two cannot drift.
     app.on_menu_event(|handle, event| {
         let id = event.id().0.as_str();
         if matches!(
