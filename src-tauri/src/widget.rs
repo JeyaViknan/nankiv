@@ -55,6 +55,15 @@ pub const IMPORTING_FOR: time::Duration = time::Duration::minutes(3);
 /// next time the student looks at their desktop; not so long it becomes noise.
 pub const FAILURE_SHOWN_FOR: time::Duration = time::Duration::hours(24);
 
+/// How long a result leads the widget before it goes back to resting.
+///
+/// A shortlist dropped this morning is today's news; by tomorrow it is history,
+/// and a widget still shouting about it reads as stuck. After this the widget
+/// shows the season and an invitation to drop the next one — the result is not
+/// hidden, just no longer the headline. Both platforms flip at the same moment
+/// because the moment travels in the snapshot.
+pub const RESULT_LEADS_FOR: time::Duration = time::Duration::hours(12);
+
 /// Circle members carried per drive. A large widget shows a handful; more than
 /// this belongs in the app.
 pub const MAX_MEMBERS: usize = 6;
@@ -78,6 +87,9 @@ pub struct WidgetSnapshot {
     pub identity_configured: bool,
     pub activity: Activity,
     pub season: Season,
+    /// When the newest result stops leading the widget, RFC 3339, UTC. `None`
+    /// when there is nothing to lead with.
+    pub leads_until: Option<String>,
     /// Newest first. Empty when nothing has been imported.
     pub drives: Vec<DrivePreview>,
 }
@@ -419,12 +431,24 @@ pub fn build_snapshot(
         }
     }
 
+    let leads_until = previews
+        .first()
+        .and_then(|d| {
+            OffsetDateTime::parse(
+                &d.imported_at,
+                &time::format_description::well_known::Rfc3339,
+            )
+            .ok()
+        })
+        .map(|imported| format_now(imported + RESULT_LEADS_FOR));
+
     Ok(WidgetSnapshot {
         schema: SCHEMA,
         generated_at: format_now(now),
         identity_configured: profile.is_configured(),
         activity,
         season,
+        leads_until,
         drives: previews,
     })
 }
@@ -860,6 +884,29 @@ mod tests {
         for leak in ["V9H0G6C4", "C5U6K1E7", "23BAI0002", "23BAI0009", "9.41"] {
             assert!(!json.contains(leak), "snapshot must not contain {leak}");
         }
+    }
+
+    #[test]
+    fn the_newest_result_leads_for_a_while_then_stops() {
+        let s = Store::open_in_memory().unwrap();
+        assert_eq!(
+            build_snapshot(&s, Activity::Idle, NOW).unwrap().leads_until,
+            None
+        );
+
+        drive(&s, "Tredence", "t", &["C5U6K1E7"]);
+        let snap = build_snapshot(&s, Activity::Idle, NOW).unwrap();
+        let imported = OffsetDateTime::parse(
+            &snap.drives[0].imported_at,
+            &time::format_description::well_known::Rfc3339,
+        )
+        .unwrap();
+        let leads_until = OffsetDateTime::parse(
+            snap.leads_until.as_deref().unwrap(),
+            &time::format_description::well_known::Rfc3339,
+        )
+        .unwrap();
+        assert_eq!(leads_until - imported, RESULT_LEADS_FOR);
     }
 
     #[test]

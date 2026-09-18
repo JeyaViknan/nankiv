@@ -246,6 +246,29 @@ describe("expanding every state", () => {
     expect(withoutAnalysis).toContain("Your circle");
   });
 
+  it("keeps the season and the recent list while resting", () => {
+    const data = read(join(examples, "resting.json")) as Record<
+      string,
+      unknown
+    >;
+    const medium = strings(expand("medium", data)).join(" ");
+    expect(medium).toContain("No new shortlist");
+    expect(medium).toContain("Drop the next one into nankiv");
+    expect(medium).toContain("3 in · 2 not in");
+    expect(medium).toContain("Aurora Systems");
+
+    // Each recent row still opens its own shortlist.
+    const urls: string[] = [];
+    walk(expand("large", data), (node) => {
+      if (node.type === "Action.OpenUrl" && typeof node.url === "string")
+        urls.push(node.url);
+    });
+    for (const row of data.recent as { link: string }[])
+      expect(urls).toContain(row.link);
+    // And the widget itself opens the app, not a shortlist.
+    expect(urls).toContain("nankiv://shortlists");
+  });
+
   it("carries no identifiers, only the labels a student typed", () => {
     for (const name of names) {
       const raw = readFileSync(join(examples, `${name}.json`), "utf8");

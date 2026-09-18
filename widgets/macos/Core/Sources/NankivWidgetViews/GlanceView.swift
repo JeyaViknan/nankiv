@@ -32,6 +32,8 @@ public struct GlanceView: View {
             case .systemExtraLarge: ExtraLargeShortlist(glance: shortlist, now: now)
             default: SmallShortlist(glance: shortlist, now: now)
             }
+        case .resting(let resting):
+            RestingView(glance: resting, family: family, now: now)
         default:
             MessageView(glance: glance, family: family)
         }
@@ -281,6 +283,116 @@ struct PinMark: View {
     }
 }
 
+// MARK: - Resting
+
+/// After a result has had its turn: the season, what came recently, and an
+/// invitation to drop the next shortlist.
+///
+/// Nothing is hidden here — the last result is the first row of the list, with
+/// its verdict — it has simply stopped being the headline.
+struct RestingView: View {
+    let glance: RestingGlance
+    let family: WidgetFamily
+    let now: Date
+
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        let copy = Copy(locale: locale)
+        switch family {
+        case .systemMedium:
+            HStack(alignment: .top, spacing: 16) {
+                invitation(copy, short: false)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                VStack(alignment: .leading, spacing: 10) {
+                    SeasonTally(season: glance.season)
+                    if !glance.recent.isEmpty {
+                        RecentList(drives: Array(glance.recent.prefix(2)), now: now)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+
+        case .systemLarge:
+            VStack(alignment: .leading, spacing: 16) {
+                invitation(copy, short: false)
+                SeasonTally(season: glance.season)
+                Spacer(minLength: 0)
+                if !glance.recent.isEmpty {
+                    RecentList(drives: Array(glance.recent.prefix(5)), now: now)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+        case .systemExtraLarge:
+            HStack(alignment: .top, spacing: 24) {
+                VStack(alignment: .leading, spacing: 16) {
+                    invitation(copy, short: false)
+                    SeasonTally(season: glance.season)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                if !glance.recent.isEmpty {
+                    RecentList(drives: Array(glance.recent.prefix(8)), now: now)
+                        .frame(width: 280)
+                        .frame(maxHeight: .infinity, alignment: .topLeading)
+                }
+            }
+
+        default:
+            VStack(alignment: .leading, spacing: 0) {
+                glyph(size: 30)
+                Spacer(minLength: 6)
+                words(copy, short: true)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    /// Glyph and words together, for the sizes that do not push them apart.
+    private func invitation(_ copy: Copy, short: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            glyph(size: 28)
+            words(copy, short: short)
+        }
+    }
+
+    private func glyph(size: CGFloat) -> some View {
+        Image(systemName: "tray.and.arrow.down")
+            .font(.system(size: size, weight: .medium))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(.secondary)
+            .widgetAccentable()
+            .accessibilityHidden(true)
+    }
+
+    private func words(_ copy: Copy, short: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(copy.restingTitle)
+                .font(short ? .title3.weight(.bold) : .title2.weight(.bold))
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+            Text(short ? copy.restingInvitationShort : copy.restingInvitation)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+            if let notice = glance.notice {
+                NoticeLine(notice: notice, compact: short)
+                    .padding(.top, 4)
+            } else if let last = glance.recent.first, short {
+                Text(copy.lastResult(last))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .padding(.top, 4)
+                    .sensitive()
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 // MARK: - Whole-widget messages
 
 struct MessageView: View {
@@ -355,7 +467,9 @@ struct MessageView: View {
         case .noShortlists(.importing?): "arrow.down.circle"
         case .noShortlists(.failed?): "exclamationmark.triangle"
         case .removed: "pin.slash"
-        case .shortlist: "checkmark.circle"
+        // Neither is drawn by this view; both are here so a new state cannot
+        // be added without deciding what it looks like.
+        case .shortlist, .resting: "checkmark.circle"
         }
     }
 }

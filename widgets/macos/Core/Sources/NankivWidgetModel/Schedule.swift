@@ -6,7 +6,8 @@ import Foundation
 /// changes; the timeline only has to cover changes that happen with the
 /// passage of time and nothing else:
 ///
-/// - a transient state expiring ("Importing…" after the app stopped), and
+/// - a transient state expiring ("Importing…" after the app stopped),
+/// - the newest result finishing its turn at the top, and
 /// - date labels rolling over at midnight ("Today" becomes "Yesterday").
 ///
 /// Labels settle into plain dates after a week, so a week of midnights covers
@@ -33,6 +34,8 @@ public enum Schedule {
         }
 
         var moments: Set<Date> = [now]
+        // The moment the newest result stops leading.
+        if let leadsUntil = snapshot.leadsUntil, leadsUntil > now { moments.insert(leadsUntil) }
         switch snapshot.activity {
         case .importing(_, _, let until), .failed(_, _, let until):
             if until > now { moments.insert(until) }

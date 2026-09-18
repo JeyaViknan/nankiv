@@ -19,6 +19,7 @@ public sealed record WidgetSnapshot(
     bool IdentityConfigured,
     Activity Activity,
     Season Season,
+    DateTimeOffset? LeadsUntil,
     IReadOnlyList<DrivePreview> Drives)
 {
     public const int SupportedSchema = 1;

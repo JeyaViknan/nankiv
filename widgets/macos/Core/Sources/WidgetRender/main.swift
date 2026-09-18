@@ -58,6 +58,8 @@ let states: [(String, Glance)] = [
     ("removed", Glance.make(from: load("ready"), pinned: 999_999, at: now)),
     ("not-started", Glance.make(from: .missing, pinned: nil, at: now)),
     ("needs-refresh", Glance.make(from: .stale, pinned: nil, at: now)),
+    ("resting", Glance.make(from: load("ready"), pinned: nil, at: now.addingTimeInterval(13 * 3600))),
+    ("resting-importing", Glance.make(from: load("importing"), pinned: nil, at: now.addingTimeInterval(13 * 3600))),
     ("placeholder", .sample(now: now)),
 ]
 

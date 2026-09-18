@@ -10,7 +10,7 @@ using System.Globalization;
 
 namespace Nankiv.Widgets;
 
-public enum GlanceState { NotStarted, NeedsRefresh, NeedsIdentity, NoShortlists, Removed, Ready }
+public enum GlanceState { NotStarted, NeedsRefresh, NeedsIdentity, NoShortlists, Removed, Ready, Resting }
 
 public sealed record Notice(bool IsFailure, string Filename);
 
@@ -31,6 +31,16 @@ public sealed record Glance(
         if (!snapshot.IdentityConfigured) return Empty(GlanceState.NeedsIdentity);
 
         var notice = NoticeFor(snapshot.Activity, now);
+
+        // A result leads for a while, then steps back — the same moment macOS
+        // uses, because it travels in the snapshot rather than being decided
+        // twice.
+        if (pinned is null && snapshot.LeadsUntil is { } leadsUntil && now >= leadsUntil
+            && snapshot.Drives.Count > 0)
+        {
+            return new Glance(
+                GlanceState.Resting, null, false, notice, snapshot.Season, snapshot.Drives);
+        }
 
         DrivePreview? shown;
         if (pinned is { } id)
@@ -148,8 +158,12 @@ public static class Copy
 
     public static string NoticeShort(Notice notice) => notice.IsFailure ? "Last import failed" : "Importing…";
 
+    public const string RestingTitle = "No new shortlist";
+    public const string RestingInvitation = "Drop the next one into nankiv";
+
     public static (string Title, string Body)? Message(Glance glance) => glance.State switch
     {
+        GlanceState.Resting => (RestingTitle, RestingInvitation),
         GlanceState.NotStarted => ("Open nankiv", "Your latest shortlist result will appear here."),
         GlanceState.NeedsRefresh => ("Open nankiv", "Open the app to bring this widget up to date."),
         GlanceState.NeedsIdentity => ("Finish setting up", "Add your Neo ID in nankiv to see your results here."),

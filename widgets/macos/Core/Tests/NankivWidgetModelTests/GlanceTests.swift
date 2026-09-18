@@ -61,10 +61,59 @@ struct GlanceTests {
     @Test func aFailureShowsForADay() throws {
         guard case .shortlist(let soon) = try glance("failed", at: now) else { Issue.record("expected a shortlist"); return }
         #expect(soon.notice == .failed(filename: "Round 2 - final.xlsx"))
-        guard case .shortlist(let later) = try glance("failed", at: now.addingTimeInterval(23 * 3600)) else {
-            Issue.record("expected a shortlist"); return
+
+        // It outlives the result's turn at the top, and is carried into the
+        // resting state rather than dropped.
+        guard case .resting(let resting) = try glance("failed", at: now.addingTimeInterval(10 * 3600)) else {
+            Issue.record("expected the widget to be resting"); return
+        }
+        #expect(resting.notice == .failed(filename: "Round 2 - final.xlsx"))
+
+        guard case .resting(let later) = try glance("failed", at: now.addingTimeInterval(23 * 3600)) else {
+            Issue.record("expected the widget to be resting"); return
         }
         #expect(later.notice == nil, "recorded two hours before the fixture, so it has expired")
+    }
+
+    // MARK: Resting
+
+    @Test func theResultLeadsForATurnThenStepsBack() throws {
+        let snapshot = try Fixture.snapshot("ready")
+        let leadsUntil = try #require(snapshot.leadsUntil)
+        #expect(leadsUntil.timeIntervalSince(snapshot.drives[0].importedAt) == 12 * 3600)
+
+        guard case .shortlist = Glance.make(from: .loaded(snapshot), pinned: nil, at: leadsUntil.addingTimeInterval(-1))
+        else { Issue.record("expected a shortlist just before its turn ends"); return }
+
+        guard case .resting(let resting) = Glance.make(from: .loaded(snapshot), pinned: nil, at: leadsUntil) else {
+            Issue.record("expected the widget to be resting"); return
+        }
+        // Nothing is hidden: the result that was leading is the first row now.
+        #expect(resting.recent.first?.company == "Aurora Systems")
+        #expect(resting.recent.count == snapshot.drives.count)
+        #expect(resting.season == snapshot.season)
+    }
+
+    @Test func restingStillLinksToTheApp() throws {
+        let snapshot = try Fixture.snapshot("ready")
+        let later = try #require(snapshot.leadsUntil).addingTimeInterval(3600)
+        #expect(Glance.make(from: .loaded(snapshot), pinned: nil, at: later).destination == DeepLink.shortlists)
+    }
+
+    @Test func aChosenShortlistNeverStepsBack() throws {
+        let snapshot = try Fixture.snapshot("ready")
+        let cedar = try #require(snapshot.drives.first { $0.company == "Cedar Labs" })
+        let later = try #require(snapshot.leadsUntil).addingTimeInterval(72 * 3600)
+        guard case .shortlist(let s) = Glance.make(from: .loaded(snapshot), pinned: cedar.id, at: later) else {
+            Issue.record("a pinned shortlist should stay"); return
+        }
+        #expect(s.drive == cedar)
+    }
+
+    @Test func withNothingImportedThereIsNothingToRest() throws {
+        let snapshot = try Fixture.snapshot("empty")
+        #expect(snapshot.leadsUntil == nil)
+        #expect(Glance.make(from: .loaded(snapshot), pinned: nil, at: now.addingTimeInterval(86_400)) == .noShortlists(nil))
     }
 
     @Test func linksGoStraightToTheShortlistOnScreen() throws {
@@ -99,27 +148,34 @@ struct ScheduleTests {
 
     @Test func coversAWeekOfMidnights() throws {
         let now = Fixture.now
-        let plan = Schedule.plan(for: .loaded(try Fixture.snapshot("ready")), from: now, calendar: calendar)
+        let snapshot = try Fixture.snapshot("ready")
+        let plan = Schedule.plan(for: .loaded(snapshot), from: now, calendar: calendar)
         #expect(plan.moments.first == now)
-        #expect(plan.moments.count == 1 + Schedule.midnights)
-        for moment in plan.moments.dropFirst() {
-            #expect(calendar.startOfDay(for: moment) == moment)
-        }
+        #expect(plan.moments.count == 2 + Schedule.midnights, "now, the end of the result's turn, and a week of midnights")
+        let midnights = plan.moments.filter { calendar.startOfDay(for: $0) == $0 }
+        #expect(midnights.count == Schedule.midnights)
         #expect(plan.reload == plan.moments.last)
         #expect(plan.moments == plan.moments.sorted())
+    }
+
+    @Test func includesTheMomentTheResultStepsBack() throws {
+        let now = Fixture.now
+        let snapshot = try Fixture.snapshot("ready")
+        let plan = Schedule.plan(for: .loaded(snapshot), from: now, calendar: calendar)
+        #expect(plan.moments.contains(try #require(snapshot.leadsUntil)))
     }
 
     @Test func includesTheMomentAnImportExpires() throws {
         let now = Fixture.now
         let plan = Schedule.plan(for: .loaded(try Fixture.snapshot("importing")), from: now, calendar: calendar)
         #expect(plan.moments.contains(now.addingTimeInterval(160)))
-        #expect(plan.moments.count == 2 + Schedule.midnights)
+        #expect(plan.moments.count == 3 + Schedule.midnights)
     }
 
     @Test func anExpiredStateAddsNothing() throws {
         let later = Fixture.now.addingTimeInterval(3600)
         let plan = Schedule.plan(for: .loaded(try Fixture.snapshot("importing")), from: later, calendar: calendar)
-        #expect(plan.moments.count == 1 + Schedule.midnights)
+        #expect(plan.moments.count == 2 + Schedule.midnights, "the import has expired; the result's turn has not")
     }
 }
 

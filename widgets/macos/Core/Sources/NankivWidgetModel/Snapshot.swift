@@ -19,6 +19,9 @@ public struct WidgetSnapshot: Decodable, Sendable, Equatable {
     public let identityConfigured: Bool
     public let activity: Activity
     public let season: Season
+    /// When the newest result stops leading the widget. `nil` when there is
+    /// nothing to lead with.
+    public let leadsUntil: Date?
     /// Newest first.
     public let drives: [DrivePreview]
 
@@ -28,6 +31,7 @@ public struct WidgetSnapshot: Decodable, Sendable, Equatable {
         identityConfigured: Bool,
         activity: Activity,
         season: Season,
+        leadsUntil: Date? = nil,
         drives: [DrivePreview]
     ) {
         self.schema = schema
@@ -35,6 +39,7 @@ public struct WidgetSnapshot: Decodable, Sendable, Equatable {
         self.identityConfigured = identityConfigured
         self.activity = activity
         self.season = season
+        self.leadsUntil = leadsUntil
         self.drives = drives
     }
 }

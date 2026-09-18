@@ -1,0 +1,42 @@
+{
+  "state": "resting",
+  "link": "nankiv://shortlists",
+  "message": {
+    "title": "No new shortlist",
+    "body": "Drop the next one into nankiv"
+  },
+  "season": {
+    "summary": "5 shortlists",
+    "tally": "3 in · 2 not in"
+  },
+  "recent": [
+    {
+      "company": "Aurora Systems",
+      "status": "In",
+      "tone": "Good",
+      "when": "Yesterday",
+      "link": "nankiv://drive/5"
+    },
+    {
+      "company": "Bluefin Analytics",
+      "status": "Not in",
+      "tone": "Default",
+      "when": "Wednesday",
+      "link": "nankiv://drive/4"
+    },
+    {
+      "company": "Cedar Labs",
+      "status": "In",
+      "tone": "Good",
+      "when": "Tuesday",
+      "link": "nankiv://drive/3"
+    },
+    {
+      "company": "Driftwood Energy",
+      "status": "In",
+      "tone": "Good",
+      "when": "Monday",
+      "link": "nankiv://drive/2"
+    }
+  ]
+}

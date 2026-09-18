@@ -18,12 +18,24 @@ public enum Glance: Sendable, Equatable {
     /// The widget was pinned to a shortlist that has since been deleted.
     case removed
     case shortlist(ShortlistGlance)
+    /// The newest result has had its turn. The widget goes back to the season
+    /// and an invitation, rather than shouting yesterday's news.
+    case resting(RestingGlance)
 
     /// Where a click takes you: the shortlist on screen, or the app's front page.
     public var destination: URL {
         switch self {
         case .shortlist(let s): DeepLink.drive(s.drive.id)
         default: DeepLink.shortlists
+        }
+    }
+
+    /// The season's shortlists, newest first, wherever the state has them.
+    public var recent: [DrivePreview] {
+        switch self {
+        case .shortlist(let s): s.others
+        case .resting(let r): r.recent
+        default: []
         }
     }
 }
@@ -43,6 +55,19 @@ public struct ShortlistGlance: Sendable, Equatable {
         self.notice = notice
         self.season = season
         self.others = others
+    }
+}
+
+public struct RestingGlance: Sendable, Equatable {
+    public let season: Season
+    /// Newest first; the one that was leading is simply the first of them now.
+    public let recent: [DrivePreview]
+    public let notice: Notice?
+
+    public init(season: Season, recent: [DrivePreview], notice: Notice?) {
+        self.season = season
+        self.recent = recent
+        self.notice = notice
     }
 }
 
@@ -70,6 +95,16 @@ extension Glance {
         guard snapshot.identityConfigured else { return .needsIdentity }
 
         let notice = Notice(snapshot.activity, at: date)
+
+        // A result leads for a while, then steps back. A pinned shortlist is
+        // there because someone asked for it, so it never steps back.
+        if pinned == nil, let leadsUntil = snapshot.leadsUntil, date >= leadsUntil,
+            !snapshot.drives.isEmpty
+        {
+            return .resting(
+                RestingGlance(season: snapshot.season, recent: snapshot.drives, notice: notice))
+        }
+
         let shown: DrivePreview
         if let pinned {
             guard let match = snapshot.drives.first(where: { $0.id == pinned }) else {

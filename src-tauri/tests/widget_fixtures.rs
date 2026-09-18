@@ -275,6 +275,11 @@ fn build(setup: Setup, activity: impl FnOnce(&Store) -> Activity) -> WidgetSnaps
     for (k, d) in snap.drives.iter_mut().enumerate() {
         d.imported_at = widget::format_now(NOW - Duration::hours(3) - Duration::days(k as i64));
     }
+    // Derived from the newest import, so it has to be pinned with them.
+    snap.leads_until = snap
+        .drives
+        .first()
+        .map(|_| widget::format_now(NOW - Duration::hours(3) + widget::RESULT_LEADS_FOR));
     snap
 }
 

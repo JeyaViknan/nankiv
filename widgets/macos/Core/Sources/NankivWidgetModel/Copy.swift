@@ -114,6 +114,16 @@ public struct Copy: Sendable {
     // MARK: Circle and season
 
     public let circleTitle = "Your circle"
+    /// The resting widget: no fresh result, and an invitation to drop the next.
+    public let restingTitle = "No new shortlist"
+    public let restingInvitation = "Drop the next one into nankiv"
+    /// The same invitation where a small widget has room for four words.
+    public let restingInvitationShort = "Drop the next one"
+
+    /// "Last: Aurora Systems · You're in"
+    public func lastResult(_ drive: DrivePreview) -> String {
+        "Last: \(drive.company) · \(status(drive.verdict))"
+    }
     public let recentTitle = "Recent shortlists"
     public let seasonTitle = "This season"
 
@@ -154,7 +164,7 @@ public struct Copy: Sendable {
 
     public func message(for glance: Glance) -> Message? {
         switch glance {
-        case .shortlist:
+        case .shortlist, .resting:
             nil
         case .notStarted:
             Message(title: "Open nankiv", body: "Your latest shortlist result will appear here.")

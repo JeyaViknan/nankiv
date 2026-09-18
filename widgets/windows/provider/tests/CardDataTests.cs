@@ -82,6 +82,33 @@ public class CardDataTests
     }
 
     [Fact]
+    public void AResultLeadsForATurnThenTheWidgetRests()
+    {
+        var snapshot = Load("ready").Snapshot!;
+        var leadsUntil = Assert.NotNull(snapshot.LeadsUntil);
+        Assert.Equal(TimeSpan.FromHours(12), leadsUntil - snapshot.Drives[0].ImportedAt);
+
+        var leading = Glance.Make(Load("ready"), null, leadsUntil.AddSeconds(-1));
+        Assert.Equal(GlanceState.Ready, leading.State);
+
+        var resting = Glance.Make(Load("ready"), null, leadsUntil.AddHours(1));
+        Assert.Equal(GlanceState.Resting, resting.State);
+        // Nothing is hidden: the result that was leading heads the list now.
+        Assert.Equal("Aurora Systems", resting.Others[0].Company);
+        AssertMatchesExample("resting", resting);
+    }
+
+    [Fact]
+    public void AChosenShortlistNeverStepsBack()
+    {
+        var snapshot = Load("ready").Snapshot!;
+        var cedar = snapshot.Drives.First(d => d.Company == "Cedar Labs");
+        var glance = Glance.Make(Load("ready"), cedar.Id, snapshot.LeadsUntil!.Value.AddDays(3));
+        Assert.Equal(GlanceState.Ready, glance.State);
+        Assert.Equal(cedar.Id, glance.Drive!.Id);
+    }
+
+    [Fact]
     public void BeforeTheAppHasEverRun()
     {
         AssertMatchesExample("not_started", Glance.Make(SnapshotLoad.Missing, null, Now));

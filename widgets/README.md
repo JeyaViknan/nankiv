@@ -35,8 +35,14 @@ labels you typed into your own circle. See [docs/PRIVACY.md](../docs/PRIVACY.md)
 
 **No polling.** The app rebuilds the snapshot when something changes and asks
 WidgetKit to reload. Timeline entries exist only for things that change with
-time alone: a transient state expiring, and date labels rolling over at
-midnight.
+time alone: a transient state expiring, a result's turn at the top ending, and
+date labels rolling over at midnight.
+
+**A result does not linger.** Twelve hours after an import, the widget stops
+leading with it and goes back to resting — the season, what came recently, and
+an invitation to drop the next shortlist. The moment it flips travels in the
+snapshot (`leads_until`), so macOS and Windows agree without deciding it twice,
+and the widget flips on its own with nothing running.
 
 ## Layout
 
@@ -98,6 +104,7 @@ them.
 | State | What the widget shows |
 | --- | --- |
 | `ready` | The answer, and what the shortlist suggests. |
+| `resting` | Twelve hours on, the result stops leading: the season, the recent shortlists, and an invitation to drop the next one. Nothing is hidden — the result heads the list. |
 | `importing` | The previous answer, with a line saying a file is being read. |
 | `failed` | The previous answer, with a line saying the last import failed. |
 | `insufficient` / `not_set_up` | The answer, and why there is no analysis — never a guess. |

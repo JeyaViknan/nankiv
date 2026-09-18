@@ -26,6 +26,87 @@
           "weight": "Lighter",
           "isSubtle": true,
           "wrap": true
+        },
+        {
+          "type": "Container",
+          "$when": "${state == 'resting'}",
+          "spacing": "Medium",
+          "items": [
+            {
+              "type": "TextBlock",
+              "$when": "${season != null}",
+              "text": "${season.summary} · ${season.tally}",
+              "size": "Small",
+              "weight": "Lighter",
+              "isSubtle": true,
+              "wrap": false,
+              "spacing": "Small"
+            },
+            {
+              "type": "Container",
+              "$when": "${recent != null}",
+              "spacing": "Small",
+              "items": [
+                {
+                  "type": "Container",
+                  "$data": "${recent}",
+                  "selectAction": {
+                    "type": "Action.OpenUrl",
+                    "title": "Open ${company} in nankiv",
+                    "url": "${link}"
+                  },
+                  "items": [
+                    {
+                      "type": "ColumnSet",
+                      "columns": [
+                        {
+                          "type": "Column",
+                          "width": "stretch",
+                          "items": [
+                            {
+                              "type": "TextBlock",
+                              "text": "${company}",
+                              "size": "Default",
+                              "weight": "Lighter",
+                              "wrap": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Column",
+                          "width": "auto",
+                          "items": [
+                            {
+                              "type": "TextBlock",
+                              "text": "${status}",
+                              "size": "Small",
+                              "weight": "Lighter",
+                              "color": "${tone}",
+                              "wrap": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Column",
+                          "width": "auto",
+                          "items": [
+                            {
+                              "type": "TextBlock",
+                              "text": "${when}",
+                              "size": "Small",
+                              "weight": "Lighter",
+                              "isSubtle": true,
+                              "wrap": false
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },

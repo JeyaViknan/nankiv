@@ -31,6 +31,13 @@ public static class CardData
         if (Copy.Message(glance) is { } message)
         {
             data["message"] = new JsonObject { ["title"] = message.Title, ["body"] = message.Body };
+            // Resting is not an empty state: the season and what came recently
+            // are exactly what is worth showing while waiting for the next one.
+            if (glance.State == GlanceState.Resting)
+            {
+                data["season"] = Season(glance.Season);
+                data["recent"] = Recent(glance.Others, now);
+            }
             return data;
         }
 
@@ -76,8 +83,15 @@ public static class CardData
             }
             : null;
 
-        data["recent"] = glance.Others.Count > 0
-            ? new JsonArray(glance.Others.Take(RecentShown).Select(d =>
+        data["recent"] = Recent(glance.Others, now);
+        data["season"] = Season(glance.Season);
+
+        return data;
+    }
+
+    private static JsonNode? Recent(IReadOnlyList<DrivePreview> drives, DateTimeOffset now) =>
+        drives.Count > 0
+            ? new JsonArray(drives.Take(RecentShown).Select(d =>
                 (JsonNode)new JsonObject
                 {
                     ["company"] = d.Company,
@@ -88,16 +102,14 @@ public static class CardData
                 }).ToArray())
             : null;
 
-        data["season"] = glance.Season is { } season
+    private static JsonNode? Season(Season? season) =>
+        season is { } s
             ? new JsonObject
             {
-                ["summary"] = Copy.SeasonSummary(season),
-                ["tally"] = Copy.SeasonTally(season),
+                ["summary"] = Copy.SeasonSummary(s),
+                ["tally"] = Copy.SeasonTally(s),
             }
             : null;
-
-        return data;
-    }
 
     public static string Serialise(JsonObject data) =>
         data.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
@@ -120,6 +132,7 @@ public static class CardData
         GlanceState.NeedsIdentity => "needsIdentity",
         GlanceState.NoShortlists => "noShortlists",
         GlanceState.Removed => "removed",
+        GlanceState.Resting => "resting",
         _ => "ready",
     };
 }
