@@ -12,7 +12,6 @@
 		49F9976AB14B712E5C481B46 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C2681DB70192BD67AB629A34 /* WidgetKit.framework */; };
 		4BC9DDD7431D1A2DA2436897 /* Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ABC192A4A18B0B401315265 /* Previews.swift */; };
 		69584EBC48DCC7F909C86E61 /* NankivWidgetModel in Frameworks */ = {isa = PBXBuildFile; productRef = BC23357B235F8AE69C7D913A /* NankivWidgetModel */; };
-		70FCB3180B61673F07BA54D2 /* ChooseShortlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B709C65C18CFF6E9AA4E8ECB /* ChooseShortlist.swift */; };
 		C28028BCC49DE6D0F488A2B7 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 12D0ACCEDB5FD93729B98A90 /* AppIntents.framework */; };
 		FC16FF57F90116EE443F0350 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36491D3CB21090C4B63E076 /* SwiftUI.framework */; };
 /* End PBXBuildFile section */
@@ -23,7 +22,6 @@
 		1E7FAADA78981F7B1F24F1B3 /* ShortlistWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortlistWidget.swift; sourceTree = "<group>"; };
 		2795798161CD6089E49D3CD2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		3ABC192A4A18B0B401315265 /* Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Previews.swift; sourceTree = "<group>"; };
-		B709C65C18CFF6E9AA4E8ECB /* ChooseShortlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseShortlist.swift; sourceTree = "<group>"; };
 		C2681DB70192BD67AB629A34 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		D36491D3CB21090C4B63E076 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -73,7 +71,6 @@
 		D522A50063A747D7090960FF /* Extension */ = {
 			isa = PBXGroup;
 			children = (
-				B709C65C18CFF6E9AA4E8ECB /* ChooseShortlist.swift */,
 				3ABC192A4A18B0B401315265 /* Previews.swift */,
 				1E7FAADA78981F7B1F24F1B3 /* ShortlistWidget.swift */,
 			);
@@ -155,7 +152,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				70FCB3180B61673F07BA54D2 /* ChooseShortlist.swift in Sources */,
 				4BC9DDD7431D1A2DA2436897 /* Previews.swift in Sources */,
 				00F9D11E2500321A5657C6FA /* ShortlistWidget.swift in Sources */,
 			);

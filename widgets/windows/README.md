@@ -60,10 +60,11 @@ app writes snapshot.json ──► FileSystemWatcher ──► Glance.Make ─�
   `windows.protocol` extension registers `nankiv://`, the same scheme macOS
   registers, and the core already accepts it on the command line — which is how
   Windows hands a URL to an app.
-- **Configuration.** macOS lets you pin the widget to one shortlist. On Windows
-  the provider starts zero-configuration (always the latest); pinning would use
-  the board's customization flow and `CustomState`, which is the natural place
-  for it when the package exists.
+- **Configuration.** Neither side has any, for different reasons: macOS cannot
+  ship its pin-a-shortlist setting until the app is signed with a Developer ID
+  (see the note in ../README.md), and the Windows provider starts on the latest
+  shortlist. When pinning does arrive, the board's customization flow and
+  `CustomState` are where it belongs here.
 
 ## Adapted to Fluent, not ported from Apple
 

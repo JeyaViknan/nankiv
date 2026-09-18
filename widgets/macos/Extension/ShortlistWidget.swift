@@ -1,4 +1,3 @@
-import AppIntents
 import NankivWidgetModel
 import NankivWidgetViews
 import SwiftUI
@@ -16,7 +15,17 @@ struct ShortlistWidget: Widget {
     static let kind = "app.nankiv.widget.shortlist"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: Self.kind, intent: ChooseShortlist.self, provider: GlanceProvider()) { entry in
+        // Static, with nothing to configure.
+        //
+        // An AppIntentConfiguration would let someone pin the widget to one
+        // shortlist, and it is written and tested in the model. It cannot ship
+        // yet: the system has to hand the widget an intent configuration, and
+        // it will not for an app built outside Xcode and signed ad hoc —
+        // chronod refuses every timeline with "Intent configuration is required
+        // but was not provided", which leaves the widget showing its loading
+        // placeholder forever. Following the latest shortlist needs no
+        // configuration, which is the behaviour almost everyone wants anyway.
+        StaticConfiguration(kind: Self.kind, provider: GlanceProvider()) { entry in
             GlanceEntryView(entry: entry)
         }
         .configurationDisplayName("Shortlist")
@@ -49,32 +58,36 @@ struct GlanceEntryView: View {
 /// It reads one small file and does no analysis — the app has already done it.
 /// Timelines are rebuilt when the app asks (it reloads them whenever the
 /// snapshot changes); the entries here only cover what changes with time alone.
-struct GlanceProvider: AppIntentTimelineProvider {
+struct GlanceProvider: TimelineProvider {
+    /// No configuration yet, so the widget always follows the latest shortlist.
+    private let pinned: Int64? = nil
+
     func placeholder(in context: Context) -> GlanceEntry {
         // Drawn redacted by WidgetKit; invented content only.
         GlanceEntry(date: Date(), glance: .sample())
     }
 
-    func snapshot(for configuration: ChooseShortlist, in context: Context) async -> GlanceEntry {
+    func getSnapshot(in context: Context, completion: @escaping (GlanceEntry) -> Void) {
         let now = Date()
-        let glance = Glance.make(from: SnapshotSource.standard.load(), pinned: configuration.pinnedID, at: now)
+        let glance = Glance.make(from: SnapshotSource.standard.load(), pinned: pinned, at: now)
         // In the widget gallery, show what the widget does, not a setup
         // message: someone deciding whether to add it needs to see its value.
         if context.isPreview, case .shortlist = glance {
-            return GlanceEntry(date: now, glance: glance)
+            completion(GlanceEntry(date: now, glance: glance))
         } else if context.isPreview {
-            return GlanceEntry(date: now, glance: .sample(now: now))
+            completion(GlanceEntry(date: now, glance: .sample(now: now)))
+        } else {
+            completion(GlanceEntry(date: now, glance: glance))
         }
-        return GlanceEntry(date: now, glance: glance)
     }
 
-    func timeline(for configuration: ChooseShortlist, in context: Context) async -> Timeline<GlanceEntry> {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<GlanceEntry>) -> Void) {
         let now = Date()
         let load = SnapshotSource.standard.load()
         let plan = Schedule.plan(for: load, from: now)
         let entries = plan.moments.map { moment in
-            GlanceEntry(date: moment, glance: Glance.make(from: load, pinned: configuration.pinnedID, at: moment))
+            GlanceEntry(date: moment, glance: Glance.make(from: load, pinned: pinned, at: moment))
         }
-        return Timeline(entries: entries, policy: .after(plan.reload))
+        completion(Timeline(entries: entries, policy: .after(plan.reload)))
     }
 }
