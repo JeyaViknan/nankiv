@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run build && npm run widget:build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -57,7 +57,11 @@
     "shortDescription": "Placement shortlist analysis",
     "longDescription": "Check whether you and your friends are on a placement shortlist, and see what the shortlist reveals. Fully offline: files never leave your machine.",
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-",
+      "files": {
+        "PlugIns/NankivWidget.appex": "../widgets/macos/build/NankivWidget.appex"
+      }
     },
     "windows": {
       "nsis": {

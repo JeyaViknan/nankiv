@@ -1,0 +1,51 @@
+{
+  "state": "ready",
+  "link": "nankiv://drive/2",
+  "company": "Elmstead Foods",
+  "title": "Not this time",
+  "detail": "Not among the 120 shortlisted",
+  "tone": "Default",
+  "when": "Today, 17:30",
+  "pinned": false,
+  "notice": null,
+  "analysis": {
+    "headline": "Skews high, no hard cutoff",
+    "basis": "Estimate from all 120 students",
+    "spread": "8.0 – 10.0 · median 8.91"
+  },
+  "insight": "analysis",
+  "circle": {
+    "summary": "2 of 5 in",
+    "members": [
+      {
+        "label": "Meera",
+        "status": "In"
+      },
+      {
+        "label": "Sam",
+        "status": "In"
+      },
+      {
+        "label": "Priya",
+        "status": "Unknown"
+      },
+      {
+        "label": "Karthik",
+        "status": "Not in"
+      }
+    ]
+  },
+  "recent": [
+    {
+      "company": "Cedar Labs",
+      "status": "In",
+      "tone": "Good",
+      "when": "Yesterday",
+      "link": "nankiv://drive/1"
+    }
+  ],
+  "season": {
+    "summary": "2 shortlists",
+    "tally": "1 in · 1 not in"
+  }
+}

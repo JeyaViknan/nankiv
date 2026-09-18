@@ -1,0 +1,258 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.6",
+  "selectAction": {
+    "type": "Action.OpenUrl",
+    "title": "Open in nankiv",
+    "url": "${link}"
+  },
+  "body": [
+    {
+      "type": "Container",
+      "$when": "${state != 'ready'}",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "${message.title}",
+          "size": "ExtraLarge",
+          "weight": "Bolder",
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "${message.body}",
+          "size": "Default",
+          "weight": "Lighter",
+          "isSubtle": true,
+          "wrap": true
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "$when": "${state == 'ready'}",
+      "items": [
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${company}",
+                  "size": "Default",
+                  "weight": "Bolder",
+                  "wrap": false
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${when}",
+                  "size": "Small",
+                  "weight": "Lighter",
+                  "isSubtle": true,
+                  "wrap": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "$when": "${notice != null}",
+          "text": "${notice.full}",
+          "size": "Small",
+          "weight": "Lighter",
+          "color": "${notice.tone}",
+          "wrap": true,
+          "maxLines": 2,
+          "spacing": "Small"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${title}",
+          "size": "ExtraLarge",
+          "weight": "Bolder",
+          "color": "${tone}",
+          "wrap": false,
+          "spacing": "Small"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${detail}",
+          "size": "Default",
+          "weight": "Lighter",
+          "isSubtle": true,
+          "wrap": true,
+          "maxLines": 2,
+          "spacing": "None"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${analysis.headline}",
+          "size": "Medium",
+          "weight": "Bolder",
+          "wrap": true,
+          "maxLines": 2,
+          "spacing": "Medium"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${analysis.basis}",
+          "size": "Small",
+          "weight": "Lighter",
+          "isSubtle": true,
+          "wrap": true,
+          "spacing": "None"
+        },
+        {
+          "type": "TextBlock",
+          "$when": "${analysis.spread != null}",
+          "text": "${analysis.spread}",
+          "size": "Small",
+          "weight": "Lighter",
+          "wrap": false,
+          "spacing": "Small"
+        },
+        {
+          "type": "ColumnSet",
+          "$when": "${circle != null}",
+          "spacing": "Medium",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Your circle",
+                  "size": "Small",
+                  "weight": "Bolder",
+                  "isSubtle": true,
+                  "wrap": false
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${circle.summary}",
+                  "size": "Small",
+                  "weight": "Lighter",
+                  "isSubtle": true,
+                  "wrap": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "FactSet",
+          "$when": "${circle != null}",
+          "spacing": "Small",
+          "facts": [
+            {
+              "$data": "${circle.members}",
+              "title": "${label}",
+              "value": "${status}"
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "$when": "${recent != null}",
+          "spacing": "Medium",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Recent shortlists",
+              "size": "Small",
+              "weight": "Bolder",
+              "isSubtle": true,
+              "wrap": false,
+              "spacing": "Medium"
+            },
+            {
+              "type": "Container",
+              "$data": "${recent}",
+              "selectAction": {
+                "type": "Action.OpenUrl",
+                "title": "Open ${company} in nankiv",
+                "url": "${link}"
+              },
+              "spacing": "Small",
+              "items": [
+                {
+                  "type": "ColumnSet",
+                  "columns": [
+                    {
+                      "type": "Column",
+                      "width": "stretch",
+                      "items": [
+                        {
+                          "type": "TextBlock",
+                          "text": "${company}",
+                          "size": "Default",
+                          "weight": "Lighter",
+                          "wrap": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Column",
+                      "width": "auto",
+                      "items": [
+                        {
+                          "type": "TextBlock",
+                          "text": "${status}",
+                          "size": "Small",
+                          "weight": "Lighter",
+                          "color": "${tone}",
+                          "wrap": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Column",
+                      "width": "auto",
+                      "items": [
+                        {
+                          "type": "TextBlock",
+                          "text": "${when}",
+                          "size": "Small",
+                          "weight": "Lighter",
+                          "isSubtle": true,
+                          "wrap": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "${season.summary} · ${season.tally}",
+          "size": "Small",
+          "weight": "Lighter",
+          "isSubtle": true,
+          "wrap": false,
+          "spacing": "Medium"
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 //! is never committed:
 //!
 //! ```text
-//! cargo run --bin build_reference
+//! cargo run --example build_reference
 //! ```
 //!
 //! The expensive, careful part of identity resolution happens here rather than

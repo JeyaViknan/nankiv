@@ -18,6 +18,25 @@ use std::sync::Mutex;
 
 pub struct AppState {
     pub store: Mutex<Store>,
+    /// Absent in tests and wherever the widget directory is unavailable.
+    pub widget: Option<crate::widget::Publisher>,
+    /// A `nankiv://` link that arrived before the interface was listening,
+    /// typically the one that launched the app from a widget.
+    pub pending_route: Mutex<Option<crate::widget::Route>>,
+}
+
+impl AppState {
+    /// Tells the widget something it shows may have changed. Cheap: it only
+    /// sends a signal; the snapshot is rebuilt on a background thread.
+    pub fn widget_changed(&self) {
+        self.signal(crate::widget::Signal::Changed);
+    }
+
+    pub fn signal(&self, s: crate::widget::Signal) {
+        if let Some(w) = &self.widget {
+            w.send(s);
+        }
+    }
 }
 
 /// Errors crossing the IPC boundary, in language a student can act on.
@@ -179,6 +198,7 @@ pub fn save_profile(state: tauri::State<AppState>, profile: Profile) -> R<()> {
         ..profile
     };
     store(&state).save_profile(&cleaned)?;
+    state.widget_changed();
     Ok(())
 }
 
@@ -204,17 +224,20 @@ pub fn add_friend(
         ));
     }
     let s = store(&state);
-    Ok(s.add_friend(
+    let id = s.add_friend(
         label.trim(),
         neo.as_ref().map(|x| x.as_str()),
         reg.as_ref().map(|x| x.as_str()),
         group_tag.as_deref(),
-    )?)
+    )?;
+    state.widget_changed();
+    Ok(id)
 }
 
 #[tauri::command]
 pub fn remove_friend(state: tauri::State<AppState>, id: i64) -> R<()> {
     store(&state).remove_friend(id)?;
+    state.widget_changed();
     Ok(())
 }
 
@@ -224,6 +247,41 @@ pub fn remove_friend(state: tauri::State<AppState>, id: i64) -> R<()> {
 
 #[tauri::command]
 pub fn import_shortlist(
+    state: tauri::State<AppState>,
+    path: String,
+    company_override: Option<String>,
+    replace_existing: Option<bool>,
+) -> R<ImportOutcome> {
+    use crate::widget::{self, Signal};
+
+    let filename = PathBuf::from(&path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "shortlist.xlsx".into());
+
+    state.signal(Signal::ImportStarted(filename.clone()));
+    let result = import_shortlist_inner(state.clone(), path, company_override, replace_existing);
+
+    // Remember a genuine failure so the widget can explain a missing result,
+    // and forget it as soon as any import goes through. A duplicate or a
+    // reference sheet is not a failure: the file was a reasonable thing to
+    // drop, it just did not add a new drive.
+    {
+        let s = store(&state);
+        let now = time::OffsetDateTime::now_utc();
+        let _ = match &result {
+            Ok(_) => widget::clear_failure(&s),
+            Err(e) if matches!(e.code.as_str(), "duplicate_drive" | "imported_reference") => {
+                widget::clear_failure(&s)
+            }
+            Err(_) => widget::record_failure(&s, &filename, now),
+        };
+    }
+    state.signal(Signal::ImportEnded);
+    result
+}
+
+fn import_shortlist_inner(
     state: tauri::State<AppState>,
     path: String,
     company_override: Option<String>,
@@ -494,12 +552,15 @@ pub fn delete_drive(state: tauri::State<AppState>, id: i64) -> R<Option<DriveSna
     let s = store(&state);
     let snap = s.snapshot_drive(id)?;
     s.delete_drive(id)?;
+    state.widget_changed();
     Ok(snap)
 }
 
 #[tauri::command]
 pub fn restore_drive(state: tauri::State<AppState>, snapshot: DriveSnapshot) -> R<i64> {
-    Ok(store(&state).restore_drive(&snapshot)?)
+    let id = store(&state).restore_drive(&snapshot)?;
+    state.widget_changed();
+    Ok(id)
 }
 
 /// Corrects the company name inferred from the filename.
@@ -513,6 +574,7 @@ pub fn rename_drive(state: tauri::State<AppState>, id: i64, company: String) -> 
         ));
     }
     store(&state).rename_drive(id, name)?;
+    state.widget_changed();
     Ok(())
 }
 
@@ -527,17 +589,33 @@ pub fn set_drive_round(state: tauri::State<AppState>, id: i64, parent_id: Option
         ));
     }
     store(&state).set_drive_parent(id, parent_id)?;
+    state.widget_changed();
     Ok(())
 }
 
 #[tauri::command]
 pub fn get_drive_detail(state: tauri::State<AppState>, id: i64) -> R<ImportOutcome> {
     let s = store(&state);
+    let profile = s.profile()?;
+    let identity = engine::build_graph(&s)?;
+    drive_outcome(&s, id, &identity, &profile)
+}
+
+/// Everything the drive screen shows for one drive.
+///
+/// Shared by the drive screen and the desktop widget, so the widget can never
+/// disagree with the app about a verdict, a count or a cutoff. The identity
+/// graph is passed in because it is the expensive part, and the widget builds
+/// several outcomes from one graph.
+pub fn drive_outcome(
+    s: &Store,
+    id: i64,
+    identity: &ResolvedIdentity,
+    profile: &Profile,
+) -> R<ImportOutcome> {
     let drive = s
         .drive(id)?
         .ok_or_else(|| CommandError::new("not_found", "That drive is no longer stored."))?;
-    let profile = s.profile()?;
-    let identity = engine::build_graph(&s)?;
 
     let neo_ids = s.drive_neo_ids(id)?;
     let reg_nos = s.drive_reg_nos(id)?;
@@ -569,8 +647,8 @@ pub fn get_drive_detail(state: tauri::State<AppState>, id: i64) -> R<ImportOutco
         profile.neo_id.as_deref(),
         profile.reg_no.as_deref(),
         &synthetic,
-        &identity,
-        &s,
+        identity,
+        s,
         profile.show_friend_cgpa,
         true,
     )?;
@@ -581,8 +659,8 @@ pub fn get_drive_detail(state: tauri::State<AppState>, id: i64) -> R<ImportOutco
             f.neo_id.as_deref(),
             f.reg_no.as_deref(),
             &synthetic,
-            &identity,
-            &s,
+            identity,
+            s,
             profile.show_friend_cgpa,
             false,
         )?);
@@ -593,7 +671,7 @@ pub fn get_drive_detail(state: tauri::State<AppState>, id: i64) -> R<ImportOutco
         Verdict::NotShortlisted => 2,
     });
 
-    let analysis = engine::analyse_drive(&s, id, &identity, &profile)?;
+    let analysis = engine::analyse_drive(s, id, identity, profile)?;
 
     Ok(ImportOutcome {
         drive_id: id,
@@ -746,6 +824,15 @@ pub struct ReferenceImportResult {
 /// reach storage even if the sheet contains them.
 #[tauri::command]
 pub fn import_reference(state: tauri::State<AppState>, path: String) -> R<ReferenceImportResult> {
+    let result = import_reference_inner(state.clone(), path);
+    if result.is_ok() {
+        // New academic data changes every drive's analysis, not just one.
+        state.widget_changed();
+    }
+    result
+}
+
+fn import_reference_inner(state: tauri::State<AppState>, path: String) -> R<ReferenceImportResult> {
     let p = PathBuf::from(&path);
     let filename = p
         .file_name()
@@ -816,6 +903,7 @@ pub fn wipe_all_data(state: tauri::State<AppState>) -> R<()> {
     if let Err(e) = crate::reference::seed(&s) {
         eprintln!("could not restore bundled reference data: {e}");
     }
+    state.widget_changed();
     Ok(())
 }
 
@@ -852,6 +940,14 @@ pub fn share_summary(state: tauri::State<AppState>, drive_id: i64) -> R<String> 
     }
     out.push_str("\nvia nankiv");
     Ok(out)
+}
+
+/// Returns, and forgets, a `nankiv://` link that arrived before the interface
+/// was listening. Called once the interface has loaded, which covers the case
+/// that matters most: a click on the widget that launches the app.
+#[tauri::command]
+pub fn take_pending_route(state: tauri::State<AppState>) -> Option<crate::widget::Route> {
+    state.pending_route.lock().ok().and_then(|mut r| r.take())
 }
 
 /// Writes the names on a shortlist to a file the student chose.

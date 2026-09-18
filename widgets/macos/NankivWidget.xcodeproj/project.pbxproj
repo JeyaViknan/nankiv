@@ -1,0 +1,384 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00F9D11E2500321A5657C6FA /* ShortlistWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7FAADA78981F7B1F24F1B3 /* ShortlistWidget.swift */; };
+		01BED3205F05D3A5E856C210 /* NankivWidgetViews in Frameworks */ = {isa = PBXBuildFile; productRef = FFD640E9E337223BEFE67691 /* NankivWidgetViews */; };
+		49F9976AB14B712E5C481B46 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C2681DB70192BD67AB629A34 /* WidgetKit.framework */; };
+		4BC9DDD7431D1A2DA2436897 /* Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ABC192A4A18B0B401315265 /* Previews.swift */; };
+		69584EBC48DCC7F909C86E61 /* NankivWidgetModel in Frameworks */ = {isa = PBXBuildFile; productRef = BC23357B235F8AE69C7D913A /* NankivWidgetModel */; };
+		70FCB3180B61673F07BA54D2 /* ChooseShortlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B709C65C18CFF6E9AA4E8ECB /* ChooseShortlist.swift */; };
+		C28028BCC49DE6D0F488A2B7 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 12D0ACCEDB5FD93729B98A90 /* AppIntents.framework */; };
+		FC16FF57F90116EE443F0350 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36491D3CB21090C4B63E076 /* SwiftUI.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		12D0ACCEDB5FD93729B98A90 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
+		1D3F24E50B50FFBFC3F910E0 /* NankivWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NankivWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1E7FAADA78981F7B1F24F1B3 /* ShortlistWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortlistWidget.swift; sourceTree = "<group>"; };
+		2795798161CD6089E49D3CD2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
+		3ABC192A4A18B0B401315265 /* Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Previews.swift; sourceTree = "<group>"; };
+		B709C65C18CFF6E9AA4E8ECB /* ChooseShortlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseShortlist.swift; sourceTree = "<group>"; };
+		C2681DB70192BD67AB629A34 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		D36491D3CB21090C4B63E076 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E4E90756FA3A8C5D7E139C80 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				69584EBC48DCC7F909C86E61 /* NankivWidgetModel in Frameworks */,
+				01BED3205F05D3A5E856C210 /* NankivWidgetViews in Frameworks */,
+				49F9976AB14B712E5C481B46 /* WidgetKit.framework in Frameworks */,
+				FC16FF57F90116EE443F0350 /* SwiftUI.framework in Frameworks */,
+				C28028BCC49DE6D0F488A2B7 /* AppIntents.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		14BB7B0CCB037C708DDD2C98 = {
+			isa = PBXGroup;
+			children = (
+				D522A50063A747D7090960FF /* Extension */,
+				5B2843B8A1DC331EECC36F9B /* Packages */,
+				F880562321D65043D3C9B6D4 /* Frameworks */,
+				C43DEFBD14DA3C3459828D38 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5B2843B8A1DC331EECC36F9B /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				2795798161CD6089E49D3CD2 /* Core */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		C43DEFBD14DA3C3459828D38 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1D3F24E50B50FFBFC3F910E0 /* NankivWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D522A50063A747D7090960FF /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				B709C65C18CFF6E9AA4E8ECB /* ChooseShortlist.swift */,
+				3ABC192A4A18B0B401315265 /* Previews.swift */,
+				1E7FAADA78981F7B1F24F1B3 /* ShortlistWidget.swift */,
+			);
+			path = Extension;
+			sourceTree = "<group>";
+		};
+		F880562321D65043D3C9B6D4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				12D0ACCEDB5FD93729B98A90 /* AppIntents.framework */,
+				D36491D3CB21090C4B63E076 /* SwiftUI.framework */,
+				C2681DB70192BD67AB629A34 /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		16DF2AA8F07C3184E0455D61 /* NankivWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DCA41F9BA6FA2BE1A59E2080 /* Build configuration list for PBXNativeTarget "NankivWidget" */;
+			buildPhases = (
+				E13F342B42D5A4D6815813C0 /* Sources */,
+				E4E90756FA3A8C5D7E139C80 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NankivWidget;
+			packageProductDependencies = (
+				BC23357B235F8AE69C7D913A /* NankivWidgetModel */,
+				FFD640E9E337223BEFE67691 /* NankivWidgetViews */,
+			);
+			productName = NankivWidget;
+			productReference = 1D3F24E50B50FFBFC3F910E0 /* NankivWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		094D41496E5D4511C8D16FF2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					16DF2AA8F07C3184E0455D61 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 2B449ED267A7F54EC339693E /* Build configuration list for PBXProject "NankivWidget" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 14BB7B0CCB037C708DDD2C98;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				91F2FA7D5DD3224BE0CD172D /* XCLocalSwiftPackageReference "Core" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C43DEFBD14DA3C3459828D38 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				16DF2AA8F07C3184E0455D61 /* NankivWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E13F342B42D5A4D6815813C0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70FCB3180B61673F07BA54D2 /* ChooseShortlist.swift in Sources */,
+				4BC9DDD7431D1A2DA2436897 /* Previews.swift in Sources */,
+				00F9D11E2500321A5657C6FA /* ShortlistWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7AE33983BD1AA95BBE1889C1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		92F301AE05CBD2FBB7460E3C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extension/NankivWidget.entitlements;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.nankiv.desktop.widget;
+				PRODUCT_NAME = NankivWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		A555785F633A6125E238F351 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extension/NankivWidget.entitlements;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.nankiv.desktop.widget;
+				PRODUCT_NAME = NankivWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		E1129682825E59ABBDF590AB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2B449ED267A7F54EC339693E /* Build configuration list for PBXProject "NankivWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1129682825E59ABBDF590AB /* Debug */,
+				7AE33983BD1AA95BBE1889C1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DCA41F9BA6FA2BE1A59E2080 /* Build configuration list for PBXNativeTarget "NankivWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				92F301AE05CBD2FBB7460E3C /* Debug */,
+				A555785F633A6125E238F351 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		91F2FA7D5DD3224BE0CD172D /* XCLocalSwiftPackageReference "Core" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Core;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BC23357B235F8AE69C7D913A /* NankivWidgetModel */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NankivWidgetModel;
+		};
+		FFD640E9E337223BEFE67691 /* NankivWidgetViews */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NankivWidgetViews;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 094D41496E5D4511C8D16FF2 /* Project object */;
+}

@@ -1,0 +1,51 @@
+{
+  "state": "ready",
+  "link": "nankiv://drive/2",
+  "company": "Driftwood Energy",
+  "title": "You're in",
+  "detail": "60 students shortlisted",
+  "tone": "Good",
+  "when": "Today, 17:30",
+  "pinned": false,
+  "notice": null,
+  "analysis": {
+    "headline": "Not enough data to analyse",
+    "basis": "Matched 0 of 60 students",
+    "spread": null
+  },
+  "insight": "circle",
+  "circle": {
+    "summary": "0 of 5 in",
+    "members": [
+      {
+        "label": "Karthik",
+        "status": "Unknown"
+      },
+      {
+        "label": "Meera",
+        "status": "Unknown"
+      },
+      {
+        "label": "Rahul",
+        "status": "Unknown"
+      },
+      {
+        "label": "Sam",
+        "status": "Unknown"
+      }
+    ]
+  },
+  "recent": [
+    {
+      "company": "Bluefin Analytics",
+      "status": "Not in",
+      "tone": "Default",
+      "when": "Yesterday",
+      "link": "nankiv://drive/1"
+    }
+  ],
+  "season": {
+    "summary": "2 shortlists",
+    "tally": "1 in · 1 not in"
+  }
+}

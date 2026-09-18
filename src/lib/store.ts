@@ -19,7 +19,9 @@ import {
   type ImportOutcome,
   type IdentityStats,
   type Profile,
+  type Route,
 } from "./api";
+import { resolveRoute } from "./deeplinks";
 
 /** A default filename that is legal on both macOS and Windows. */
 export function exportFilename(company: string, format: ExportFormat): string {
@@ -75,6 +77,7 @@ interface State {
   renameDrive: (id: number, company: string) => Promise<void>;
   deleteDrive: (id: number, label: string) => Promise<void>;
   exportNames: (format: ExportFormat) => Promise<void>;
+  followRoute: (route: Route) => Promise<void>;
   dismissImport: () => void;
   clearError: () => void;
   showToast: (message: string, undo?: () => void) => void;
@@ -113,6 +116,41 @@ export const useStore = create<State>((set, get) => ({
       });
     } catch (e) {
       set({ error: toApiError(e) });
+      return;
+    }
+
+    // A click on the desktop widget that launched the app is waiting here. It
+    // is collected only now, once the drives are loaded, so a link to a drive
+    // can be checked against what actually exists.
+    try {
+      const route = await api.takePendingRoute();
+      if (route) await get().followRoute(route);
+    } catch {
+      /* no pending link, or none can be read — start normally */
+    }
+  },
+
+  /**
+   * Opens whatever a `nankiv://` link points at.
+   *
+   * Drives are refreshed first: the widget can be a moment behind the app, and
+   * a link must be checked against the drives that exist now, not the ones
+   * that existed when the list was last loaded.
+   */
+  followRoute: async (route) => {
+    // Clears the held copy, so a link that has been followed is never
+    // followed again on the next launch.
+    void api.takePendingRoute().catch(() => {});
+    // Until someone has said who they are there is nothing a link could show
+    // them, and skipping setup would leave every verdict undetermined.
+    if (get().view === "onboarding") return;
+    await get().refreshDrives();
+    const action = resolveRoute(route, get().drives);
+    if (action.kind === "open") {
+      await get().openDrive(action.id);
+    } else {
+      set({ view: "shortlists", current: null });
+      if (action.notice) get().showToast(action.notice);
     }
   },
 

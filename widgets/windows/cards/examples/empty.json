@@ -1,0 +1,8 @@
+{
+  "state": "noShortlists",
+  "link": "nankiv://shortlists",
+  "message": {
+    "title": "No shortlists yet",
+    "body": "Drop a shortlist into nankiv and your result appears here."
+  }
+}

@@ -14,6 +14,7 @@ pub mod model;
 pub mod parse;
 pub mod reference;
 pub mod store;
+pub mod widget;
 
 use commands::AppState;
 use std::sync::Mutex;
@@ -60,9 +61,37 @@ pub fn run() {
                 }
             }
 
+            // The widget reads only this directory — its sandbox is scoped to it —
+            // so the snapshot lives beside the database, never inside it.
+            #[cfg(target_os = "macos")]
+            widget::set_reload_hook(widget::reload_widgetkit);
+            let handle = app.handle().clone();
+            let publisher = widget::Publisher::spawn(dir.join("widget"), move |f| {
+                if let Some(state) = handle.try_state::<AppState>() {
+                    if let Ok(s) = state.store.lock() {
+                        f(&s);
+                    }
+                }
+            });
+
+            // A link passed on the command line is how Windows and Linux hand a
+            // URL to an app they are launching.
+            let launch_route = std::env::args()
+                .skip(1)
+                .find_map(|a| widget::parse_route(&a));
+
             app.manage(AppState {
                 store: Mutex::new(store),
+                widget: Some(publisher),
+                pending_route: Mutex::new(launch_route),
             });
+
+            // Publish once at launch, so the widget reflects anything that
+            // changed while the app was closed — including a new app version
+            // whose analysis differs.
+            if let Some(state) = app.try_state::<AppState>() {
+                state.widget_changed();
+            }
 
             if let Some(window) = app.get_webview_window("main") {
                 desktop::persist_geometry(&window);
@@ -96,7 +125,46 @@ pub fn run() {
             commands::wipe_all_data,
             commands::share_summary,
             commands::export_shortlist,
+            commands::take_pending_route,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running nankiv");
+        .build(tauri::generate_context!())
+        .expect("error while building nankiv")
+        .run(|app, event| {
+            // macOS delivers `nankiv://` links — from the widget, or from
+            // anywhere else — as an open-URLs event rather than as arguments.
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            if let tauri::RunEvent::Opened { urls } = &event {
+                if let Some(route) = urls
+                    .iter()
+                    .rev()
+                    .find_map(|u| widget::parse_route(u.as_str()))
+                {
+                    open_route(app, route);
+                }
+            }
+            let _ = (app, event);
+        });
+}
+
+/// Brings the window forward and hands a route to the interface.
+///
+/// The route is both stored and emitted. If the interface is already running it
+/// acts on the event and then clears the stored copy; if the link launched the
+/// app, nothing is listening yet, and the interface collects the stored copy
+/// once it has loaded. Opening the same drive twice is harmless, so the overlap
+/// needs no coordination.
+#[cfg_attr(not(any(target_os = "macos", target_os = "ios")), allow(dead_code))]
+fn open_route(app: &tauri::AppHandle, route: widget::Route) {
+    use tauri::Emitter;
+    if let Some(state) = app.try_state::<AppState>() {
+        if let Ok(mut pending) = state.pending_route.lock() {
+            *pending = Some(route.clone());
+        }
+    }
+    let _ = app.emit("deep-link", &route);
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
 }

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Holds the provider to the shared fixtures and to the committed card data
+    examples. Portable on purpose: these tests cover Snapshot.cs, Glance.cs,
+    Copy.cs and CardData.cs, none of which touch the Windows App SDK, so they
+    run wherever .NET does — including a Linux or macOS CI runner.
+
+    NOT YET RUN: no .NET SDK was available on the machine this was written on.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Nankiv.Widgets.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.*" />
+    <PackageReference Include="xunit" Version="2.9.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.*" />
+  </ItemGroup>
+
+  <!-- The parts of the provider that do not need Windows. -->
+  <ItemGroup>
+    <Compile Include="..\Snapshot.cs" />
+    <Compile Include="..\Glance.cs" />
+    <Compile Include="..\CardData.cs" />
+  </ItemGroup>
+
+</Project>

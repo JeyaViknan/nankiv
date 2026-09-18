@@ -24,6 +24,11 @@ target/
 src-tauri/target/
 src-tauri/gen/
 *.local
+# Xcode and Swift Package Manager output for the macOS widget. The generated
+# NankivWidget.xcodeproj is committed on purpose, so building needs only Xcode.
+.build/
+.swiftpm/
+widget-renders/
 
 # ---------------------------------------------------------------------------
 # Tooling

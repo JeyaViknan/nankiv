@@ -1,0 +1,76 @@
+# The macOS widget extension, bundled into nankiv.app as PlugIns/NankivWidget.appex.
+#
+# NankivWidget.xcodeproj is generated from this file and committed, so building
+# needs only Xcode. After editing, regenerate it:
+#
+#   xcodegen generate --spec widgets/macos/project.yml
+#
+# Signing is ad hoc ("-") here, matching the app's current unsigned releases.
+# See docs/RELEASING.md for signing both with a Developer ID.
+
+name: NankivWidget
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+packages:
+  NankivWidgetCore:
+    path: Core
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+targets:
+  NankivWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Extension
+        excludes:
+          - "*.plist"
+          - "*.entitlements"
+    dependencies:
+      - package: NankivWidgetCore
+        product: NankivWidgetModel
+      - package: NankivWidgetCore
+        product: NankivWidgetViews
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: AppIntents.framework
+    info:
+      path: Extension/Info.plist
+      properties:
+        CFBundleDisplayName: nankiv
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: "Copyright © nankiv contributors"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Extension/NankivWidget.entitlements
+      properties:
+        # Widgets must be sandboxed.
+        com.apple.security.app-sandbox: true
+        # Read-only access to the one directory the app publishes the widget
+        # snapshot into. Not the database beside it, not anything else. The
+        # path must match SnapshotSource.relativePath and lib.rs.
+        com.apple.security.temporary-exception.files.home-relative-path.read-only:
+          - /Library/Application Support/app.nankiv.desktop/widget/
+    settings:
+      base:
+        PRODUCT_NAME: NankivWidget
+        PRODUCT_BUNDLE_IDENTIFIER: app.nankiv.desktop.widget
+        ENABLE_HARDENED_RUNTIME: YES
+        # Keeps get-task-allow out of the signature, so debug and release
+        # builds carry exactly the entitlements above.
+        CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: NO
+    scheme: {}

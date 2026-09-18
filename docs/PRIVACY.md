@@ -111,8 +111,49 @@ webview.
 | Windows | `%APPDATA%\app.nankiv.desktop\nankiv.db` |
 | Linux | `~/.local/share/app.nankiv.desktop/nankiv.db` |
 
-Delete that file, or use **Settings → Delete all local data**, and nothing
-remains.
+Beside it, `widget/snapshot.json` — the only thing the desktop widget can see.
+Delete both, or use **Settings → Delete all local data**, and nothing remains.
+
+## The desktop widget
+
+A widget runs in its own process, outside the app. That process is given the
+least it can be given and still be useful.
+
+**It cannot read the database.** The macOS extension is sandboxed with exactly
+one exception — read-only access to the directory holding `snapshot.json`:
+
+```
+com.apple.security.app-sandbox
+com.apple.security.temporary-exception.files.home-relative-path.read-only
+  = /Library/Application Support/app.nankiv.desktop/widget/
+```
+
+Tested, not assumed: an earlier build of this extension could read
+`snapshot.json` and was denied `nankiv.db` in the same directory tree, and
+denied the home directory. The build in CI fails if that entitlement is missing,
+if `get-task-allow` appears, or if broader file access is granted.
+
+**The snapshot is display-ready and thin.** It holds what a glance needs and
+nothing else: company names, counts, verdict words, coverage, the estimated
+cutoff, bucket counts for the chart, and the labels the student typed into their
+own circle. It holds **no Neo IDs, no registration numbers, no individual
+CGPAs**, and no names from the reference data. The Rust tests assert this on
+synthetic data, and the same check runs against every committed fixture.
+
+**It carries no error text.** A failed import is recorded as a filename and a
+time, not a message, because error messages can quote file paths.
+
+**Links are navigation only.** A widget click opens `nankiv://drive/<id>`,
+`nankiv://latest` or `nankiv://shortlists`. Any application or web page can open
+a URL scheme, so no route imports, deletes, exports or changes a setting, and
+anything that does not parse exactly is ignored. The Windows cards use
+`Action.OpenUrl` and never `Action.Execute`, so a card cannot ask the provider
+to do anything either.
+
+**On screen means on screen.** The answer and your circle are marked
+privacy-sensitive, so the system hides them where it hides private data. A
+widget sits on a desktop that other people can see, which is the reason the
+snapshot has no identifiers in it to show.
 
 ## What this does not protect against
 
@@ -122,6 +163,10 @@ Stated plainly, because a security claim that overreaches is worse than none:
   account can read it. Encrypting it with a key shipped in the binary would be
   obfuscation, not security — the key would be extractable — which is precisely
   why the real answer is minimisation: do not store what is not needed.
+- **A widget is visible to whoever can see the screen.** Sharing a screen or
+  sitting in a lab shows the latest result and your circle's labels to anyone
+  looking. Remove the widget if that matters; the data it can show is already
+  the minimum.
 - **A student can still read what is on their own screen.** The controls above
   raise the effort of bulk misuse; they do not make individual lookups
   impossible, and they are not meant to.
@@ -131,7 +176,7 @@ Stated plainly, because a security claim that overreaches is worse than none:
 ## For maintainers
 
 The bundled pack at `src-tauri/reference/pack.json` is generated from `Global/`
-by `cargo run --bin build_reference`, and is the one committed artefact that
+by `cargo run --example build_reference`, and is the one committed artefact that
 carries real names and CGPAs. Regenerate it whenever the source sheets change.
 A test asserts it contains no email address, phone number or document link.
 

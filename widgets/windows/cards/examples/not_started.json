@@ -1,0 +1,8 @@
+{
+  "state": "notStarted",
+  "link": "nankiv://shortlists",
+  "message": {
+    "title": "Open nankiv",
+    "body": "Your latest shortlist result will appear here."
+  }
+}

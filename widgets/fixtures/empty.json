@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-17T15:00:00Z",
+  "identity_configured": true,
+  "activity": {
+    "state": "idle"
+  },
+  "season": {
+    "drives": 0,
+    "shortlisted": 0,
+    "not_shortlisted": 0,
+    "undetermined": 0
+  },
+  "drives": []
+}

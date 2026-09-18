@@ -12,7 +12,7 @@
 //! phone numbers, gender, dates of birth and resume links; none of those are
 //! read by the generator and none have a field here to land in.
 //!
-//! Regenerate with `cargo run --bin build_reference` after updating `Global/`.
+//! Regenerate with `cargo run --example build_reference` after updating `Global/`.
 
 use crate::model::{Confidence, Identifier, NeoId, RegNo};
 use crate::store::{Store, StoreError};

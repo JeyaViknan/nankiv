@@ -1,0 +1,456 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-17T15:00:00Z",
+  "identity_configured": true,
+  "activity": {
+    "state": "failed",
+    "filename": "Round 2 - final.xlsx",
+    "at": "2026-09-17T13:00:00Z",
+    "until": "2026-09-18T13:00:00Z"
+  },
+  "season": {
+    "drives": 5,
+    "shortlisted": 3,
+    "not_shortlisted": 2,
+    "undetermined": 0
+  },
+  "drives": [
+    {
+      "id": 5,
+      "company": "Aurora Systems",
+      "imported_at": "2026-09-17T12:00:00Z",
+      "total_students": 96,
+      "key": "reg_no",
+      "verdict": {
+        "status": "shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 5,
+        "shortlisted": 2,
+        "not_shortlisted": 2,
+        "undetermined": 1,
+        "members": [
+          {
+            "label": "Meera",
+            "status": "shortlisted"
+          },
+          {
+            "label": "Rahul",
+            "status": "shortlisted"
+          },
+          {
+            "label": "Priya",
+            "status": "undetermined"
+          },
+          {
+            "label": "Karthik",
+            "status": "not_shortlisted"
+          },
+          {
+            "label": "Sam",
+            "status": "not_shortlisted"
+          }
+        ]
+      },
+      "analysis": {
+        "status": "ready",
+        "matched": 96,
+        "coverage": 1.0,
+        "cutoff": {
+          "kind": "hard_cutoff",
+          "threshold": 8.5,
+          "observed_floor": 8.51
+        },
+        "median": 8.95,
+        "histogram": [
+          {
+            "lower": 8.5,
+            "upper": 8.75,
+            "count": 25
+          },
+          {
+            "lower": 8.75,
+            "upper": 9.0,
+            "count": 28
+          },
+          {
+            "lower": 9.0,
+            "upper": 9.25,
+            "count": 19
+          },
+          {
+            "lower": 9.25,
+            "upper": 9.5,
+            "count": 16
+          },
+          {
+            "lower": 9.5,
+            "upper": 9.75,
+            "count": 3
+          },
+          {
+            "lower": 9.75,
+            "upper": 10.0,
+            "count": 5
+          }
+        ],
+        "over_represented": [
+          "CSE"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "company": "Bluefin Analytics",
+      "imported_at": "2026-09-16T12:00:00Z",
+      "total_students": 140,
+      "key": "reg_no",
+      "verdict": {
+        "status": "not_shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 5,
+        "shortlisted": 0,
+        "not_shortlisted": 4,
+        "undetermined": 1,
+        "members": [
+          {
+            "label": "Priya",
+            "status": "undetermined"
+          },
+          {
+            "label": "Karthik",
+            "status": "not_shortlisted"
+          },
+          {
+            "label": "Meera",
+            "status": "not_shortlisted"
+          },
+          {
+            "label": "Rahul",
+            "status": "not_shortlisted"
+          },
+          {
+            "label": "Sam",
+            "status": "not_shortlisted"
+          }
+        ]
+      },
+      "analysis": {
+        "status": "ready",
+        "matched": 140,
+        "coverage": 1.0,
+        "cutoff": {
+          "kind": "no_cgpa_filter",
+          "threshold": null,
+          "observed_floor": null
+        },
+        "median": 8.84,
+        "histogram": [
+          {
+            "lower": 8.0,
+            "upper": 8.25,
+            "count": 16
+          },
+          {
+            "lower": 8.25,
+            "upper": 8.5,
+            "count": 16
+          },
+          {
+            "lower": 8.5,
+            "upper": 8.75,
+            "count": 30
+          },
+          {
+            "lower": 8.75,
+            "upper": 9.0,
+            "count": 26
+          },
+          {
+            "lower": 9.0,
+            "upper": 9.25,
+            "count": 21
+          },
+          {
+            "lower": 9.25,
+            "upper": 9.5,
+            "count": 23
+          },
+          {
+            "lower": 9.5,
+            "upper": 9.75,
+            "count": 3
+          },
+          {
+            "lower": 9.75,
+            "upper": 10.0,
+            "count": 5
+          }
+        ],
+        "over_represented": []
+      }
+    },
+    {
+      "id": 3,
+      "company": "Cedar Labs",
+      "imported_at": "2026-09-15T12:00:00Z",
+      "total_students": 110,
+      "key": "reg_no",
+      "verdict": {
+        "status": "shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 5,
+        "shortlisted": 2,
+        "not_shortlisted": 2,
+        "undetermined": 1,
+        "members": [
+          {
+            "label": "Karthik",
+            "status": "shortlisted"
+          },
+          {
+            "label": "Rahul",
+            "status": "shortlisted"
+          },
+          {
+            "label": "Priya",
+            "status": "undetermined"
+          },
+          {
+            "label": "Meera",
+            "status": "not_shortlisted"
+          },
+          {
+            "label": "Sam",
+            "status": "not_shortlisted"
+          }
+        ]
+      },
+      "analysis": {
+        "status": "ready",
+        "matched": 110,
+        "coverage": 1.0,
+        "cutoff": {
+          "kind": "no_cgpa_filter",
+          "threshold": null,
+          "observed_floor": null
+        },
+        "median": 8.82,
+        "histogram": [
+          {
+            "lower": 6.75,
+            "upper": 7.0,
+            "count": 1
+          },
+          {
+            "lower": 7.0,
+            "upper": 7.25,
+            "count": 0
+          },
+          {
+            "lower": 7.25,
+            "upper": 7.5,
+            "count": 0
+          },
+          {
+            "lower": 7.5,
+            "upper": 7.75,
+            "count": 1
+          },
+          {
+            "lower": 7.75,
+            "upper": 8.0,
+            "count": 1
+          },
+          {
+            "lower": 8.0,
+            "upper": 8.25,
+            "count": 13
+          },
+          {
+            "lower": 8.25,
+            "upper": 8.5,
+            "count": 11
+          },
+          {
+            "lower": 8.5,
+            "upper": 8.75,
+            "count": 22
+          },
+          {
+            "lower": 8.75,
+            "upper": 9.0,
+            "count": 21
+          },
+          {
+            "lower": 9.0,
+            "upper": 9.25,
+            "count": 16
+          },
+          {
+            "lower": 9.25,
+            "upper": 9.5,
+            "count": 17
+          },
+          {
+            "lower": 9.5,
+            "upper": 9.75,
+            "count": 4
+          },
+          {
+            "lower": 9.75,
+            "upper": 10.0,
+            "count": 3
+          }
+        ],
+        "over_represented": []
+      }
+    },
+    {
+      "id": 2,
+      "company": "Driftwood Energy",
+      "imported_at": "2026-09-14T12:00:00Z",
+      "total_students": 60,
+      "key": "neo_id",
+      "verdict": {
+        "status": "shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 5,
+        "shortlisted": 0,
+        "not_shortlisted": 1,
+        "undetermined": 4,
+        "members": [
+          {
+            "label": "Karthik",
+            "status": "undetermined"
+          },
+          {
+            "label": "Meera",
+            "status": "undetermined"
+          },
+          {
+            "label": "Rahul",
+            "status": "undetermined"
+          },
+          {
+            "label": "Sam",
+            "status": "undetermined"
+          },
+          {
+            "label": "Priya",
+            "status": "not_shortlisted"
+          }
+        ]
+      },
+      "analysis": {
+        "status": "insufficient",
+        "matched": 0,
+        "coverage": 0.0,
+        "cutoff": null,
+        "median": null,
+        "histogram": [],
+        "over_represented": []
+      }
+    },
+    {
+      "id": 1,
+      "company": "Elmstead Foods",
+      "imported_at": "2026-09-13T12:00:00Z",
+      "total_students": 120,
+      "key": "reg_no",
+      "verdict": {
+        "status": "not_shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 5,
+        "shortlisted": 2,
+        "not_shortlisted": 2,
+        "undetermined": 1,
+        "members": [
+          {
+            "label": "Meera",
+            "status": "shortlisted"
+          },
+          {
+            "label": "Sam",
+            "status": "shortlisted"
+          },
+          {
+            "label": "Priya",
+            "status": "undetermined"
+          },
+          {
+            "label": "Karthik",
+            "status": "not_shortlisted"
+          },
+          {
+            "label": "Rahul",
+            "status": "not_shortlisted"
+          }
+        ]
+      },
+      "analysis": {
+        "status": "ready",
+        "matched": 120,
+        "coverage": 1.0,
+        "cutoff": {
+          "kind": "soft_preference",
+          "threshold": null,
+          "observed_floor": 8.09
+        },
+        "median": 8.91,
+        "histogram": [
+          {
+            "lower": 8.0,
+            "upper": 8.25,
+            "count": 2
+          },
+          {
+            "lower": 8.25,
+            "upper": 8.5,
+            "count": 16
+          },
+          {
+            "lower": 8.5,
+            "upper": 8.75,
+            "count": 27
+          },
+          {
+            "lower": 8.75,
+            "upper": 9.0,
+            "count": 25
+          },
+          {
+            "lower": 9.0,
+            "upper": 9.25,
+            "count": 19
+          },
+          {
+            "lower": 9.25,
+            "upper": 9.5,
+            "count": 22
+          },
+          {
+            "lower": 9.5,
+            "upper": 9.75,
+            "count": 3
+          },
+          {
+            "lower": 9.75,
+            "upper": 10.0,
+            "count": 6
+          }
+        ],
+        "over_represented": []
+      }
+    }
+  ]
+}

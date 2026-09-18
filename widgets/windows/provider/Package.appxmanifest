@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Packaging for the Windows widget.
+
+  Only a packaged (MSIX) app can provide a Windows widget, and nankiv currently
+  ships as MSI and NSIS installers. This manifest is what an MSIX build needs;
+  widgets/windows/README.md explains the remaining work and the trade-off.
+
+  Two extensions matter:
+    windows.comServer          starts the provider when the Widgets host asks
+    com.microsoft.windows.widgets  declares the widget, its sizes and its capabilities
+
+  The protocol extension registers nankiv:// so a tap on the widget opens the
+  app on that shortlist, the same scheme macOS registers in src-tauri/Info.plist.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 com rescap">
+
+  <Identity Name="app.nankiv.desktop" Publisher="CN=nankiv" Version="0.1.0.0" />
+
+  <Properties>
+    <DisplayName>nankiv</DisplayName>
+    <PublisherDisplayName>nankiv</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="nankiv.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="nankiv"
+        Description="Check whether you and your friends are on a placement shortlist."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+
+      <Extensions>
+        <!-- nankiv:// links, including the ones the widget opens. -->
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="nankiv" />
+        </uap:Extension>
+
+        <!-- The provider process, started on demand by the Widgets host. -->
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="nankiv-widget-provider.exe" Arguments="-RegisterProcessAsComServer" DisplayName="nankiv widgets">
+              <com:Class Id="9C6D5E1C-5E3B-4D6B-9E2E-3F0A9B7D41A7" DisplayName="nankiv widget provider" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension
+            Name="com.microsoft.windows.widgets"
+            Id="ShortlistWidget"
+            PublicFolder="Public"
+            DisplayName="nankiv"
+            Description="See whether you made your latest shortlist, and what it suggests.">
+            <uap3:Properties>
+              <WidgetProvider>
+                <ProviderIcons>
+                  <Icon Path="Public\Icons\widget.png" />
+                </ProviderIcons>
+                <Activation>
+                  <CreateInstance ClassId="9C6D5E1C-5E3B-4D6B-9E2E-3F0A9B7D41A7" />
+                </Activation>
+                <Definitions>
+                  <Definition
+                    Id="Shortlist"
+                    DisplayName="Shortlist"
+                    Description="See whether you made your latest shortlist, and what it suggests."
+                    AllowMultiple="true">
+                    <Capabilities>
+                      <Capability><Size Name="small" /></Capability>
+                      <Capability><Size Name="medium" /></Capability>
+                      <Capability><Size Name="large" /></Capability>
+                    </Capabilities>
+                    <ThemeResources>
+                      <Icons>
+                        <Icon Path="Public\Icons\widget.png" />
+                      </Icons>
+                      <Screenshots>
+                        <Screenshot Path="Public\Screenshots\shortlist.png" DisplayAltText="nankiv showing the latest shortlist result" />
+                      </Screenshots>
+                      <DarkMode />
+                      <LightMode />
+                    </ThemeResources>
+                  </Definition>
+                </Definitions>
+              </WidgetProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

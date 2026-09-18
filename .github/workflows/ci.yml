@@ -67,6 +67,68 @@ jobs:
         run: cargo test --manifest-path src-tauri/Cargo.toml
 
   # ---------------------------------------------------------------------------
+  # The desktop widget. Needs Xcode, so it runs on its own.
+  # ---------------------------------------------------------------------------
+  widget-macos:
+    name: macOS widget
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Widget model tests
+        # Decodes the shared fixtures, which the Rust tests generate. A change
+        # to the snapshot contract fails here until the Swift side follows.
+        run: swift test --package-path widgets/macos/Core
+
+      - name: Every state renders
+        # Draws each state at each size into PNGs; catches a layout that throws
+        # or a view that cannot be built, without needing a desktop.
+        run: swift run --package-path widgets/macos/Core nankiv-widget-render "$RUNNER_TEMP/renders"
+
+      - name: Build the widget extension
+        run: widgets/macos/build.sh "$RUNNER_TEMP/widget"
+
+      - name: The widget keeps its sandbox and nothing else
+        run: |
+          set -euo pipefail
+          appex="$RUNNER_TEMP/widget/NankivWidget.appex"
+          codesign --verify --strict "$appex"
+          entitlements=$(codesign -d --entitlements - "$appex" 2>/dev/null)
+          echo "$entitlements" | grep -q 'com.apple.security.app-sandbox'
+          echo "$entitlements" | grep -q 'temporary-exception.files.home-relative-path.read-only'
+          # A widget that could read the database, or be debugged, would be a
+          # privacy problem rather than a build problem.
+          ! echo "$entitlements" | grep -q 'get-task-allow'
+          ! echo "$entitlements" | grep -q 'files.all'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: widget-renders
+          retention-days: 14
+          path: ${{ runner.temp }}/renders
+
+  # ---------------------------------------------------------------------------
+  # The Windows widget's portable half: snapshot decoding, state and wording.
+  # The provider host itself needs Windows and an MSIX package; see
+  # widgets/windows/README.md.
+  #
+  # This code has never been compiled — it was written on a machine with no
+  # .NET SDK — so this job is its first real check and may fail until someone
+  # fixes it on Windows. It does not block the rest of CI for that reason.
+  # ---------------------------------------------------------------------------
+  widget-windows-core:
+    name: Windows widget content (unverified)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Provider tests
+        run: dotnet test widgets/windows/provider/tests --nologo
+
+  # ---------------------------------------------------------------------------
   # Privacy guard: fixtures must never contain real student data.
   # ---------------------------------------------------------------------------
   privacy:
@@ -101,7 +163,7 @@ jobs:
   # ---------------------------------------------------------------------------
   bundle:
     name: ${{ matrix.label }}
-    needs: [check, privacy]
+    needs: [check, privacy, widget-macos]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

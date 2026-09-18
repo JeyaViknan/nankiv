@@ -1,0 +1,58 @@
+{
+  "state": "ready",
+  "link": "nankiv://drive/3",
+  "company": "Bluefin Analytics",
+  "title": "Not this time",
+  "detail": "Not among the 140 shortlisted",
+  "tone": "Default",
+  "when": "Today, 17:30",
+  "pinned": false,
+  "notice": null,
+  "analysis": {
+    "headline": "No CGPA filter detected",
+    "basis": "Estimate from all 140 students",
+    "spread": "8.0 – 10.0 · median 8.84"
+  },
+  "insight": "analysis",
+  "circle": {
+    "summary": "0 of 5 in",
+    "members": [
+      {
+        "label": "Priya",
+        "status": "Unknown"
+      },
+      {
+        "label": "Karthik",
+        "status": "Not in"
+      },
+      {
+        "label": "Meera",
+        "status": "Not in"
+      },
+      {
+        "label": "Rahul",
+        "status": "Not in"
+      }
+    ]
+  },
+  "recent": [
+    {
+      "company": "Cedar Labs",
+      "status": "In",
+      "tone": "Good",
+      "when": "Yesterday",
+      "link": "nankiv://drive/2"
+    },
+    {
+      "company": "Aurora Systems",
+      "status": "In",
+      "tone": "Good",
+      "when": "Tuesday",
+      "link": "nankiv://drive/1"
+    }
+  ],
+  "season": {
+    "summary": "3 shortlists",
+    "tally": "2 in · 1 not in"
+  }
+}

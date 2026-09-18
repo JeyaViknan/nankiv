@@ -12,6 +12,9 @@
     "tauri": "tauri",
     "app:dev": "tauri dev",
     "app:build": "tauri build",
+    "widget:build": "node scripts/build_widget.mjs",
+    "widget:test": "swift test --package-path widgets/macos/Core",
+    "widget:renders": "swift run --package-path widgets/macos/Core nankiv-widget-render",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run src/e2e",
@@ -22,7 +25,7 @@
     "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
     "rust:lint": "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings",
     "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
-    "check:all": "npm run typecheck && npm run lint && npm run test && npm run rust:lint && npm run rust:test",
+    "check:all": "npm run typecheck && npm run lint && npm run test && npm run rust:lint && npm run rust:test && npm run widget:test",
     "preview:design": "vite --port 1425"
   },
   "dependencies": {
@@ -45,6 +48,7 @@
     "@typescript-eslint/parser": "^8.18.1",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^3.2.7",
+    "adaptivecards-templating": "^2.3.1",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^5.1.0",
     "jsdom": "^25.0.1",

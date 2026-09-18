@@ -1,0 +1,68 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.6",
+  "selectAction": {
+    "type": "Action.OpenUrl",
+    "title": "Open in nankiv",
+    "url": "${link}"
+  },
+  "body": [
+    {
+      "type": "TextBlock",
+      "$when": "${state != 'ready'}",
+      "text": "${message.title}",
+      "size": "Medium",
+      "weight": "Bolder",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "$when": "${state != 'ready'}",
+      "text": "${message.body}",
+      "size": "Small",
+      "weight": "Lighter",
+      "isSubtle": true,
+      "wrap": true,
+      "maxLines": 3
+    },
+    {
+      "type": "TextBlock",
+      "$when": "${state == 'ready'}",
+      "text": "${title}",
+      "size": "Large",
+      "weight": "Bolder",
+      "color": "${tone}",
+      "wrap": false
+    },
+    {
+      "type": "TextBlock",
+      "$when": "${state == 'ready'}",
+      "text": "${company}",
+      "size": "Default",
+      "weight": "Bolder",
+      "wrap": false,
+      "spacing": "None"
+    },
+    {
+      "type": "TextBlock",
+      "$when": "${state == 'ready' && notice == null}",
+      "text": "${when}",
+      "size": "Small",
+      "weight": "Lighter",
+      "isSubtle": true,
+      "wrap": false,
+      "spacing": "Small"
+    },
+    {
+      "type": "TextBlock",
+      "$when": "${state == 'ready' && notice != null}",
+      "text": "${notice.short}",
+      "size": "Small",
+      "weight": "Lighter",
+      "color": "${notice.tone}",
+      "wrap": false,
+      "spacing": "Small"
+    }
+  ]
+}

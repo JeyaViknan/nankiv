@@ -1,0 +1,155 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.6",
+  "selectAction": {
+    "type": "Action.OpenUrl",
+    "title": "Open in nankiv",
+    "url": "${link}"
+  },
+  "body": [
+    {
+      "type": "Container",
+      "$when": "${state != 'ready'}",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "${message.title}",
+          "size": "Large",
+          "weight": "Bolder",
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "${message.body}",
+          "size": "Default",
+          "weight": "Lighter",
+          "isSubtle": true,
+          "wrap": true,
+          "maxLines": 3
+        }
+      ]
+    },
+    {
+      "type": "ColumnSet",
+      "$when": "${state == 'ready'}",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "45",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${title}",
+              "size": "Large",
+              "weight": "Bolder",
+              "color": "${tone}",
+              "wrap": false
+            },
+            {
+              "type": "TextBlock",
+              "text": "${company}",
+              "size": "Default",
+              "weight": "Bolder",
+              "wrap": true,
+              "maxLines": 2,
+              "spacing": "None"
+            },
+            {
+              "type": "TextBlock",
+              "$when": "${notice == null}",
+              "text": "${when}",
+              "size": "Small",
+              "weight": "Lighter",
+              "isSubtle": true,
+              "wrap": false
+            },
+            {
+              "type": "TextBlock",
+              "$when": "${notice != null}",
+              "text": "${notice.short}",
+              "size": "Small",
+              "weight": "Lighter",
+              "color": "${notice.tone}",
+              "wrap": true,
+              "maxLines": 2
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "55",
+          "items": [
+            {
+              "type": "TextBlock",
+              "$when": "${insight == 'circle'}",
+              "text": "Your circle",
+              "size": "Small",
+              "weight": "Bolder",
+              "isSubtle": true,
+              "wrap": false
+            },
+            {
+              "type": "TextBlock",
+              "$when": "${insight == 'circle'}",
+              "text": "${circle.summary}",
+              "size": "Default",
+              "weight": "Bolder",
+              "wrap": false,
+              "spacing": "None"
+            },
+            {
+              "type": "TextBlock",
+              "text": "${analysis.headline}",
+              "size": "Default",
+              "weight": "Bolder",
+              "wrap": true,
+              "maxLines": 2,
+              "$when": "${insight == 'analysis'}"
+            },
+            {
+              "type": "TextBlock",
+              "text": "${analysis.basis}",
+              "size": "Small",
+              "weight": "Lighter",
+              "isSubtle": true,
+              "wrap": true,
+              "maxLines": 2,
+              "spacing": "None",
+              "$when": "${insight == 'analysis'}"
+            },
+            {
+              "type": "TextBlock",
+              "$when": "${insight == 'analysis' && analysis.spread != null}",
+              "text": "${analysis.spread}",
+              "size": "Small",
+              "weight": "Lighter",
+              "wrap": false,
+              "spacing": "Small"
+            },
+            {
+              "type": "FactSet",
+              "$when": "${insight == 'circle'}",
+              "spacing": "Small",
+              "facts": [
+                {
+                  "$data": "${circle.members}",
+                  "title": "${label}",
+                  "value": "${status}"
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "$when": "${insight == 'season'}",
+              "text": "${season.summary}",
+              "size": "Default",
+              "weight": "Bolder",
+              "wrap": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

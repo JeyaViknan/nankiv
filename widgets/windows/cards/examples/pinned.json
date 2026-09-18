@@ -1,0 +1,72 @@
+{
+  "state": "ready",
+  "link": "nankiv://drive/3",
+  "company": "Cedar Labs",
+  "title": "You're in",
+  "detail": "110 students shortlisted",
+  "tone": "Good",
+  "when": "Tuesday",
+  "pinned": true,
+  "notice": null,
+  "analysis": {
+    "headline": "No CGPA filter detected",
+    "basis": "Estimate from all 110 students",
+    "spread": "6.8 – 10.0 · median 8.82"
+  },
+  "insight": "analysis",
+  "circle": {
+    "summary": "2 of 5 in",
+    "members": [
+      {
+        "label": "Karthik",
+        "status": "In"
+      },
+      {
+        "label": "Rahul",
+        "status": "In"
+      },
+      {
+        "label": "Priya",
+        "status": "Unknown"
+      },
+      {
+        "label": "Meera",
+        "status": "Not in"
+      }
+    ]
+  },
+  "recent": [
+    {
+      "company": "Aurora Systems",
+      "status": "In",
+      "tone": "Good",
+      "when": "Today, 17:30",
+      "link": "nankiv://drive/5"
+    },
+    {
+      "company": "Bluefin Analytics",
+      "status": "Not in",
+      "tone": "Default",
+      "when": "Yesterday",
+      "link": "nankiv://drive/4"
+    },
+    {
+      "company": "Driftwood Energy",
+      "status": "In",
+      "tone": "Good",
+      "when": "Monday",
+      "link": "nankiv://drive/2"
+    },
+    {
+      "company": "Elmstead Foods",
+      "status": "Not in",
+      "tone": "Default",
+      "when": "Sunday",
+      "link": "nankiv://drive/1"
+    }
+  ],
+  "season": {
+    "summary": "5 shortlists",
+    "tally": "3 in · 2 not in"
+  }
+}

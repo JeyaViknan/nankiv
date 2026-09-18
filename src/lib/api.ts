@@ -294,6 +294,7 @@ export const api = {
   wipeAllData: () => invoke<void>("wipe_all_data"),
   shareSummary: (driveId: number) =>
     invoke<string>("share_summary", { driveId }),
+  takePendingRoute: () => invoke<Route | null>("take_pending_route"),
   exportShortlist: (driveId: number, path: string, format: ExportFormat) =>
     invoke<ExportSummary>("export_shortlist", { driveId, path, format }),
 };
@@ -306,3 +307,10 @@ export interface ExportSummary {
   rows: number;
   named: number;
 }
+
+/**
+ * A `nankiv://` destination. Navigation only: no route performs an action,
+ * because any app or web page can open a URL scheme.
+ */
+export type Route =
+  { kind: "drive"; id: number } | { kind: "latest" } | { kind: "shortlists" };

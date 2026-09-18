@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Merged by Tauri into the application's Info.plist.
+
+  Registers the nankiv:// scheme that the desktop widget links through, so a
+  click opens the specific shortlist it shows. Any app or web page can open a
+  URL scheme, so every route it accepts is read-only navigation; see
+  `parse_route` in src/widget.rs.
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>app.nankiv.desktop</string>
+      <key>CFBundleTypeRole</key>
+      <string>Viewer</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>nankiv</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>

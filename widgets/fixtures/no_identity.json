@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-17T15:00:00Z",
+  "identity_configured": false,
+  "activity": {
+    "state": "idle"
+  },
+  "season": {
+    "drives": 2,
+    "shortlisted": 0,
+    "not_shortlisted": 0,
+    "undetermined": 2
+  },
+  "drives": [
+    {
+      "id": 2,
+      "company": "Aurora Systems",
+      "imported_at": "2026-09-17T12:00:00Z",
+      "total_students": 96,
+      "key": "reg_no",
+      "verdict": {
+        "status": "undetermined",
+        "reason": "no_identity_configured"
+      },
+      "circle": {
+        "total": 0,
+        "shortlisted": 0,
+        "not_shortlisted": 0,
+        "undetermined": 0,
+        "members": []
+      },
+      "analysis": {
+        "status": "ready",
+        "matched": 96,
+        "coverage": 1.0,
+        "cutoff": {
+          "kind": "hard_cutoff",
+          "threshold": 8.5,
+          "observed_floor": 8.51
+        },
+        "median": 8.95,
+        "histogram": [
+          {
+            "lower": 8.5,
+            "upper": 8.75,
+            "count": 25
+          },
+          {
+            "lower": 8.75,
+            "upper": 9.0,
+            "count": 28
+          },
+          {
+            "lower": 9.0,
+            "upper": 9.25,
+            "count": 19
+          },
+          {
+            "lower": 9.25,
+            "upper": 9.5,
+            "count": 16
+          },
+          {
+            "lower": 9.5,
+            "upper": 9.75,
+            "count": 3
+          },
+          {
+            "lower": 9.75,
+            "upper": 10.0,
+            "count": 5
+          }
+        ],
+        "over_represented": [
+          "CSE"
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "company": "Cedar Labs",
+      "imported_at": "2026-09-16T12:00:00Z",
+      "total_students": 110,
+      "key": "reg_no",
+      "verdict": {
+        "status": "undetermined",
+        "reason": "no_identity_configured"
+      },
+      "circle": {
+        "total": 0,
+        "shortlisted": 0,
+        "not_shortlisted": 0,
+        "undetermined": 0,
+        "members": []
+      },
+      "analysis": {
+        "status": "ready",
+        "matched": 110,
+        "coverage": 1.0,
+        "cutoff": {
+          "kind": "no_cgpa_filter",
+          "threshold": null,
+          "observed_floor": null
+        },
+        "median": 8.82,
+        "histogram": [
+          {
+            "lower": 6.75,
+            "upper": 7.0,
+            "count": 1
+          },
+          {
+            "lower": 7.0,
+            "upper": 7.25,
+            "count": 0
+          },
+          {
+            "lower": 7.25,
+            "upper": 7.5,
+            "count": 0
+          },
+          {
+            "lower": 7.5,
+            "upper": 7.75,
+            "count": 1
+          },
+          {
+            "lower": 7.75,
+            "upper": 8.0,
+            "count": 1
+          },
+          {
+            "lower": 8.0,
+            "upper": 8.25,
+            "count": 13
+          },
+          {
+            "lower": 8.25,
+            "upper": 8.5,
+            "count": 11
+          },
+          {
+            "lower": 8.5,
+            "upper": 8.75,
+            "count": 22
+          },
+          {
+            "lower": 8.75,
+            "upper": 9.0,
+            "count": 21
+          },
+          {
+            "lower": 9.0,
+            "upper": 9.25,
+            "count": 16
+          },
+          {
+            "lower": 9.25,
+            "upper": 9.5,
+            "count": 17
+          },
+          {
+            "lower": 9.5,
+            "upper": 9.75,
+            "count": 4
+          },
+          {
+            "lower": 9.75,
+            "upper": 10.0,
+            "count": 3
+          }
+        ],
+        "over_represented": []
+      }
+    }
+  ]
+}

@@ -10,7 +10,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "./store";
 import { api } from "./api";
-import type { DriveSnapshot, ImportOutcome } from "./api";
+import type { DriveRecord, DriveSnapshot, ImportOutcome } from "./api";
 
 vi.mock("./api", async () => {
   const actual = await vi.importActual<typeof import("./api")>("./api");
@@ -26,6 +26,7 @@ vi.mock("./api", async () => {
       deleteDrive: vi.fn(),
       restoreDrive: vi.fn(),
       renameDrive: vi.fn(),
+      takePendingRoute: vi.fn(),
     },
   };
 });
@@ -74,6 +75,7 @@ beforeEach(() => {
     error: null,
   });
   vi.mocked(api.listDrives).mockResolvedValue([]);
+  vi.mocked(api.takePendingRoute).mockResolvedValue(null);
   vi.mocked(api.identityStats).mockResolvedValue({
     students_known: 0,
     names_known: 0,
@@ -264,5 +266,71 @@ describe("dropping a reference sheet", () => {
 
     // Without this the student adds the data and still sees "not set up".
     expect(vi.mocked(api.getDriveDetail)).toHaveBeenCalledWith(5);
+  });
+});
+
+describe("following a widget link", () => {
+  function record(id: number, company: string): DriveRecord {
+    return {
+      id,
+      company,
+      drive_date: null,
+      imported_at: "2026-09-01 10:00:00",
+      source_filename: `${company}.xlsx`,
+      content_hash: `H${id}`,
+      shape: "neo_id_only",
+      primary_key: "neo_id",
+      total_students: 166,
+      round_label: null,
+      parent_drive_id: null,
+    };
+  }
+
+  it("opens the shortlist the widget was showing", async () => {
+    vi.mocked(api.listDrives).mockResolvedValue([record(7, "Amazon")]);
+    vi.mocked(api.getDriveDetail).mockResolvedValue(outcome(7, "Amazon"));
+    await useStore.getState().followRoute({ kind: "drive", id: 7 });
+    expect(api.getDriveDetail).toHaveBeenCalledWith(7);
+    expect(useStore.getState().view).toBe("drive");
+    expect(useStore.getState().current?.drive_id).toBe(7);
+  });
+
+  it("explains, rather than fails, when that shortlist was deleted", async () => {
+    vi.mocked(api.listDrives).mockResolvedValue([record(8, "Siemens")]);
+    await useStore.getState().followRoute({ kind: "drive", id: 7 });
+    expect(api.getDriveDetail).not.toHaveBeenCalled();
+    expect(useStore.getState().view).toBe("shortlists");
+    expect(useStore.getState().toast?.message).toMatch(/no longer in nankiv/);
+    expect(useStore.getState().error).toBeNull();
+  });
+
+  it("checks against the drives that exist now, not the cached list", async () => {
+    useStore.setState({ drives: [record(7, "Amazon")] });
+    vi.mocked(api.listDrives).mockResolvedValue([]);
+    await useStore.getState().followRoute({ kind: "drive", id: 7 });
+    expect(api.getDriveDetail).not.toHaveBeenCalled();
+  });
+
+  it("opens the newest shortlist for the latest link", async () => {
+    vi.mocked(api.listDrives).mockResolvedValue([
+      record(9, "Tredence"),
+      record(4, "Elgi"),
+    ]);
+    vi.mocked(api.getDriveDetail).mockResolvedValue(outcome(9, "Tredence"));
+    await useStore.getState().followRoute({ kind: "latest" });
+    expect(api.getDriveDetail).toHaveBeenCalledWith(9);
+  });
+
+  it("clears the held link so it is never followed twice", async () => {
+    await useStore.getState().followRoute({ kind: "shortlists" });
+    expect(api.takePendingRoute).toHaveBeenCalled();
+  });
+
+  it("does not skip setup", async () => {
+    useStore.setState({ view: "onboarding" });
+    vi.mocked(api.listDrives).mockResolvedValue([record(7, "Amazon")]);
+    await useStore.getState().followRoute({ kind: "drive", id: 7 });
+    expect(useStore.getState().view).toBe("onboarding");
+    expect(api.getDriveDetail).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,72 @@
+{
+  "state": "ready",
+  "link": "nankiv://drive/5",
+  "company": "Aurora Systems",
+  "title": "Can't tell",
+  "detail": "This list uses registration numbers. Add yours in nankiv.",
+  "tone": "Warning",
+  "when": "Today, 17:30",
+  "pinned": false,
+  "notice": null,
+  "analysis": {
+    "headline": "CGPA cutoff around 8.5",
+    "basis": "Estimate from all 96 students",
+    "spread": "8.5 – 10.0 · median 8.95"
+  },
+  "insight": "analysis",
+  "circle": {
+    "summary": "2 of 5 in",
+    "members": [
+      {
+        "label": "Meera",
+        "status": "In"
+      },
+      {
+        "label": "Rahul",
+        "status": "In"
+      },
+      {
+        "label": "Priya",
+        "status": "Unknown"
+      },
+      {
+        "label": "Karthik",
+        "status": "Not in"
+      }
+    ]
+  },
+  "recent": [
+    {
+      "company": "Bluefin Analytics",
+      "status": "Unknown",
+      "tone": "Warning",
+      "when": "Yesterday",
+      "link": "nankiv://drive/4"
+    },
+    {
+      "company": "Cedar Labs",
+      "status": "Unknown",
+      "tone": "Warning",
+      "when": "Tuesday",
+      "link": "nankiv://drive/3"
+    },
+    {
+      "company": "Driftwood Energy",
+      "status": "In",
+      "tone": "Good",
+      "when": "Monday",
+      "link": "nankiv://drive/2"
+    },
+    {
+      "company": "Elmstead Foods",
+      "status": "Unknown",
+      "tone": "Warning",
+      "when": "Sunday",
+      "link": "nankiv://drive/1"
+    }
+  ],
+  "season": {
+    "summary": "5 shortlists",
+    "tally": "1 in · 0 not in · 4 unknown"
+  }
+}

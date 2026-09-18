@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-17T15:00:00Z",
+  "identity_configured": true,
+  "activity": {
+    "state": "idle"
+  },
+  "season": {
+    "drives": 5,
+    "shortlisted": 3,
+    "not_shortlisted": 2,
+    "undetermined": 0
+  },
+  "drives": [
+    {
+      "id": 5,
+      "company": "Aurora Systems",
+      "imported_at": "2026-09-17T12:00:00Z",
+      "total_students": 96,
+      "key": "reg_no",
+      "verdict": {
+        "status": "shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 0,
+        "shortlisted": 0,
+        "not_shortlisted": 0,
+        "undetermined": 0,
+        "members": []
+      },
+      "analysis": {
+        "status": "not_set_up",
+        "matched": 0,
+        "coverage": 0.0,
+        "cutoff": null,
+        "median": null,
+        "histogram": [],
+        "over_represented": []
+      }
+    },
+    {
+      "id": 4,
+      "company": "Bluefin Analytics",
+      "imported_at": "2026-09-16T12:00:00Z",
+      "total_students": 140,
+      "key": "reg_no",
+      "verdict": {
+        "status": "not_shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 0,
+        "shortlisted": 0,
+        "not_shortlisted": 0,
+        "undetermined": 0,
+        "members": []
+      },
+      "analysis": {
+        "status": "not_set_up",
+        "matched": 0,
+        "coverage": 0.0,
+        "cutoff": null,
+        "median": null,
+        "histogram": [],
+        "over_represented": []
+      }
+    },
+    {
+      "id": 3,
+      "company": "Cedar Labs",
+      "imported_at": "2026-09-15T12:00:00Z",
+      "total_students": 110,
+      "key": "reg_no",
+      "verdict": {
+        "status": "shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 0,
+        "shortlisted": 0,
+        "not_shortlisted": 0,
+        "undetermined": 0,
+        "members": []
+      },
+      "analysis": {
+        "status": "not_set_up",
+        "matched": 0,
+        "coverage": 0.0,
+        "cutoff": null,
+        "median": null,
+        "histogram": [],
+        "over_represented": []
+      }
+    },
+    {
+      "id": 2,
+      "company": "Driftwood Energy",
+      "imported_at": "2026-09-14T12:00:00Z",
+      "total_students": 60,
+      "key": "neo_id",
+      "verdict": {
+        "status": "shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 0,
+        "shortlisted": 0,
+        "not_shortlisted": 0,
+        "undetermined": 0,
+        "members": []
+      },
+      "analysis": {
+        "status": "not_set_up",
+        "matched": 0,
+        "coverage": 0.0,
+        "cutoff": null,
+        "median": null,
+        "histogram": [],
+        "over_represented": []
+      }
+    },
+    {
+      "id": 1,
+      "company": "Elmstead Foods",
+      "imported_at": "2026-09-13T12:00:00Z",
+      "total_students": 120,
+      "key": "reg_no",
+      "verdict": {
+        "status": "not_shortlisted",
+        "reason": null
+      },
+      "circle": {
+        "total": 0,
+        "shortlisted": 0,
+        "not_shortlisted": 0,
+        "undetermined": 0,
+        "members": []
+      },
+      "analysis": {
+        "status": "not_set_up",
+        "matched": 0,
+        "coverage": 0.0,
+        "cutoff": null,
+        "median": null,
+        "histogram": [],
+        "over_represented": []
+      }
+    }
+  ]
+}
