@@ -51,30 +51,51 @@ export function isRoute(value: unknown): value is Route {
 }
 
 /**
- * Follows links that arrive while the app is running. Subscribed once for the
- * life of the component, for the same reason the shortcuts are: re-subscribing
- * on every render leaves two listeners live for a moment.
+ * Takes shortlists the desktop opened with nankiv — dropped on the app icon, or
+ * chosen with Open With — while the app is running.
  */
+export function useOpenedFiles(open: (paths: string[]) => void): void {
+  useTauriEvent<unknown>("open-files", (payload) => {
+    const paths = asPaths(payload);
+    if (paths.length > 0) open(paths);
+  });
+}
+
+export function asPaths(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((p) => typeof p === "string") : [];
+}
+
+/** Follows links that arrive while the app is running. */
 export function useDeepLinks(follow: (route: Route) => void): void {
-  const followRef = useRef(follow);
-  followRef.current = follow;
+  useTauriEvent<unknown>("deep-link", (payload) => {
+    if (isRoute(payload)) follow(payload);
+  });
+}
+
+/**
+ * Subscribed once for the life of the component, for the same reason the
+ * shortcuts are: re-subscribing on every render leaves two listeners live for a
+ * moment, and the same shortlist would be opened twice.
+ */
+function useTauriEvent<T>(name: string, handle: (payload: T) => void): void {
+  const handler = useRef(handle);
+  handler.current = handle;
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     let disposed = false;
-    listen<unknown>("deep-link", (event) => {
-      if (isRoute(event.payload)) followRef.current(event.payload);
-    })
+    listen<T>(name, (event) => handler.current(event.payload))
       .then((un) => {
         if (disposed) un();
         else unlisten = un;
       })
       .catch(() => {
-        // Outside the desktop shell there are no links to follow.
+        // Outside the desktop shell nothing sends these. The Open command
+        // still works, so this is not worth surfacing.
       });
     return () => {
       disposed = true;
       unlisten?.();
     };
-  }, []);
+  }, [name]);
 }

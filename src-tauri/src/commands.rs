@@ -23,6 +23,9 @@ pub struct AppState {
     /// A `nankiv://` link that arrived before the interface was listening,
     /// typically the one that launched the app from a widget.
     pub pending_route: Mutex<Option<crate::widget::Route>>,
+    /// Shortlists the desktop handed us — dropped on the app icon, or opened
+    /// with nankiv — before the interface was listening.
+    pub pending_files: Mutex<Vec<String>>,
 }
 
 impl AppState {
@@ -948,6 +951,16 @@ pub fn share_summary(state: tauri::State<AppState>, drive_id: i64) -> R<String> 
 #[tauri::command]
 pub fn take_pending_route(state: tauri::State<AppState>) -> Option<crate::widget::Route> {
     state.pending_route.lock().ok().and_then(|mut r| r.take())
+}
+
+/// Collects shortlists the desktop handed us, once.
+#[tauri::command]
+pub fn take_pending_files(state: tauri::State<AppState>) -> Vec<String> {
+    state
+        .pending_files
+        .lock()
+        .map(|mut f| std::mem::take(&mut *f))
+        .unwrap_or_default()
 }
 
 /// Writes the names on a shortlist to a file the student chose.

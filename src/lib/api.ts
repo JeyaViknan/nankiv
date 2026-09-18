@@ -295,6 +295,7 @@ export const api = {
   shareSummary: (driveId: number) =>
     invoke<string>("share_summary", { driveId }),
   takePendingRoute: () => invoke<Route | null>("take_pending_route"),
+  takePendingFiles: () => invoke<string[]>("take_pending_files"),
   exportShortlist: (driveId: number, path: string, format: ExportFormat) =>
     invoke<ExportSummary>("export_shortlist", { driveId, path, format }),
 };

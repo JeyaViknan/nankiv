@@ -74,16 +74,21 @@ pub fn run() {
                 }
             });
 
-            // A link passed on the command line is how Windows and Linux hand a
-            // URL to an app they are launching.
-            let launch_route = std::env::args()
-                .skip(1)
-                .find_map(|a| widget::parse_route(&a));
+            // A link or a file passed on the command line is how Windows and
+            // Linux hand either to an app they are launching.
+            let arguments: Vec<String> = std::env::args().skip(1).collect();
+            let launch_route = arguments.iter().find_map(|a| widget::parse_route(a));
+            let launch_files: Vec<String> = arguments
+                .iter()
+                .filter_map(|a| desktop::spreadsheet(a))
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect();
 
             app.manage(AppState {
                 store: Mutex::new(store),
                 widget: Some(publisher),
                 pending_route: Mutex::new(launch_route),
+                pending_files: Mutex::new(launch_files),
             });
 
             // Publish once at launch, so the widget reflects anything that
@@ -126,6 +131,7 @@ pub fn run() {
             commands::share_summary,
             commands::export_shortlist,
             commands::take_pending_route,
+            commands::take_pending_files,
         ])
         .build(tauri::generate_context!())
         .expect("error while building nankiv")
@@ -141,6 +147,14 @@ pub fn run() {
                 {
                     open_route(app, route);
                 }
+                let files: Vec<String> = urls
+                    .iter()
+                    .filter_map(|u| desktop::spreadsheet(u.as_str()))
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .collect();
+                if !files.is_empty() {
+                    open_files(app, files);
+                }
             }
             let _ = (app, event);
         });
@@ -153,6 +167,26 @@ pub fn run() {
 /// app, nothing is listening yet, and the interface collects the stored copy
 /// once it has loaded. Opening the same drive twice is harmless, so the overlap
 /// needs no coordination.
+/// Hands the interface shortlists the desktop opened with nankiv.
+///
+/// The same two paths as a link: acted on immediately if the interface is
+/// running, held for it to collect if the drop is what launched the app.
+#[cfg_attr(not(any(target_os = "macos", target_os = "ios")), allow(dead_code))]
+fn open_files(app: &tauri::AppHandle, files: Vec<String>) {
+    use tauri::Emitter;
+    if let Some(state) = app.try_state::<AppState>() {
+        if let Ok(mut pending) = state.pending_files.lock() {
+            pending.clone_from(&files);
+        }
+    }
+    let _ = app.emit("open-files", &files);
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
 #[cfg_attr(not(any(target_os = "macos", target_os = "ios")), allow(dead_code))]
 fn open_route(app: &tauri::AppHandle, route: widget::Route) {
     use tauri::Emitter;

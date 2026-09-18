@@ -97,7 +97,8 @@ See [docs/RELEASING.md](docs/RELEASING.md) for how to enable signing.
 2. **Add reference data** (optional) — drop in the roster or CGPA sheets you
    already received. nankiv ships with no student data in it.
 3. **Add your circle** (optional) — a name and a Neo ID each, once.
-4. **Drop shortlists.** That's the whole daily loop.
+4. **Drop shortlists.** Onto the window, or onto the nankiv icon in the Dock —
+   either imports straight away. That's the whole daily loop.
 5. **Add the widget** (optional, macOS) — right-click the desktop, choose *Edit
    Widgets*, search for nankiv, and pick a size. It updates itself whenever the
    app does anything, and never reads your database — see

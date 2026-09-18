@@ -1,4 +1,5 @@
-//! Native desktop behaviour: the menu bar and window geometry.
+//! Native desktop behaviour: the menu bar, window geometry, and files the
+//! desktop hands the app.
 //!
 //! Both exist because a keyboard shortcut that lives only in a JavaScript
 //! `keydown` handler is invisible to the operating system. It works, but the
@@ -12,6 +13,7 @@ use tauri::menu::{
 use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewWindow, WindowEvent};
 
 use crate::store::Store;
+use std::path::PathBuf;
 
 const GEOMETRY_KEY: &str = "window_geometry";
 
@@ -321,9 +323,92 @@ fn save_now<R: Runtime>(w: &WebviewWindow<R>) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Files opened from outside the app
+// ---------------------------------------------------------------------------
+
+/// The formats nankiv reads, as the parser understands them.
+const SPREADSHEETS: [&str; 5] = ["xlsx", "xls", "xlsm", "csv", "ods"];
+
+/// A spreadsheet the desktop is handing us, or nothing.
+///
+/// macOS sends a `file://` URL when a shortlist is dropped on the Dock icon or
+/// opened with nankiv; Windows and Linux pass a plain path on the command line.
+/// Both arrive here. Anything that is not a spreadsheet is ignored rather than
+/// guessed at: another application's file dropped on the icon by accident must
+/// not start an import.
+pub fn spreadsheet(argument: &str) -> Option<PathBuf> {
+    let path = if let Some(rest) = argument.strip_prefix("file://") {
+        // Percent-encoded, and the host section is empty for local files.
+        let rest = rest.strip_prefix("localhost").unwrap_or(rest);
+        PathBuf::from(percent_decode(rest))
+    } else if argument.contains("://") {
+        // Some other scheme — `nankiv://` links are handled elsewhere.
+        return None;
+    } else {
+        PathBuf::from(argument)
+    };
+
+    let extension = path.extension()?.to_str()?.to_ascii_lowercase();
+    SPREADSHEETS.contains(&extension.as_str()).then_some(path)
+}
+
+fn percent_decode(raw: &str) -> String {
+    let bytes = raw.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let Ok(byte) = u8::from_str_radix(&raw[i + 1..i + 3], 16) {
+                out.push(byte);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_file_url_becomes_a_path() {
+        assert_eq!(
+            spreadsheet("file:///Users/a/Downloads/Siemens%20shortlist.xlsx"),
+            Some(PathBuf::from("/Users/a/Downloads/Siemens shortlist.xlsx"))
+        );
+        assert_eq!(
+            spreadsheet("file://localhost/tmp/list.csv"),
+            Some(PathBuf::from("/tmp/list.csv"))
+        );
+    }
+
+    #[test]
+    fn a_plain_path_is_taken_as_it_is() {
+        assert_eq!(
+            spreadsheet(r"C:\Users\a\Elgi test.XLSX"),
+            Some(PathBuf::from(r"C:\Users\a\Elgi test.XLSX")),
+            "Windows passes paths, and extensions are not case sensitive"
+        );
+    }
+
+    #[test]
+    fn anything_that_is_not_a_spreadsheet_is_ignored() {
+        for argument in [
+            "nankiv://drive/42",
+            "file:///Users/a/report.pdf",
+            "https://example.com/list.xlsx",
+            "/Users/a/Documents",
+            "",
+            "--flag",
+        ] {
+            assert_eq!(spreadsheet(argument), None, "{argument} should be ignored");
+        }
+    }
 
     #[test]
     fn geometry_round_trips_through_the_store() {

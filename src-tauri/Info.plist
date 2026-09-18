@@ -7,6 +7,11 @@
   click opens the specific shortlist it shows. Any app or web page can open a
   URL scheme, so every route it accepts is read-only navigation; see
   `parse_route` in src/widget.rs.
+
+  Also declares the spreadsheets nankiv can open, which is what makes the app
+  icon a drop target: drag a shortlist onto nankiv in the Dock or Finder and it
+  imports straight away. The rank is Alternate — nankiv is somewhere you can
+  send a spreadsheet, not the app that should own every one on the machine.
 -->
 <plist version="1.0">
 <dict>
@@ -20,6 +25,26 @@
       <key>CFBundleURLSchemes</key>
       <array>
         <string>nankiv</string>
+      </array>
+    </dict>
+  </array>
+
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key>
+      <string>Shortlist spreadsheet</string>
+      <key>CFBundleTypeRole</key>
+      <string>Viewer</string>
+      <key>LSHandlerRank</key>
+      <string>Alternate</string>
+      <key>LSItemContentTypes</key>
+      <array>
+        <string>org.openxmlformats.spreadsheetml.sheet</string>
+        <string>org.openxmlformats.spreadsheetml.sheet.macroenabled</string>
+        <string>com.microsoft.excel.xls</string>
+        <string>org.oasis-open.opendocument.spreadsheet</string>
+        <string>public.comma-separated-values-text</string>
       </array>
     </dict>
   </array>

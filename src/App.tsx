@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "./lib/shortcuts";
-import { useDeepLinks } from "./lib/deeplinks";
+import { useDeepLinks, useOpenedFiles } from "./lib/deeplinks";
 import { useStore } from "./lib/store";
 import { applyTheme, getThemeChoice, watchSystemTheme } from "./lib/theme";
 import { DropSurface } from "./components/DropSurface";
@@ -99,6 +99,10 @@ export default function App() {
   // A click on the desktop widget opens the shortlist it was showing. Links
   // that launch the app are picked up during bootstrap instead.
   useDeepLinks((route) => void useStore.getState().followRoute(route));
+
+  // Dropping a shortlist on the app icon imports it, from anywhere in the
+  // system — the Dock, Finder, Open With.
+  useOpenedFiles((paths) => void useStore.getState().openFiles(paths));
 
   // One implementation per shortcut, reachable from the menu bar and the
   // keyboard alike. The hook guarantees each runs once per press, however many

@@ -78,6 +78,7 @@ interface State {
   deleteDrive: (id: number, label: string) => Promise<void>;
   exportNames: (format: ExportFormat) => Promise<void>;
   followRoute: (route: Route) => Promise<void>;
+  openFiles: (paths: string[]) => Promise<void>;
   dismissImport: () => void;
   clearError: () => void;
   showToast: (message: string, undo?: () => void) => void;
@@ -119,14 +120,31 @@ export const useStore = create<State>((set, get) => ({
       return;
     }
 
-    // A click on the desktop widget that launched the app is waiting here. It
-    // is collected only now, once the drives are loaded, so a link to a drive
-    // can be checked against what actually exists.
+    // A click on the desktop widget that launched the app is waiting here, as
+    // is a shortlist dropped on the app icon. Both are collected only now, once
+    // the drives are loaded, so a link to a drive can be checked against what
+    // actually exists.
     try {
       const route = await api.takePendingRoute();
       if (route) await get().followRoute(route);
+      const files = await api.takePendingFiles();
+      if (files.length > 0) await get().openFiles(files);
     } catch {
-      /* no pending link, or none can be read — start normally */
+      /* nothing was waiting, or it cannot be read — start normally */
+    }
+  },
+
+  /**
+   * Imports shortlists the desktop handed us, one after another.
+   *
+   * Sequential on purpose: each import replaces what is on screen, and two at
+   * once would race for it.
+   */
+  openFiles: async (paths) => {
+    void api.takePendingFiles().catch(() => {});
+    if (get().view === "onboarding") return;
+    for (const path of paths) {
+      await get().importFile(path);
     }
   },
 

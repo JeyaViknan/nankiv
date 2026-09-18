@@ -27,6 +27,7 @@ vi.mock("./api", async () => {
       restoreDrive: vi.fn(),
       renameDrive: vi.fn(),
       takePendingRoute: vi.fn(),
+      takePendingFiles: vi.fn(),
     },
   };
 });
@@ -76,6 +77,7 @@ beforeEach(() => {
   });
   vi.mocked(api.listDrives).mockResolvedValue([]);
   vi.mocked(api.takePendingRoute).mockResolvedValue(null);
+  vi.mocked(api.takePendingFiles).mockResolvedValue([]);
   vi.mocked(api.identityStats).mockResolvedValue({
     students_known: 0,
     names_known: 0,
@@ -332,5 +334,33 @@ describe("following a widget link", () => {
     await useStore.getState().followRoute({ kind: "drive", id: 7 });
     expect(useStore.getState().view).toBe("onboarding");
     expect(api.getDriveDetail).not.toHaveBeenCalled();
+  });
+});
+
+describe("shortlists dropped on the app icon", () => {
+  it("imports each one in turn", async () => {
+    vi.mocked(api.importShortlist)
+      .mockResolvedValueOnce(outcome(1, "Elgi"))
+      .mockResolvedValueOnce(outcome(2, "Siemens"));
+
+    await useStore.getState().openFiles(["/a/Elgi.xlsx", "/a/Siemens.xlsx"]);
+
+    expect(vi.mocked(api.importShortlist).mock.calls.map((c) => c[0])).toEqual([
+      "/a/Elgi.xlsx",
+      "/a/Siemens.xlsx",
+    ]);
+    expect(useStore.getState().current?.company).toBe("Siemens");
+  });
+
+  it("does not import before setup is finished", async () => {
+    useStore.setState({ view: "onboarding" });
+    await useStore.getState().openFiles(["/a/Elgi.xlsx"]);
+    expect(api.importShortlist).not.toHaveBeenCalled();
+  });
+
+  it("clears the held files so they are not imported twice", async () => {
+    vi.mocked(api.importShortlist).mockResolvedValue(outcome(1, "Elgi"));
+    await useStore.getState().openFiles(["/a/Elgi.xlsx"]);
+    expect(api.takePendingFiles).toHaveBeenCalled();
   });
 });

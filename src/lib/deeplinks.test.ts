@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { isRoute, resolveRoute } from "./deeplinks";
+import { asPaths, isRoute, resolveRoute } from "./deeplinks";
 import type { DriveRecord } from "./api";
 
 const drive = (id: number) => ({ id }) as DriveRecord;
@@ -62,5 +62,20 @@ describe("isRoute", () => {
     ]) {
       expect(isRoute(value)).toBe(false);
     }
+  });
+});
+
+describe("asPaths", () => {
+  it("takes the paths out of what the core sent", () => {
+    expect(asPaths(["/a/list.xlsx", "/b/other.csv"])).toEqual([
+      "/a/list.xlsx",
+      "/b/other.csv",
+    ]);
+  });
+
+  it("ignores anything that is not a list of paths", () => {
+    expect(asPaths(undefined)).toEqual([]);
+    expect(asPaths("/a/list.xlsx")).toEqual([]);
+    expect(asPaths([1, null, "/a/list.xlsx"])).toEqual(["/a/list.xlsx"]);
   });
 });
