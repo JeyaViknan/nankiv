@@ -213,7 +213,7 @@ export default function App() {
       </main>
 
       <DropSurface
-        onFile={(p) => void importFile(p)}
+        onFile={(file) => void useStore.getState().importDropped(file)}
         disabled={importStage.phase === "reading"}
       />
 

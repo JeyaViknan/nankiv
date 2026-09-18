@@ -19,7 +19,7 @@
         "minHeight": 620,
         "resizable": true,
         "fullscreen": false,
-        "dragDropEnabled": true,
+        "dragDropEnabled": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "maxWidth": 1280,

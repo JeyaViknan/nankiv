@@ -2,7 +2,7 @@
  * The drag interaction.
  *
  * The whole window is the target, because the whole window already *was* the
- * target — the previous build listened at the webview level while only a small
+ * target — an earlier build listened at the window level while only a small
  * dashed rectangle reacted, so the app quietly accepted more than it admitted
  * to. An affordance that lies is worse than no affordance.
  *
@@ -16,10 +16,16 @@
  * Rejecting an unsupported file mid-drag matters more than it sounds: the
  * alternative is letting someone complete the gesture and then telling them it
  * was wrong, which is the interaction equivalent of a shrug.
+ *
+ * These are the web view's own drag events rather than the ones the window
+ * layer reports. Tauri's native handler is switched off in tauri.conf.json:
+ * on macOS it reads dropped paths through a pasteboard type that has been
+ * deprecated for years, and on recent systems the app is handed a drop with
+ * nothing in it. The web view's own events are the platform's supported path,
+ * and they carry the file itself rather than a path to it.
  */
 
 import { useEffect, useState } from "react";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { Icon } from "./Icon";
 
 const SPREADSHEET = ["xlsx", "xls", "xlsm", "ods", "csv"];
@@ -31,6 +37,20 @@ export function isSpreadsheet(path: string): boolean {
 
 export function basename(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
+}
+
+/** The first spreadsheet in a drag, or the first file to explain the refusal. */
+export function chooseFile(files: File[]): { file: File; ok: boolean } | null {
+  const good = files.find((f) => isSpreadsheet(f.name));
+  if (good) return { file: good, ok: true };
+  const first = files[0];
+  return first ? { file: first, ok: false } : null;
+}
+
+/** Whether a drag carries files at all, rather than selected text or a link. */
+export function carriesFiles(transfer: DataTransfer | null): boolean {
+  if (!transfer) return false;
+  return Array.from(transfer.types ?? []).includes("Files");
 }
 
 type DragState =
@@ -47,53 +67,67 @@ export function DropSurface({
   onFile,
   disabled,
 }: {
-  onFile: (path: string) => void;
+  onFile: (file: File) => void;
   disabled?: boolean;
 }) {
   const [drag, setDrag] = useState<DragState>({ phase: "idle" });
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    let cancelled = false;
+    // Counted rather than toggled: dragging across a child element fires
+    // `dragleave` for the one being left, and the overlay would flicker.
+    let depth = 0;
 
-    getCurrentWebview()
-      .onDragDropEvent((event) => {
-        const p = event.payload;
+    const over = (event: DragEvent) => {
+      if (!carriesFiles(event.dataTransfer)) return;
+      // Without this the web view opens the file itself, replacing the app.
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+    };
 
-        // `enter` and `drop` carry paths; `over` carries only a position, so
-        // the verdict reached on enter is held for the rest of the drag.
-        if (p.type === "enter") {
-          const paths = p.paths ?? [];
-          const good = paths.find(isSpreadsheet);
-          if (good) {
-            setDrag({ phase: "valid", name: basename(good) });
-          } else if (paths.length > 0) {
-            setDrag({ phase: "invalid", name: basename(paths[0]!) });
-          }
-          return;
-        }
+    const enter = (event: DragEvent) => {
+      if (!carriesFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      depth += 1;
+      // Names only arrive with the drop itself; during the drag the web view
+      // reports how many files there are and nothing else.
+      const items = Array.from(event.dataTransfer?.items ?? []);
+      const names = items.filter((i) => i.kind === "file").length;
+      setDrag({ phase: "valid", name: names > 1 ? `${names} files` : "" });
+    };
 
-        if (p.type === "drop") {
-          setDrag({ phase: "idle" });
-          const good = (p.paths ?? []).find(isSpreadsheet);
-          if (good && !disabled) onFile(good);
-          return;
-        }
+    const leave = (event: DragEvent) => {
+      if (!carriesFiles(event.dataTransfer)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setDrag({ phase: "idle" });
+    };
 
-        if (p.type === "leave") setDrag({ phase: "idle" });
-      })
-      .then((fn) => {
-        if (cancelled) fn();
-        else unlisten = fn;
-      })
-      .catch(() => {
-        // Outside the Tauri shell there is no drag event source. The Open
-        // command still works, so this is not worth surfacing.
-      });
+    const drop = (event: DragEvent) => {
+      if (!carriesFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      depth = 0;
+      const chosen = chooseFile(Array.from(event.dataTransfer?.files ?? []));
+      if (!chosen) {
+        setDrag({ phase: "idle" });
+        return;
+      }
+      if (!chosen.ok) {
+        setDrag({ phase: "invalid", name: chosen.file.name });
+        window.setTimeout(() => setDrag({ phase: "idle" }), 2500);
+        return;
+      }
+      setDrag({ phase: "idle" });
+      if (!disabled) onFile(chosen.file);
+    };
 
+    window.addEventListener("dragenter", enter);
+    window.addEventListener("dragover", over);
+    window.addEventListener("dragleave", leave);
+    window.addEventListener("drop", drop);
     return () => {
-      cancelled = true;
-      unlisten?.();
+      window.removeEventListener("dragenter", enter);
+      window.removeEventListener("dragover", over);
+      window.removeEventListener("dragleave", leave);
+      window.removeEventListener("drop", drop);
     };
   }, [onFile, disabled]);
 
@@ -110,7 +144,7 @@ export function DropSurface({
         <p className="drag-title">
           {invalid ? "That file won't work" : "Drop to analyse"}
         </p>
-        <p className="drag-name">{drag.name}</p>
+        {drag.name && <p className="drag-name">{drag.name}</p>}
         {invalid && (
           <p className="drag-reason">
             nankiv reads spreadsheets — .xlsx, .xls or .csv.

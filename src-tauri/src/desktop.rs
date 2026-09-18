@@ -353,7 +353,8 @@ pub fn spreadsheet(argument: &str) -> Option<PathBuf> {
     SPREADSHEETS.contains(&extension.as_str()).then_some(path)
 }
 
-fn percent_decode(raw: &str) -> String {
+/// Also used for the filename of a dropped file, which travels as a header.
+pub fn percent_decode(raw: &str) -> String {
     let bytes = raw.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;

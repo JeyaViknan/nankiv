@@ -296,6 +296,15 @@ export const api = {
     invoke<string>("share_summary", { driveId }),
   takePendingRoute: () => invoke<Route | null>("take_pending_route"),
   takePendingFiles: () => invoke<string[]>("take_pending_files"),
+  /**
+   * Hands the core the bytes of a file dropped on the window, and gets back a
+   * path the ordinary import can read. A web view is never told where a
+   * dropped file lives on disk, so this is the only way in.
+   */
+  stageDroppedFile: (name: string, bytes: ArrayBuffer) =>
+    invoke<string>("stage_dropped_file", bytes, {
+      headers: { "x-filename": encodeURIComponent(name) },
+    }),
   exportShortlist: (driveId: number, path: string, format: ExportFormat) =>
     invoke<ExportSummary>("export_shortlist", { driveId, path, format }),
 };

@@ -15,6 +15,7 @@ use crate::store::{DriveRecord, DriveSnapshot, Friend, Profile, Store, StoreErro
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use tauri::Manager;
 
 pub struct AppState {
     pub store: Mutex<Store>,
@@ -953,6 +954,63 @@ pub fn take_pending_route(state: tauri::State<AppState>) -> Option<crate::widget
     state.pending_route.lock().ok().and_then(|mut r| r.take())
 }
 
+/// Takes the bytes of a file dropped on the window and puts them somewhere the
+/// importer can read.
+///
+/// macOS hands a dropped file to the web view as content, not as a path — the
+/// page is not allowed to know where on disk it came from. Rather than teach
+/// the parser a second way in, the bytes are written to a scratch file and the
+/// ordinary import runs on that, so a dropped shortlist and one opened from the
+/// file panel travel exactly the same road.
+#[tauri::command]
+pub fn stage_dropped_file(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> R<String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(CommandError::new(
+            "dropped_file",
+            "That file could not be read.",
+        ));
+    };
+    if bytes.len() as u64 > crate::parse::MAX_FILE_BYTES {
+        return Err(CommandError::new(
+            "dropped_file",
+            format!("That file is too large ({} bytes).", bytes.len()),
+        ));
+    }
+
+    // Percent-encoded by the interface: a header cannot carry a space, and the
+    // name matters — the company is taken from it.
+    let name = request
+        .headers()
+        .get("x-filename")
+        .and_then(|v| v.to_str().ok())
+        .map(|raw| safe_filename(&crate::desktop::percent_decode(raw)))
+        .unwrap_or_else(|| "shortlist.xlsx".to_string());
+
+    let dir = app
+        .path()
+        .app_cache_dir()
+        .map_err(|e| CommandError::new("dropped_file", e.to_string()))?
+        .join("dropped");
+    std::fs::create_dir_all(&dir).map_err(|e| CommandError::new("dropped_file", e.to_string()))?;
+    let path = dir.join(&name);
+    std::fs::write(&path, bytes).map_err(|e| CommandError::new("dropped_file", e.to_string()))?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// The name as given, with anything that could point somewhere else removed.
+/// The name matters: the importer takes the company from it.
+pub fn safe_filename(raw: &str) -> String {
+    let trimmed = raw.rsplit(['/', '\\']).next().unwrap_or(raw).trim();
+    let cleaned: String = trimmed
+        .chars()
+        .filter(|c| !matches!(c, '\0'..='\u{1f}' | ':'))
+        .collect();
+    match cleaned.trim_matches('.').trim() {
+        "" => "shortlist.xlsx".to_string(),
+        name => name.chars().take(200).collect(),
+    }
+}
+
 /// Collects shortlists the desktop handed us, once.
 #[tauri::command]
 pub fn take_pending_files(state: tauri::State<AppState>) -> Vec<String> {
@@ -990,6 +1048,58 @@ pub fn export_shortlist(
             other => CommandError::new("export_failed", format!("Couldn't create the file — {other}")),
         },
     )
+}
+
+#[cfg(test)]
+mod dropped_file_tests {
+    use super::safe_filename;
+
+    #[test]
+    fn the_name_is_kept_because_the_company_comes_from_it() {
+        assert_eq!(
+            safe_filename("Siemens SISW shortlist 2027.xlsx"),
+            "Siemens SISW shortlist 2027.xlsx"
+        );
+    }
+
+    #[test]
+    fn nothing_in_the_name_can_point_somewhere_else() {
+        assert_eq!(
+            safe_filename("../../.ssh/authorized_keys"),
+            "authorized_keys"
+        );
+        assert_eq!(safe_filename("/etc/passwd"), "passwd");
+        assert_eq!(
+            safe_filename(r"C:\Windows\system32\drivers\etc\hosts"),
+            "hosts"
+        );
+        assert_eq!(safe_filename("list\u{0}.xlsx"), "list.xlsx");
+    }
+
+    #[test]
+    fn an_unusable_name_still_gets_a_file() {
+        assert_eq!(safe_filename(""), "shortlist.xlsx");
+        assert_eq!(safe_filename("   "), "shortlist.xlsx");
+        assert_eq!(safe_filename(".."), "shortlist.xlsx");
+        assert_eq!(safe_filename("/"), "shortlist.xlsx");
+    }
+
+    #[test]
+    fn the_name_arrives_percent_encoded() {
+        let decoded = crate::desktop::percent_decode("Responsive%20shortlist.xlsx");
+        assert_eq!(safe_filename(&decoded), "Responsive shortlist.xlsx");
+        assert_eq!(
+            safe_filename(&crate::desktop::percent_decode(
+                "Siemens%20SISW%20%232.xlsx"
+            )),
+            "Siemens SISW #2.xlsx"
+        );
+    }
+
+    #[test]
+    fn a_very_long_name_is_trimmed() {
+        assert_eq!(safe_filename(&"a".repeat(500)).chars().count(), 200);
+    }
 }
 
 #[cfg(test)]

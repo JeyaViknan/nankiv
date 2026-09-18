@@ -79,6 +79,7 @@ interface State {
   exportNames: (format: ExportFormat) => Promise<void>;
   followRoute: (route: Route) => Promise<void>;
   openFiles: (paths: string[]) => Promise<void>;
+  importDropped: (file: File) => Promise<void>;
   dismissImport: () => void;
   clearError: () => void;
   showToast: (message: string, undo?: () => void) => void;
@@ -204,6 +205,29 @@ export const useStore = create<State>((set, get) => ({
     } catch (e) {
       set({ error: toApiError(e) });
       return false;
+    }
+  },
+
+  /**
+   * Imports a file dropped on the window.
+   *
+   * The bytes are staged by the core first, because a web view is never told
+   * where a dropped file lives; from there it is an ordinary import, with the
+   * same duplicate detection and the same messages.
+   */
+  importDropped: async (file) => {
+    set({
+      importStage: { phase: "reading", filename: file.name },
+      error: null,
+    });
+    try {
+      const path = await api.stageDroppedFile(
+        file.name,
+        await file.arrayBuffer(),
+      );
+      await get().importFile(path);
+    } catch (e) {
+      set({ importStage: { phase: "idle" }, error: toApiError(e) });
     }
   },
 
