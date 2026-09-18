@@ -241,7 +241,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.nankiv.desktop.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = app.nankiv.desktop.shortlist;
 				PRODUCT_NAME = NankivWidget;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -262,7 +262,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.nankiv.desktop.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = app.nankiv.desktop.shortlist;
 				PRODUCT_NAME = NankivWidget;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;

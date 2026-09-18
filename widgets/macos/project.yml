@@ -66,7 +66,10 @@ targets:
     settings:
       base:
         PRODUCT_NAME: NankivWidget
-        PRODUCT_BUNDLE_IDENTIFIER: app.nankiv.desktop.widget
+        # Not ".widget": that identifier was used by a throwaway prototype
+        # during development, and macOS keeps a widget's description keyed to
+        # its identifier for far longer than the prototype existed.
+        PRODUCT_BUNDLE_IDENTIFIER: app.nankiv.desktop.shortlist
         ENABLE_HARDENED_RUNTIME: YES
         # Keeps get-task-allow out of the signature, so debug and release
         # builds carry exactly the entitlements above.
