@@ -67,58 +67,40 @@ jobs:
 
       - run: npm ci
 
-      # Run separately from the bundling below, though tauri runs them too,
-      # because a step that fails on its own says where the failure was. The
-      # logs of a workflow run are not public; the list of steps is.
-      - name: Build the interface
-        run: npm run build
-
-      - name: Build the widget
-        if: startsWith(matrix.os, 'macos')
-        run: widgets/macos/build.sh
-
-      # Builds once here, before the action does, only so a failure can be
-      # reported as an annotation: a run's logs need a GitHub sign-in, and
-      # annotations do not. The action's own build then finds everything warm.
+      # Built here rather than by tauri-action, which builds a second time with
+      # APPLE_SIGNING_IDENTITY set to an empty string when no signing secrets
+      # exist. An empty identity overrides the ad-hoc "-" in tauri.conf.json,
+      # and signing then fails — which is what sank the first four attempts at
+      # this release, while the identical build in a plain step succeeded.
+      #
+      # Signing, when there is a certificate to sign with, is configured in
+      # tauri.conf.json and documented in docs/RELEASING.md.
       - name: Build installers
         shell: bash
+        run: .github/report npm run tauri build -- ${{ matrix.args }}
+
+      - name: Collect installers
+        shell: bash
         run: |
-          set -o pipefail
-          if ! npm run tauri build -- ${{ matrix.args }} 2>&1 | tee build.log; then
-            echo "::error title=tauri build failed::$(tail -n 40 build.log | tr '\n' '~' | cut -c1-3000)"
-            exit 1
-          fi
+          set -euo pipefail
+          mkdir -p installers
+          find src-tauri/target -path '*release/bundle/*' \
+            \( -name '*.dmg' -o -name '*-setup.exe' -o -name '*.msi' \) \
+            -exec cp {} installers/ \;
+          ls -lh installers
+          # A job that quietly attaches nothing is worse than one that fails.
+          test -n "$(ls -A installers)"
 
-      - name: Build and attach installers
-        uses: tauri-apps/tauri-action@v0
+      - name: Attach them to the release
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Update-manifest signing. Separate from OS code signing and free.
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # Without these the downloads still work, with a Gatekeeper warning on
-          # first launch. See docs/RELEASING.md.
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        with:
-          tagName: ${{ github.event.inputs.tag || github.ref_name }}
-          releaseName: nankiv ${{ github.event.inputs.tag || github.ref_name }}
-          releaseBody: |
-            Offline placement shortlist analysis. Download the file for your machine:
-
-            | Machine | File |
-            | --- | --- |
-            | Mac, Apple Silicon (M1 and later) | `*_aarch64.dmg` |
-            | Mac, Intel | `*_x64.dmg` |
-            | Windows | `*-setup.exe` |
-
-            These builds are not code signed yet, so the first launch needs one
-            extra step: on macOS right-click the app and choose *Open*; on
-            Windows choose *More info* → *Run anyway*.
-          releaseDraft: true
-          prerelease: false
-          args: ${{ matrix.args }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Three jobs race to be first; whichever wins creates the draft.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --draft --title "nankiv $TAG" \
+              --notes-file .github/release-notes.md || true
+          fi
+          gh release upload "$TAG" installers/* --clobber

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs a command, and if it fails prints its last lines as a GitHub annotation.
+#
+# A workflow run's logs need a GitHub sign-in to read. Annotations do not, which
+# matters when the person fixing the build is not the person who owns the
+# repository — including a tool working on it.
+set -o pipefail
+
+log="$(mktemp)"
+if "$@" 2>&1 | tee "$log"; then
+  exit 0
+fi
+
+# Annotations are one line, so newlines become a visible separator. Captured
+# rather than piped: the text has no trailing newline, and `read` would drop it.
+summary="$(tail -n 40 "$log" | tr '\n' '~' | cut -c1-3000)"
+echo "::error title=$1 failed::$summary"
+exit 1

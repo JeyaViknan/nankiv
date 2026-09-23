@@ -45,9 +45,19 @@ public class CardDataTests
     private static SnapshotLoad Load(string name) =>
         SnapshotReader.Decode(File.ReadAllText(Fixture(name)));
 
-    public static TheoryData<string> Snapshots() => new(
+    /// <summary>Every fixture in widgets/fixtures that is a snapshot.</summary>
+    public static readonly string[] SnapshotNames =
+    [
         "ready", "importing", "failed", "not_shortlisted", "insufficient",
-        "soft_preference", "undetermined", "not_set_up", "no_identity", "empty");
+        "soft_preference", "undetermined", "not_set_up", "no_identity", "empty",
+    ];
+
+    public static TheoryData<string> Snapshots()
+    {
+        var data = new TheoryData<string>();
+        foreach (var name in SnapshotNames) data.Add(name);
+        return data;
+    }
 
     [Theory]
     [MemberData(nameof(Snapshots))]
@@ -155,7 +165,7 @@ public class CardDataTests
     [Fact]
     public void NoIdentifiersReachTheCard()
     {
-        foreach (var name in Snapshots().Select(row => (string)row[0]!))
+        foreach (var name in SnapshotNames)
         {
             var json = CardData.Serialise(CardData.Build(Glance.Make(Load(name), null, Now), Now));
             Assert.DoesNotMatch(@"[A-Z]\d[A-Z]\d[A-Z]\d[A-Z]\d", json);

@@ -45,28 +45,37 @@ jobs:
       - run: npm ci
 
       - name: Frontend typecheck
-        run: npm run typecheck
+        shell: bash
+        run: .github/report npm run typecheck
 
       - name: Frontend lint
-        run: npm run lint
+        shell: bash
+        run: .github/report npm run lint
 
       - name: Frontend format
-        run: npm run format:check
+        shell: bash
+        run: .github/report npm run format:check
 
       - name: Frontend tests
-        run: npm run test
+        shell: bash
+        run: .github/report npm run test
 
       - name: Rust format
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
 
+      # `report` prints a failing command's last lines as an annotation. A
+      # workflow run's logs need a GitHub sign-in; its annotations do not, and
+      # a failure nobody can read is a failure nobody can fix.
       - name: Rust lint
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
+        shell: bash
+        run: .github/report cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 
       - name: Rust tests
         # Covers unit, parser regression against all fifteen real-world
         # formats, the import -> verdict integration flow, and the matcher
         # property tests.
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        shell: bash
+        run: .github/report cargo test --manifest-path src-tauri/Cargo.toml
 
   # ---------------------------------------------------------------------------
   # The desktop widget. Needs Xcode, so it runs on its own.
@@ -224,15 +233,11 @@ jobs:
           # Set these repository secrets to enable in-app updates.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # macOS code signing and notarisation. Without these the build still
-          # succeeds — users will see a Gatekeeper warning on first launch.
-          # See docs/RELEASING.md.
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # The Apple signing variables are deliberately absent. Passing them
+          # while the secrets are unset hands the bundler an empty signing
+          # identity, which overrides the ad-hoc "-" in tauri.conf.json and
+          # fails the macOS build. docs/RELEASING.md covers adding them for
+          # real, with a certificate behind them.
         with:
           args: ${{ matrix.args }}
 
