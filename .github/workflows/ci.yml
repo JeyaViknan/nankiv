@@ -137,7 +137,8 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - name: Provider tests
-        run: dotnet test widgets/windows/provider/tests --nologo
+        shell: bash
+        run: .github/report dotnet test widgets/windows/provider/tests --nologo
 
   # ---------------------------------------------------------------------------
   # Privacy guard: fixtures must never contain real student data.
