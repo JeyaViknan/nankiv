@@ -136,6 +136,18 @@ public class CardDataTests
     }
 
     [Fact]
+    public void CircleMembersKeepTheirNamesAndTheirAnswers()
+    {
+        var circle = Load("ready").Snapshot!.Drives[0].Circle;
+        Assert.Equal(5, circle.Total);
+        Assert.NotEmpty(circle.Members);
+        Assert.All(circle.Members, m => Assert.False(string.IsNullOrWhiteSpace(m.Label)));
+        Assert.All(circle.Members, m => Assert.NotNull(m.Verdict));
+        Assert.Contains(circle.Members, m => m.Verdict.Status == VerdictStatus.Shortlisted);
+        Assert.Contains(circle.Members, m => m.Verdict.Status == VerdictStatus.Undetermined);
+    }
+
+    [Fact]
     public void AnUnknownVerdictIsNeverARejection()
     {
         var verdict = Verdict.From("waitlisted", null);

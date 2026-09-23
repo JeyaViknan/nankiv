@@ -162,6 +162,7 @@ public static class SnapshotReader
         };
         options.Converters.Add(new ActivityConverter());
         options.Converters.Add(new VerdictConverter());
+        options.Converters.Add(new CircleMemberConverter());
         options.Converters.Add(new AnalysisConverter());
         return options;
     }
@@ -209,6 +210,27 @@ internal sealed class VerdictConverter : JsonConverter<Verdict>
     }
 
     public override void Write(Utf8JsonWriter writer, Verdict value, JsonSerializerOptions options) =>
+        throw new NotSupportedException("the widget never writes snapshots");
+}
+
+/// <summary>
+/// A circle member carries its answer as a plain `status`, not as the nested
+/// verdict object a drive has — there is no reason for it, since a friend's
+/// result has no explanation attached. Without this the property decodes as
+/// null and the first card built from it throws.
+/// </summary>
+internal sealed class CircleMemberConverter : JsonConverter<CircleMember>
+{
+    public override CircleMember Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
+    {
+        using var document = JsonDocument.ParseValue(ref reader);
+        var root = document.RootElement;
+        return new CircleMember(
+            root.TryGetProperty("label", out var label) ? label.GetString() ?? "" : "",
+            Verdict.From(root.TryGetProperty("status", out var status) ? status.GetString() : null, null));
+    }
+
+    public override void Write(Utf8JsonWriter writer, CircleMember value, JsonSerializerOptions options) =>
         throw new NotSupportedException("the widget never writes snapshots");
 }
 
