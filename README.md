@@ -77,15 +77,29 @@ people, the other is one person, and no score separates them.
 
 ## Install
 
-Download the installer for your platform from
-[Releases](../../releases), open it, and drag nankiv to Applications.
+Every release is on the
+[Releases page](https://github.com/JeyaViknan/nankiv/releases/latest). Take the
+one file that matches your machine:
+
+| Your machine | File to download | What to do with it |
+| --- | --- | --- |
+| Mac with Apple Silicon (M1, M2, M3, M4) | `nankiv_<version>_aarch64.dmg` | Open it, drag nankiv to Applications |
+| Mac with an Intel processor | `nankiv_<version>_x64.dmg` | Open it, drag nankiv to Applications |
+| Windows 10 or 11 | `nankiv_<version>_x64-setup.exe` | Run it |
+| Windows, for IT deployment | `nankiv_<version>_x64_en-US.msi` | Run it |
+| Linux, most distributions | `nankiv_<version>_amd64.AppImage` | `chmod +x` it, then run it |
+| Debian or Ubuntu | `nankiv_<version>_amd64.deb` | `sudo apt install ./nankiv_*.deb` |
+
+Not sure which Mac you have? Apple menu → *About This Mac*. "Apple M1" or
+similar means Apple Silicon; "Intel" means the Intel file.
 
 Builds are currently **unsigned**, so the first launch shows a security warning:
 
 - **macOS** — right-click the app and choose *Open*, then *Open* again. Once only.
 - **Windows** — click *More info*, then *Run anyway*. Once only.
 
-See [docs/RELEASING.md](docs/RELEASING.md) for how to enable signing.
+See [docs/RELEASING.md](docs/RELEASING.md) for how to enable signing, and for
+cutting a release.
 
 ---
 

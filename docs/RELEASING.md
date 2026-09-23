@@ -11,10 +11,17 @@ release target yet.
 2. Tag and push:
 
 ```bash
-git tag v0.1.0 && git push --tags
+git tag v0.1.0 && git push origin master --tags
 ```
 
-3. CI attaches the installers to the release.
+3. `.github/workflows/release.yml` builds macOS (Apple Silicon and Intel),
+   Windows and Linux, and attaches the installers to a **draft** release.
+4. Check the downloads, write the notes, and publish it from the Releases page.
+   Until it is published, the links are not public.
+
+The `ci.yml` workflow also builds installers on every push, but those are
+workflow artifacts: they need a GitHub login and expire after 14 days. A
+release is what produces a link anyone can use.
 
 ## Code signing
 

@@ -1,0 +1,102 @@
+name: Release
+
+# Publishes installers people can actually download.
+#
+# CI builds installers on every push, but those are workflow artifacts: they
+# need a GitHub login, and they expire. A tag produces a GitHub Release with the
+# installers attached, which is a plain public link that keeps working.
+#
+#   git tag v0.1.0 && git push --tags
+#
+# The release is created as a draft, so the notes can be written and the
+# downloads checked before anyone sees it. Publish it from the Releases page.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and release, e.g. v0.1.0"
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS (Apple Silicon)
+            os: macos-latest
+            target: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin
+          - label: macOS (Intel)
+            os: macos-latest
+            target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
+          - label: Windows (x64)
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: ""
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: release-${{ matrix.target }}
+
+      - run: npm ci
+
+      - name: Build and attach installers
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Update-manifest signing. Separate from OS code signing and free.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Without these the downloads still work, with a Gatekeeper warning on
+          # first launch. See docs/RELEASING.md.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: nankiv ${{ github.event.inputs.tag || github.ref_name }}
+          releaseBody: |
+            Offline placement shortlist analysis. Download the file for your machine:
+
+            | Machine | File |
+            | --- | --- |
+            | Mac, Apple Silicon (M1 and later) | `*_aarch64.dmg` |
+            | Mac, Intel | `*_x64.dmg` |
+            | Windows | `*-setup.exe` |
+
+            These builds are not code signed yet, so the first launch needs one
+            extra step: on macOS right-click the app and choose *Open*; on
+            Windows choose *More info* → *Run anyway*.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
