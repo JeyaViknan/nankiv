@@ -43,7 +43,6 @@ export default function App() {
     importFile,
     importStage,
     season,
-    friends,
   } = useStore();
 
   const [circleOpen, setCircleOpen] = useState(false);
@@ -175,27 +174,13 @@ export default function App() {
         <SearchField inputRef={searchRef} />
 
         <div className="toolbar-right">
-          {/* The daily action, in the same place on every screen — including
-              the drive view, where there was previously no way to import at
-              all without going back first. */}
-          <button
-            className="icon-btn primary"
-            onClick={() => void browse()}
-            aria-label="Import a shortlist"
-            title="Import a shortlist (⌘O)"
-          >
-            <Icon name="plus" size={17} />
-          </button>
           <button
             className="icon-btn"
             onClick={() => setCircleOpen(true)}
-            aria-label={`Circle, ${friends.length} people`}
+            aria-label="Circle"
             title="Circle (⌘D)"
           >
             <Icon name="people" size={17} />
-            {friends.length > 0 && (
-              <span className="icon-badge">{friends.length}</span>
-            )}
           </button>
           <button
             className="icon-btn"
