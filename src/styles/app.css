@@ -605,10 +605,15 @@ kbd {
   flex: none;
   /* The traffic lights float over this bar (titleBarStyle: Overlay), so the
      leading edge is reserved for them.
-     They are 12pt across, 8pt apart, starting 20pt in, so they end at 72 —
-     and tauri.conf.json centres them on this bar rather than leaving them in
-     the title bar band, above everything beside them. The 16pt that follows
-     is the gap macOS leaves before the first control. */
+     Measured on macOS 26: 14pt across, 23pt apart, starting 20pt in, so they
+     end at 80, and the 8pt that follows is the gap before the first control.
+
+     trafficLightPosition in tauri.conf.json puts them on this bar's centre.
+     Its `y` is not a coordinate: tao sets the title bar container to
+     buttonHeight + y and leaves the buttons where they sit inside it, so the
+     centre lands at y - 2. Hence 23.5 for a centre of 21.5 — which is this
+     bar's own centre, and where every control in it sits. Change the height
+     above and that number has to move with it. */
   padding-left: 88px;
 }
 

@@ -21,7 +21,7 @@
         "fullscreen": false,
         "dragDropEnabled": false,
         "titleBarStyle": "Overlay",
-        "trafficLightPosition": { "x": 20, "y": 16 },
+        "trafficLightPosition": { "x": 20, "y": 23.5 },
         "hiddenTitle": true,
         "maxWidth": 1280,
         "maxHeight": 980,
