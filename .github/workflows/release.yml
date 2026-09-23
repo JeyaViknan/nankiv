@@ -77,6 +77,18 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: widgets/macos/build.sh
 
+      # Builds once here, before the action does, only so a failure can be
+      # reported as an annotation: a run's logs need a GitHub sign-in, and
+      # annotations do not. The action's own build then finds everything warm.
+      - name: Build installers
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! npm run tauri build -- ${{ matrix.args }} 2>&1 | tee build.log; then
+            echo "::error title=tauri build failed::$(tail -n 40 build.log | tr '\n' '~' | cut -c1-3000)"
+            exit 1
+          fi
+
       - name: Build and attach installers
         uses: tauri-apps/tauri-action@v0
         env:
