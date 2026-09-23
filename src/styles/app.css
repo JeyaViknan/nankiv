@@ -371,11 +371,14 @@ p {
    normal surface passes everywhere, and the green does its job in the glyph.
 */
 
+/* The three answers are not the same size, because they are not the same news.
+   A yes owns the surface; a no is calm and hands the screen to the analysis
+   that explains it; a can't-tell is a task with a button on it. */
 .verdict {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 24px 26px;
+  padding: 20px 22px;
   border-radius: var(--r-lg);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -383,8 +386,8 @@ p {
 }
 
 .verdict-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -394,9 +397,9 @@ p {
 
 .verdict-title {
   font-family: var(--display);
-  font-size: 27px;
+  font-size: 24px;
   font-weight: 680;
-  letter-spacing: -0.034em;
+  letter-spacing: -0.03em;
   line-height: 1.1;
   margin: 0;
   color: var(--text);
@@ -409,10 +412,92 @@ p {
   font-weight: 440;
 }
 
+.verdict-fix {
+  margin-top: 12px;
+}
+
+/* A yes, at the size a yes deserves. */
+.verdict.yes {
+  gap: 22px;
+  padding: 30px 30px;
+}
+
+.verdict.yes .verdict-title {
+  font-size: 38px;
+  letter-spacing: -0.038em;
+}
+
+.verdict.yes .verdict-detail {
+  font-size: 14.5px;
+  margin-top: 7px;
+}
+
 .verdict.yes .verdict-icon {
+  width: 60px;
+  height: 60px;
   background: var(--ok-solid);
-  /* The one flourish in the app, and only on the answer people hope for. */
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--ok-solid) 16%, transparent);
+}
+
+/* The ring travels outward once and is gone. It is the only celebration in the
+   application, it lasts half a second, and it never fires for a rejection. */
+.verdict.yes .verdict-icon::after {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--ok-solid);
+  animation: pulse 0.62s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.verdict.yes .verdict-icon {
+  position: relative;
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
+/* Everything lands the same way: up a little, into place. */
+.land {
+  animation: land 0.34s cubic-bezier(0.2, 0.9, 0.24, 1) both;
+}
+
+@keyframes land {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The checkmark draws itself, once, as the card lands. */
+.icon-draw {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: draw 0.34s cubic-bezier(0.4, 0, 0.2, 1) 0.14s forwards;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Digits that climb must not make the line reflow while they do it. */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 /* A rejection is not an error and is never styled like one. */
@@ -534,6 +619,75 @@ kbd {
   gap: 2px;
 }
 
+.season {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-app-region: drag;
+}
+
+.season-rule {
+  width: 1px;
+  height: 13px;
+  background: var(--border);
+}
+
+.season-part {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.season-value {
+  font-size: 13px;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+.season-part.yes .season-value {
+  color: var(--ok);
+}
+
+.season-label {
+  letter-spacing: -0.005em;
+}
+
+/* A count on a button that means something: how many people are in your
+   circle, without opening it. */
+.icon-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 9.5px;
+  font-weight: 650;
+  line-height: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.icon-btn.primary {
+  color: var(--accent);
+}
+
+/* Design preview only: the toolbar's own background, so the strip can be
+   judged where it actually lives. */
+.preview-strip {
+  padding: 10px 14px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  margin-bottom: 8px;
+}
+
 .wordmark {
   font-family: var(--display);
   font-size: 13.5px;
@@ -543,6 +697,7 @@ kbd {
 }
 
 .icon-btn {
+  position: relative;
   width: 28px;
   height: 28px;
   border-radius: var(--r-sm);
@@ -1546,6 +1701,44 @@ kbd {
   );
   border-radius: 3px 3px 1px 1px;
   min-height: 2px;
+  transform-origin: bottom;
+  animation: grow 0.42s cubic-bezier(0.2, 0.8, 0.28, 1) both;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* Rows arrive in order rather than all at once: the eye follows the list down
+   instead of being handed a block of text. */
+.list .row {
+  animation: land 0.26s cubic-bezier(0.2, 0.9, 0.24, 1) both;
+}
+
+.list .row:nth-child(1) {
+  animation-delay: 0ms;
+}
+.list .row:nth-child(2) {
+  animation-delay: 22ms;
+}
+.list .row:nth-child(3) {
+  animation-delay: 44ms;
+}
+.list .row:nth-child(4) {
+  animation-delay: 66ms;
+}
+.list .row:nth-child(5) {
+  animation-delay: 88ms;
+}
+.list .row:nth-child(n + 6) {
+  animation-delay: 104ms;
 }
 
 .hist-axis {

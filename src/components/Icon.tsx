@@ -92,6 +92,8 @@ interface Props extends Omit<SVGProps<SVGSVGElement>, "name"> {
   name: IconName;
   /** Rendered size in px. Stroke weight scales with it to hold optical weight. */
   size?: number;
+  /** Draw the stroke on first paint. For arrivals only. */
+  draw?: boolean;
 }
 
 /**
@@ -107,7 +109,7 @@ export function strokeFor(size: number): number {
   return Number(w.toFixed(3));
 }
 
-export function Icon({ name, size = 17, ...rest }: Props) {
+export function Icon({ name, size = 17, draw = false, ...rest }: Props) {
   const circle = CIRCLES[name];
   const dot = DOTS[name];
 
@@ -126,7 +128,10 @@ export function Icon({ name, size = 17, ...rest }: Props) {
       {...rest}
     >
       {circle && <circle cx={circle[0]} cy={circle[1]} r={circle[2]} />}
-      <path d={PATHS[name]} />
+      {/* `draw` lets the stroke draw itself once, for the single moment in the
+          application that earns it: a result arriving. The CSS owns the timing
+          and stands the icon down for anyone who has asked for less motion. */}
+      <path d={PATHS[name]} className={draw ? "icon-draw" : undefined} />
       {dot && (
         <circle
           cx={dot[0]}

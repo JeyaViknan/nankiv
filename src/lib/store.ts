@@ -20,6 +20,7 @@ import {
   type IdentityStats,
   type Profile,
   type Route,
+  type Season,
 } from "./api";
 import { resolveRoute } from "./deeplinks";
 
@@ -59,6 +60,8 @@ interface State {
   profile: Profile | null;
   friends: Friend[];
   drives: DriveRecord[];
+  /** How the season is going, counted by the core. Null until first loaded. */
+  season: Season | null;
   stats: IdentityStats | null;
   current: ImportOutcome | null;
   importStage: ImportStage;
@@ -93,6 +96,7 @@ export const useStore = create<State>((set, get) => ({
   profile: null,
   friends: [],
   drives: [],
+  season: null,
   stats: null,
   current: null,
   importStage: { phase: "idle" },
@@ -103,16 +107,18 @@ export const useStore = create<State>((set, get) => ({
 
   bootstrap: async () => {
     try {
-      const [profile, friends, drives, stats] = await Promise.all([
+      const [profile, friends, drives, season, stats] = await Promise.all([
         api.getProfile(),
         api.listFriends(),
         api.listDrives(),
+        api.season(),
         api.identityStats(),
       ]);
       set({
         profile,
         friends,
         drives,
+        season,
         stats,
         view: profile.neo_id || profile.reg_no ? "shortlists" : "onboarding",
       });
@@ -183,7 +189,11 @@ export const useStore = create<State>((set, get) => ({
 
   refreshDrives: async () => {
     try {
-      set({ drives: await api.listDrives() });
+      const [drives, season] = await Promise.all([
+        api.listDrives(),
+        api.season(),
+      ]);
+      set({ drives, season });
     } catch (e) {
       set({ error: toApiError(e) });
     }
@@ -241,6 +251,12 @@ export const useStore = create<State>((set, get) => ({
         view: "drive",
         importStage: { phase: "idle" },
       });
+      // One tap on the trackpad for the answer people hope for, at the moment
+      // it appears. Not for a rejection: being told no does not need a nudge,
+      // and the system decides whether it is felt at all.
+      if (outcome.you.verdict.status === "shortlisted") {
+        void api.tap().catch(() => {});
+      }
       await Promise.all([get().refreshDrives(), get().refreshStats()]);
     } catch (e) {
       const err = toApiError(e);

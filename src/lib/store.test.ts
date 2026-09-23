@@ -28,6 +28,8 @@ vi.mock("./api", async () => {
       renameDrive: vi.fn(),
       takePendingRoute: vi.fn(),
       takePendingFiles: vi.fn(),
+      season: vi.fn(),
+      tap: vi.fn(),
     },
   };
 });
@@ -78,6 +80,13 @@ beforeEach(() => {
   vi.mocked(api.listDrives).mockResolvedValue([]);
   vi.mocked(api.takePendingRoute).mockResolvedValue(null);
   vi.mocked(api.takePendingFiles).mockResolvedValue([]);
+  vi.mocked(api.tap).mockResolvedValue(undefined);
+  vi.mocked(api.season).mockResolvedValue({
+    drives: 0,
+    shortlisted: 0,
+    not_shortlisted: 0,
+    undetermined: 0,
+  });
   vi.mocked(api.identityStats).mockResolvedValue({
     students_known: 0,
     names_known: 0,
@@ -362,5 +371,40 @@ describe("shortlists dropped on the app icon", () => {
     vi.mocked(api.importShortlist).mockResolvedValue(outcome(1, "Elgi"));
     await useStore.getState().openFiles(["/a/Elgi.xlsx"]);
     expect(api.takePendingFiles).toHaveBeenCalled();
+  });
+});
+
+describe("the moment a result lands", () => {
+  it("taps the trackpad when you're in", async () => {
+    vi.mocked(api.importShortlist).mockResolvedValue(outcome(1, "Siemens"));
+    await useStore.getState().importFile("/a/Siemens.xlsx");
+    expect(api.tap).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays silent when you're not", async () => {
+    const no = outcome(1, "Siemens");
+    no.you.verdict = { status: "not_shortlisted" };
+    vi.mocked(api.importShortlist).mockResolvedValue(no);
+    await useStore.getState().importFile("/a/Siemens.xlsx");
+    expect(api.tap).not.toHaveBeenCalled();
+  });
+
+  it("stays silent when the answer is unknown", async () => {
+    const unknown = outcome(1, "Siemens");
+    unknown.you.verdict = {
+      status: "undetermined",
+      reason: "needs_neo_id" as never,
+    };
+    vi.mocked(api.importShortlist).mockResolvedValue(unknown);
+    await useStore.getState().importFile("/a/Siemens.xlsx");
+    expect(api.tap).not.toHaveBeenCalled();
+  });
+
+  it("does not fail an import when the trackpad cannot be tapped", async () => {
+    vi.mocked(api.tap).mockRejectedValue(new Error("no haptics here"));
+    vi.mocked(api.importShortlist).mockResolvedValue(outcome(1, "Siemens"));
+    await useStore.getState().importFile("/a/Siemens.xlsx");
+    expect(useStore.getState().current?.company).toBe("Siemens");
+    expect(useStore.getState().error).toBeNull();
   });
 });

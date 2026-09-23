@@ -369,18 +369,14 @@ fn shape_of(label: &str) -> FileShape {
     }
 }
 
-/// Builds the snapshot from the store as it stands.
-pub fn build_snapshot(
-    store: &Store,
-    activity: Activity,
-    now: OffsetDateTime,
-) -> Result<WidgetSnapshot, StoreError> {
+/// How the season is going: one verdict per drive, counted.
+///
+/// Shared with the interface, which shows it in the toolbar, so the number on
+/// the widget and the number above the list can never disagree. Cheap: a
+/// membership check per drive, no analysis.
+pub fn season_tally(store: &Store) -> Result<Season, StoreError> {
     let profile = store.profile()?;
     let drives = store.drives()?;
-    let academics_known = store.academic_count()?;
-
-    // Season counts need only the student's own verdict per drive, which is a
-    // membership check — cheap even across a whole season.
     let mut season = Season {
         drives: drives.len(),
         ..Default::default()
@@ -405,6 +401,20 @@ pub fn build_snapshot(
             Verdict::Undetermined(_) => season.undetermined += 1,
         }
     }
+    Ok(season)
+}
+
+/// Builds the snapshot from the store as it stands.
+pub fn build_snapshot(
+    store: &Store,
+    activity: Activity,
+    now: OffsetDateTime,
+) -> Result<WidgetSnapshot, StoreError> {
+    let profile = store.profile()?;
+    let drives = store.drives()?;
+    let academics_known = store.academic_count()?;
+
+    let season = season_tally(store)?;
 
     let mut previews = Vec::new();
     if !drives.is_empty() {

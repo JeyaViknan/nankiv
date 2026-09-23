@@ -1011,6 +1011,30 @@ pub fn safe_filename(raw: &str) -> String {
     }
 }
 
+/// Taps the trackpad, for the moment a result lands.
+///
+/// Silent everywhere else, including on a mouse and wherever the person has
+/// turned trackpad feedback off — which is the system's decision to make, not
+/// this app's.
+#[tauri::command]
+pub fn tap() {
+    #[cfg(target_os = "macos")]
+    {
+        extern "C" {
+            fn nankiv_tap();
+        }
+        // SAFETY: takes nothing, returns nothing, and asks AppKit for one
+        // haptic tap on the main queue.
+        unsafe { nankiv_tap() }
+    }
+}
+
+/// How the season is going, for the strip in the toolbar.
+#[tauri::command]
+pub fn season(state: tauri::State<AppState>) -> R<crate::widget::Season> {
+    Ok(crate::widget::season_tally(&store(&state))?)
+}
+
 /// Collects shortlists the desktop handed us, once.
 #[tauri::command]
 pub fn take_pending_files(state: tauri::State<AppState>) -> Vec<String> {

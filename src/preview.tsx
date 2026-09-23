@@ -21,6 +21,7 @@ import {
   StandingCard,
 } from "./components/Analysis";
 import { NeedsReference } from "./components/NeedsReference";
+import { SeasonStrip } from "./components/SeasonStrip";
 import { MenuButton } from "./components/MenuButton";
 import { Icon, type IconName } from "./components/Icon";
 import { applyTheme, getThemeChoice, type ThemeChoice } from "./lib/theme";
@@ -272,6 +273,22 @@ function Preview() {
             </div>
           </Section>
 
+          <Section title="Season strip — what replaced the window title">
+            <div className="preview-strip">
+              <SeasonStrip
+                season={{
+                  drives: 12,
+                  shortlisted: 4,
+                  not_shortlisted: 7,
+                  undetermined: 1,
+                }}
+              />
+            </div>
+            <div className="preview-strip">
+              <SeasonStrip season={null} />
+            </div>
+          </Section>
+
           <Section title="Verdict — shortlisted">
             <VerdictBanner
               verdict={IN}
@@ -297,6 +314,7 @@ function Preview() {
 
           <Section title="Verdict — cannot determine">
             <VerdictBanner
+              onFix={() => {}}
               verdict={UNKNOWN}
               company="HPE"
               totalStudents={874}

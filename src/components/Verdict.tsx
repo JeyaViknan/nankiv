@@ -9,6 +9,7 @@
 
 import type { Verdict, UndeterminedReason } from "../lib/api";
 import { Icon } from "./Icon";
+import { CountUp } from "./CountUp";
 
 /** Plain-language explanation for why we can't answer. */
 export function undeterminedText(r: UndeterminedReason): {
@@ -46,6 +47,8 @@ interface BannerProps {
   verdict: Verdict;
   company: string;
   totalStudents: number;
+  /** Opens Settings on the field that would answer the question. */
+  onFix?: () => void;
 }
 
 /** The hero of the application: one unmistakable answer. */
@@ -53,17 +56,21 @@ export function VerdictBanner({
   verdict,
   company,
   totalStudents,
+  onFix,
 }: BannerProps) {
+  // The answer people hope for gets the room, the motion and the one flourish
+  // in the application. The other two are deliberately quieter: a rejection
+  // that arrives with a fanfare is cruel, and "can't tell" is a task, not news.
   if (verdict.status === "shortlisted") {
     return (
-      <div className="verdict yes" role="status">
+      <div className="verdict yes land" role="status">
         <div className="verdict-icon">
-          <Icon name="check" size={24} />
+          <Icon name="check" size={30} draw />
         </div>
         <div>
           <p className="verdict-title">You're in</p>
           <p className="verdict-detail">
-            {company} — {totalStudents.toLocaleString()} students shortlisted
+            {company} — <CountUp value={totalStudents} /> students shortlisted
           </p>
         </div>
       </div>
@@ -72,15 +79,15 @@ export function VerdictBanner({
 
   if (verdict.status === "not_shortlisted") {
     return (
-      <div className="verdict no" role="status">
+      <div className="verdict no land" role="status">
         <div className="verdict-icon">
-          <Icon name="dash" size={24} />
+          <Icon name="dash" size={20} />
         </div>
         <div>
           <p className="verdict-title">Not this time</p>
           <p className="verdict-detail">
             You're not on the {company} shortlist of{" "}
-            {totalStudents.toLocaleString()}.
+            {totalStudents.toLocaleString()}. What it took is below.
           </p>
         </div>
       </div>
@@ -88,14 +95,25 @@ export function VerdictBanner({
   }
 
   const { title, detail } = undeterminedText(verdict);
+  // Every reason here is something the student can fix in one place, so the
+  // banner carries the way to fix it rather than describing it.
+  const fixable = verdict.reason !== "file_not_understood";
   return (
-    <div className="verdict unknown" role="status">
+    <div className="verdict unknown land" role="status">
       <div className="verdict-icon">
-        <Icon name="question" size={24} />
+        <Icon name="question" size={22} />
       </div>
       <div>
         <p className="verdict-title">{title}</p>
         <p className="verdict-detail">{detail}</p>
+        {fixable && onFix && (
+          <button className="btn small verdict-fix" onClick={onFix}>
+            {verdict.reason === "key_kind_not_configured" &&
+            verdict.file_key === "reg_no"
+              ? "Add registration number"
+              : "Add Neo ID"}
+          </button>
+        )}
       </div>
     </div>
   );

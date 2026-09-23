@@ -117,7 +117,14 @@ function EditableName({ id, name }: { id: number; name: string }) {
   );
 }
 
-export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
+export function DriveScreen({
+  outcome,
+  onFix,
+}: {
+  outcome: ImportOutcome;
+  /** Opens Settings when the answer is "can't tell" and a field would fix it. */
+  onFix: () => void;
+}) {
   const { showToast, profile, drives, openDrive, stats, exportNames } =
     useStore();
   const [copied, setCopied] = useState(false);
@@ -157,12 +164,44 @@ export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
     }
   }
 
+  const notShortlisted = outcome.you.verdict.status === "not_shortlisted";
+
+  // When the answer is no, the first question is "what did it take?" — so the
+  // analysis moves above the circle. When the answer is yes, your people come
+  // first, because the next thing you do is look for them.
+  const analysis = (
+    <section className="block">
+      <div className="list-head">
+        <span className="eyebrow">What this shortlist suggests</span>
+      </div>
+
+      {/* Two different situations that were being shown as one. No academic
+              records at all is a setup step, not a thin sample. */}
+      {stats?.academics_known === 0 ? (
+        <NeedsReference />
+      ) : !a.sufficient ? (
+        <InsufficientSample analysis={a} />
+      ) : (
+        <>
+          <CoverageNotice analysis={a} />
+          {a.cutoff && <CutoffCard report={a.cutoff} />}
+          {a.your_percentile && <StandingCard percentile={a.your_percentile} />}
+          {a.cgpa && (
+            <DistributionCard dist={a.cgpa.value} yourCgpa={outcome.you.cgpa} />
+          )}
+          {a.branches && <BranchCard report={a.branches} />}
+        </>
+      )}
+    </section>
+  );
+
   return (
     <div className="surface">
       <VerdictBanner
         verdict={outcome.you.verdict}
         company={outcome.company}
         totalStudents={outcome.total_students}
+        onFix={onFix}
       />
 
       {/* Provenance, stated once, quietly, directly under the answer. */}
@@ -175,6 +214,8 @@ export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
           keyed by {outcome.primary_key === "reg_no" ? "reg number" : "Neo ID"}
         </span>
       </div>
+
+      {notShortlisted && analysis}
 
       <section className="block">
         <div className="list-head">
@@ -266,34 +307,7 @@ export function DriveScreen({ outcome }: { outcome: ImportOutcome }) {
         </section>
       )}
 
-      <section className="block">
-        <div className="list-head">
-          <span className="eyebrow">What this shortlist suggests</span>
-        </div>
-
-        {/* Two different situations that were being shown as one. No academic
-            records at all is a setup step, not a thin sample. */}
-        {stats?.academics_known === 0 ? (
-          <NeedsReference />
-        ) : !a.sufficient ? (
-          <InsufficientSample analysis={a} />
-        ) : (
-          <>
-            <CoverageNotice analysis={a} />
-            {a.cutoff && <CutoffCard report={a.cutoff} />}
-            {a.your_percentile && (
-              <StandingCard percentile={a.your_percentile} />
-            )}
-            {a.cgpa && (
-              <DistributionCard
-                dist={a.cgpa.value}
-                yourCgpa={outcome.you.cgpa}
-              />
-            )}
-            {a.branches && <BranchCard report={a.branches} />}
-          </>
-        )}
-      </section>
+      {!notShortlisted && analysis}
 
       <footer className="drive-foot">
         <div className="btn-row">

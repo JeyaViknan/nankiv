@@ -132,6 +132,8 @@ pub fn run() {
             commands::export_shortlist,
             commands::take_pending_route,
             commands::take_pending_files,
+            commands::season,
+            commands::tap,
             commands::stage_dropped_file,
         ])
         .build(tauri::generate_context!())

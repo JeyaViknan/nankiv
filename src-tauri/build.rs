@@ -3,17 +3,17 @@ use std::process::Command;
 
 fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
-        build_widget_bridge();
+        build_bridge();
     }
     tauri_build::build()
 }
 
-/// Compiles `macos/widget_bridge.swift` into a static library and links it,
-/// so the core can ask WidgetKit to reload the desktop widget.
+/// Compiles `macos/bridge.swift` into a static library and links it, so the
+/// core can ask WidgetKit to reload and tap the trackpad.
 ///
 /// Needs `swiftc`, which ships with Xcode and with the Command Line Tools.
-fn build_widget_bridge() {
-    let source = "macos/widget_bridge.swift";
+fn build_bridge() {
+    let source = "macos/bridge.swift";
     println!("cargo:rerun-if-changed={source}");
     println!("cargo:rerun-if-env-changed=MACOSX_DEPLOYMENT_TARGET");
 
@@ -34,17 +34,17 @@ fn build_widget_bridge() {
             "-static",
             "-O",
         ])
-        .args(["-swift-version", "5", "-module-name", "NankivWidgetBridge"])
+        .args(["-swift-version", "5", "-module-name", "NankivBridge"])
         .args(["-target", &format!("{arch}-apple-macosx{minimum}")])
         .arg("-o")
-        .arg(out.join("libnankiv_widget_bridge.a"))
+        .arg(out.join("libnankiv_bridge.a"))
         .arg(source)
         .status()
         .expect("could not run swiftc; install Xcode or the Command Line Tools");
-    assert!(status.success(), "compiling the widget bridge failed");
+    assert!(status.success(), "compiling the bridge failed");
 
     println!("cargo:rustc-link-search=native={}", out.display());
-    println!("cargo:rustc-link-lib=static=nankiv_widget_bridge");
+    println!("cargo:rustc-link-lib=static=nankiv_bridge");
     // Weak, so the app still launches where WidgetKit does not exist.
     println!("cargo:rustc-link-arg=-Wl,-weak_framework,WidgetKit");
 

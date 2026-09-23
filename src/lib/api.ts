@@ -172,6 +172,14 @@ export interface ImportOutcome {
   unreadable_headers: string[] | null;
 }
 
+/** How the season is going: one verdict per drive, counted by the core. */
+export interface Season {
+  drives: number;
+  shortlisted: number;
+  not_shortlisted: number;
+  undetermined: number;
+}
+
 export interface IdentityStats {
   students_known: number;
   names_known: number;
@@ -296,6 +304,9 @@ export const api = {
     invoke<string>("share_summary", { driveId }),
   takePendingRoute: () => invoke<Route | null>("take_pending_route"),
   takePendingFiles: () => invoke<string[]>("take_pending_files"),
+  season: () => invoke<Season>("season"),
+  /** A single trackpad tap. Silent on a mouse, and where the system says so. */
+  tap: () => invoke<void>("tap"),
   /**
    * Hands the core the bytes of a file dropped on the window, and gets back a
    * path the ordinary import can read. A web view is never told where a

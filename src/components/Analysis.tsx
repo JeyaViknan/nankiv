@@ -148,15 +148,21 @@ export function DistributionCard({
         role="img"
         aria-label={`CGPA distribution: median ${dist.median.toFixed(2)}, range ${dist.min.toFixed(2)} to ${dist.max.toFixed(2)}`}
       >
-        {shown.map((b) => (
+        {shown.map((b, i) => (
           <div
             className="hist-col"
             key={b.lower}
             title={`${b.lower.toFixed(2)}–${b.upper.toFixed(2)}: ${b.count}`}
           >
+            {/* Each bar grows from the baseline, a beat after the one to its
+                left. A chart that draws itself reads as measured rather than
+                decorated — and it is the shape of the data doing the moving. */}
             <div
               className="hist-bar"
-              style={{ height: `${(b.count / max) * 100}%` }}
+              style={{
+                height: `${(b.count / max) * 100}%`,
+                animationDelay: `${Math.min(i * 22, 260)}ms`,
+              }}
             />
           </div>
         ))}

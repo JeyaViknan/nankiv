@@ -22,6 +22,7 @@ import { useDeepLinks, useOpenedFiles } from "./lib/deeplinks";
 import { useStore } from "./lib/store";
 import { applyTheme, getThemeChoice, watchSystemTheme } from "./lib/theme";
 import { DropSurface } from "./components/DropSurface";
+import { SeasonStrip } from "./components/SeasonStrip";
 import { Icon } from "./components/Icon";
 import { SearchField } from "./components/SearchField";
 import { Toast } from "./components/Toast";
@@ -41,6 +42,8 @@ export default function App() {
     clearError,
     importFile,
     importStage,
+    season,
+    friends,
   } = useStore();
 
   const [circleOpen, setCircleOpen] = useState(false);
@@ -165,20 +168,34 @@ export default function App() {
               <Icon name="back" size={16} />
             </button>
           ) : (
-            <span className="wordmark">Shortlists</span>
+            <SeasonStrip season={season} />
           )}
         </div>
 
         <SearchField inputRef={searchRef} />
 
         <div className="toolbar-right">
+          {/* The daily action, in the same place on every screen — including
+              the drive view, where there was previously no way to import at
+              all without going back first. */}
+          <button
+            className="icon-btn primary"
+            onClick={() => void browse()}
+            aria-label="Import a shortlist"
+            title="Import a shortlist (⌘O)"
+          >
+            <Icon name="plus" size={17} />
+          </button>
           <button
             className="icon-btn"
             onClick={() => setCircleOpen(true)}
-            aria-label="Circle"
+            aria-label={`Circle, ${friends.length} people`}
             title="Circle (⌘D)"
           >
             <Icon name="people" size={17} />
+            {friends.length > 0 && (
+              <span className="icon-badge">{friends.length}</span>
+            )}
           </button>
           <button
             className="icon-btn"
@@ -203,7 +220,10 @@ export default function App() {
 
         {inDrive ? (
           <div className="view-drive" key={current.drive_id}>
-            <DriveScreen outcome={current} />
+            <DriveScreen
+              outcome={current}
+              onFix={() => setSettingsOpen(true)}
+            />
           </div>
         ) : (
           <div className="view-root">
