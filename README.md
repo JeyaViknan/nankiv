@@ -14,6 +14,23 @@ nankiv collapses that into: drop the file, read one line.
 **Everything runs on your machine.** No account, no server, no telemetry, no
 network calls. It works with the wifi off.
 
+## Download
+
+| Your machine | Download |
+| --- | --- |
+| **Mac** with Apple Silicon — M1, M2, M3, M4 | [nankiv-macos-apple-silicon.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-apple-silicon.dmg) |
+| **Mac** with an Intel processor | [nankiv-macos-intel.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-intel.dmg) |
+| **Windows** 10 or 11 | [nankiv-windows-setup.exe](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-windows-setup.exe) |
+| **Windows**, for IT deployment | [nankiv-windows.msi](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-windows.msi) |
+
+Which Mac do you have? Apple menu → *About This Mac*. "Apple M1" or similar is
+Apple Silicon; anything saying "Intel" is the other one.
+
+First launch shows a security warning, because these builds are not code signed
+yet: on macOS right-click the app and choose *Open*; on Windows click *More
+info* → *Run anyway*. Once only. Every version is on the
+[releases page](https://github.com/JeyaViknan/nankiv/releases).
+
 ---
 
 ## What it does
@@ -77,29 +94,19 @@ people, the other is one person, and no score separates them.
 
 ## Install
 
-Every release is on the
-[Releases page](https://github.com/JeyaViknan/nankiv/releases/latest). Take the
-one file that matches your machine:
+Take the file for your machine from [Download](#download) above.
 
-| Your machine | File to download | What to do with it |
-| --- | --- | --- |
-| Mac with Apple Silicon (M1, M2, M3, M4) | `nankiv_<version>_aarch64.dmg` | Open it, drag nankiv to Applications |
-| Mac with an Intel processor | `nankiv_<version>_x64.dmg` | Open it, drag nankiv to Applications |
-| Windows 10 or 11 | `nankiv_<version>_x64-setup.exe` | Run it |
-| Windows, for IT deployment | `nankiv_<version>_x64_en-US.msi` | Run it |
-| Linux, most distributions | `nankiv_<version>_amd64.AppImage` | `chmod +x` it, then run it |
-| Debian or Ubuntu | `nankiv_<version>_amd64.deb` | `sudo apt install ./nankiv_*.deb` |
+- **macOS** — open the `.dmg` and drag nankiv to Applications. On first launch,
+  right-click it and choose *Open*, then *Open* again. Once only.
+- **Windows** — run the installer. SmartScreen will warn; click *More info*,
+  then *Run anyway*. Once only.
 
-Not sure which Mac you have? Apple menu → *About This Mac*. "Apple M1" or
-similar means Apple Silicon; "Intel" means the Intel file.
+Both warnings are there because the builds are not code signed. See
+[docs/RELEASING.md](docs/RELEASING.md) for enabling signing, and for cutting a
+release.
 
-Builds are currently **unsigned**, so the first launch shows a security warning:
-
-- **macOS** — right-click the app and choose *Open*, then *Open* again. Once only.
-- **Windows** — click *More info*, then *Run anyway*. Once only.
-
-See [docs/RELEASING.md](docs/RELEASING.md) for how to enable signing, and for
-cutting a release.
+Linux is built on every push to keep the code portable, but is not a release
+target yet; build it yourself with `npm run app:build`.
 
 ---
 

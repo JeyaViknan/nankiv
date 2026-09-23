@@ -24,8 +24,30 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # One place creates the release, so three parallel builds do not race to.
+  prepare:
+    name: Start the release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create it, empty and unpublished
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Rebuilding a tag replaces what was attached to it, rather than
+          # leaving installers from an older attempt alongside the new ones.
+          gh release delete "$TAG" --yes --cleanup-tag=false || true
+          gh release create "$TAG" --draft --title "nankiv $TAG" \
+            --notes-file .github/release-notes.md
+
   release:
     name: ${{ matrix.label }}
+    needs: prepare
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -79,14 +101,25 @@ jobs:
         shell: bash
         run: .github/report npm run tauri build -- ${{ matrix.args }}
 
+      # Named for the machine they run on rather than for the version, so a
+      # link on the front page keeps working after the next release. Which
+      # version you have is on the release, and in the app.
       - name: Collect installers
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p installers
-          find src-tauri/target -path '*release/bundle/*' \
-            \( -name '*.dmg' -o -name '*-setup.exe' -o -name '*.msi' \) \
-            -exec cp {} installers/ \;
+          while IFS= read -r file; do
+            case "$file" in
+              *aarch64.dmg) name=nankiv-macos-apple-silicon.dmg ;;
+              *x64.dmg) name=nankiv-macos-intel.dmg ;;
+              *-setup.exe) name=nankiv-windows-setup.exe ;;
+              *.msi) name=nankiv-windows.msi ;;
+              *) continue ;;
+            esac
+            cp "$file" "installers/$name"
+          done < <(find src-tauri/target -path '*release/bundle/*' \
+            \( -name '*.dmg' -o -name '*-setup.exe' -o -name '*.msi' \))
           ls -lh installers
           # A job that quietly attaches nothing is worse than one that fails.
           test -n "$(ls -A installers)"
@@ -96,11 +129,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release upload "$TAG" installers/* --clobber
+
+  # Published only once every installer is attached: a release that is missing
+  # the file for someone's machine is worse than one that is a minute late.
+  publish:
+    name: Publish it
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Make it public
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          # Three jobs race to be first; whichever wins creates the draft.
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --draft --title "nankiv $TAG" \
-              --notes-file .github/release-notes.md || true
-          fi
-          gh release upload "$TAG" installers/* --clobber
+          gh release edit "$TAG" --draft=false --latest
+          gh release view "$TAG" --json assets -q '.assets[].name'

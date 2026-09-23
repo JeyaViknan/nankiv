@@ -14,10 +14,15 @@ release target yet.
 git tag v0.1.0 && git push origin master --tags
 ```
 
-3. `.github/workflows/release.yml` builds macOS (Apple Silicon and Intel),
-   Windows and Linux, and attaches the installers to a **draft** release.
-4. Check the downloads, write the notes, and publish it from the Releases page.
-   Until it is published, the links are not public.
+3. `.github/workflows/release.yml` starts an empty draft, builds macOS (Apple
+   Silicon and Intel) and Windows, attaches the installers, and publishes the
+   release once all three have landed — a release missing the file for
+   someone's machine is worse than one that is a minute late.
+
+The installers are named for machines, not versions —
+`nankiv-macos-apple-silicon.dmg` and so on — so the download links on the front
+page keep working release after release. Rebuilding a tag replaces what was
+attached to it, rather than piling a second set of files beside the first.
 
 The `ci.yml` workflow also builds installers on every push, but those are
 workflow artifacts: they need a GitHub login and expire after 14 days. A
