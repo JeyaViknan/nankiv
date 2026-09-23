@@ -595,14 +595,21 @@ kbd {
   grid-template-columns: 1fr minmax(180px, 340px) 1fr;
   align-items: center;
   gap: 12px;
-  height: 52px;
+  /* One integrated title bar rather than a title bar with a toolbar under it:
+     28px controls, 8px of air either side, and the window buttons centred on
+     the same line by tauri.conf.json — (44 - 12) / 2 = 16. */
+  height: 44px;
   padding: 0 12px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   flex: none;
   /* The traffic lights float over this bar (titleBarStyle: Overlay), so the
-     leading edge is reserved for them. */
-  padding-left: 78px;
+     leading edge is reserved for them.
+     They are 12pt across, 8pt apart, starting 20pt in, so they end at 72 —
+     and tauri.conf.json centres them on this bar rather than leaving them in
+     the title bar band, above everything beside them. The 16pt that follows
+     is the gap macOS leaves before the first control. */
+  padding-left: 88px;
 }
 
 .toolbar-left {
@@ -750,7 +757,7 @@ kbd {
 
 .search-input {
   width: 100%;
-  height: 27px;
+  height: 25px;
   padding: 0 10px 0 28px;
   border-radius: 7px;
   border: 1px solid var(--border);
