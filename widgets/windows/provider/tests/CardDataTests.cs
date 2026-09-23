@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Xunit;
 
 namespace Nankiv.Widgets.Tests;
 
@@ -85,7 +86,8 @@ public class CardDataTests
     public void AResultLeadsForATurnThenTheWidgetRests()
     {
         var snapshot = Load("ready").Snapshot!;
-        var leadsUntil = Assert.NotNull(snapshot.LeadsUntil);
+        Assert.NotNull(snapshot.LeadsUntil);
+        var leadsUntil = snapshot.LeadsUntil!.Value;
         Assert.Equal(TimeSpan.FromHours(12), leadsUntil - snapshot.Drives[0].ImportedAt);
 
         var leading = Glance.Make(Load("ready"), null, leadsUntil.AddSeconds(-1));

@@ -9,7 +9,12 @@
 
 import { render, screen, act } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DropSurface, carriesFiles, chooseFile, isSpreadsheet } from "./DropSurface";
+import {
+  DropSurface,
+  carriesFiles,
+  chooseFile,
+  isSpreadsheet,
+} from "./DropSurface";
 
 /** What a web view puts on a file drag; jsdom has no DataTransfer of its own. */
 function transfer(files: File[]): DataTransfer {
@@ -22,7 +27,10 @@ function transfer(files: File[]): DataTransfer {
 }
 
 function drag(type: string, dataTransfer: DataTransfer | null): DragEvent {
-  const event = new Event(type, { bubbles: true, cancelable: true }) as DragEvent;
+  const event = new Event(type, {
+    bubbles: true,
+    cancelable: true,
+  }) as DragEvent;
   Object.defineProperty(event, "dataTransfer", { value: dataTransfer });
   return event;
 }
@@ -37,7 +45,9 @@ describe("dragging a file over the window", () => {
     render(<DropSurface onFile={onFile} />);
 
     act(() => {
-      window.dispatchEvent(drag("dragenter", transfer([sheet("Siemens.xlsx")])));
+      window.dispatchEvent(
+        drag("dragenter", transfer([sheet("Siemens.xlsx")])),
+      );
     });
     expect(screen.getByText("Drop to analyse")).toBeInTheDocument();
 
@@ -63,7 +73,9 @@ describe("dragging a file over the window", () => {
     render(<DropSurface onFile={onFile} />);
 
     act(() => {
-      window.dispatchEvent(drag("drop", transfer([new File([""], "offer.pdf")])));
+      window.dispatchEvent(
+        drag("drop", transfer([new File([""], "offer.pdf")])),
+      );
     });
     expect(screen.getByText("That file won't work")).toBeInTheDocument();
     expect(screen.getByText("offer.pdf")).toBeInTheDocument();
@@ -75,7 +87,9 @@ describe("dragging a file over the window", () => {
     render(<DropSurface onFile={onFile} />);
     const wanted = sheet("Elgi.xlsx");
     act(() => {
-      window.dispatchEvent(drag("drop", transfer([new File([""], "notes.pdf"), wanted])));
+      window.dispatchEvent(
+        drag("drop", transfer([new File([""], "notes.pdf"), wanted])),
+      );
     });
     expect(onFile).toHaveBeenCalledWith(wanted);
   });
@@ -83,7 +97,11 @@ describe("dragging a file over the window", () => {
   it("ignores dragged text and links", () => {
     const onFile = vi.fn();
     render(<DropSurface onFile={onFile} />);
-    const text = { types: ["text/plain"], files: [], items: [] } as unknown as DataTransfer;
+    const text = {
+      types: ["text/plain"],
+      files: [],
+      items: [],
+    } as unknown as DataTransfer;
     const over = drag("dragover", text);
     act(() => {
       window.dispatchEvent(drag("dragenter", text));
@@ -123,7 +141,13 @@ describe("dragging a file over the window", () => {
 
 describe("what counts as droppable", () => {
   it("knows the formats nankiv reads", () => {
-    for (const name of ["a.xlsx", "A.XLS", "list.csv", "sheet.ods", "macro.xlsm"]) {
+    for (const name of [
+      "a.xlsx",
+      "A.XLS",
+      "list.csv",
+      "sheet.ods",
+      "macro.xlsm",
+    ]) {
       expect(isSpreadsheet(name), name).toBe(true);
     }
     for (const name of ["offer.pdf", "notes.txt", "shortlist", "a.xlsx.zip"]) {
@@ -141,7 +165,9 @@ describe("what counts as droppable", () => {
 
   it("only reacts to drags that carry files", () => {
     expect(carriesFiles(transfer([sheet("a.xlsx")]))).toBe(true);
-    expect(carriesFiles({ types: ["text/uri-list"] } as unknown as DataTransfer)).toBe(false);
+    expect(
+      carriesFiles({ types: ["text/uri-list"] } as unknown as DataTransfer),
+    ).toBe(false);
     expect(carriesFiles(null)).toBe(false);
   });
 });
