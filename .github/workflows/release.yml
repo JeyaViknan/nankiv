@@ -67,6 +67,16 @@ jobs:
 
       - run: npm ci
 
+      # Run separately from the bundling below, though tauri runs them too,
+      # because a step that fails on its own says where the failure was. The
+      # logs of a workflow run are not public; the list of steps is.
+      - name: Build the interface
+        run: npm run build
+
+      - name: Build the widget
+        if: startsWith(matrix.os, 'macos')
+        run: widgets/macos/build.sh
+
       - name: Build and attach installers
         uses: tauri-apps/tauri-action@v0
         env:
