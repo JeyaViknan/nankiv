@@ -173,6 +173,34 @@ export interface ImportOutcome {
 }
 
 /** How the season is going: one verdict per drive, counted by the core. */
+/** The nine weights of San Francisco, which SF Symbols share. */
+export type SymbolWeight =
+  | "ultralight"
+  | "thin"
+  | "light"
+  | "regular"
+  | "medium"
+  | "semibold"
+  | "bold"
+  | "heavy"
+  | "black";
+
+export interface SymbolRequest {
+  /** As the SF Symbols app shows it, e.g. `gearshape`. */
+  name: string;
+  pointSize: number;
+  weight: SymbolWeight;
+  /** Device pixels per point. */
+  scale: number;
+}
+
+/** A symbol macOS drew, as a mask sized in points. */
+export interface SymbolImage {
+  width: number;
+  height: number;
+  url: string;
+}
+
 export interface Season {
   drives: number;
   shortlisted: number;
@@ -307,6 +335,9 @@ export const api = {
   season: () => invoke<Season>("season"),
   /** A single trackpad tap. Silent on a mouse, and where the system says so. */
   tap: () => invoke<void>("tap"),
+  /** SF Symbols from macOS, `null` for any the system cannot supply. */
+  symbols: (requests: SymbolRequest[]) =>
+    invoke<(SymbolImage | null)[]>("symbols", { requests }),
   /**
    * Hands the core the bytes of a file dropped on the window, and gets back a
    * path the ordinary import can read. A web view is never told where a

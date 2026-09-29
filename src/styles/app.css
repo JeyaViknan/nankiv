@@ -500,6 +500,38 @@ p {
   }
 }
 
+/* An SF Symbol is macOS's own drawing, used as a mask and filled with the
+   colour of the text around it — so it follows hover, state and dark mode the
+   way the drawn set does. The box holds the layout; the symbol is centred in it
+   at its natural size. */
+.sym {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+
+.sym-glyph {
+  position: absolute;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* A symbol cannot draw its own stroke, so the checkmark is revealed the way
+   the pen would travel: left to right, at the same moment and pace. */
+.sym-draw .sym-glyph {
+  clip-path: inset(0 100% 0 0);
+  animation: sym-draw 0.34s cubic-bezier(0.4, 0, 0.2, 1) 0.14s forwards;
+}
+
+@keyframes sym-draw {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 /* Digits that climb must not make the line reflow while they do it. */
 .tabular {
   font-variant-numeric: tabular-nums;
@@ -535,11 +567,6 @@ p {
   border: 1px solid transparent;
   white-space: nowrap;
   line-height: 1.45;
-}
-
-.pill svg {
-  width: 12px;
-  height: 12px;
 }
 
 .pill.yes {

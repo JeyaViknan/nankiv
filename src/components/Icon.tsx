@@ -1,43 +1,29 @@
 /**
  * The icon set.
  *
- * Every icon in the application was previously drawn ad hoc, which produced
- * seven different stroke weights across four different viewBox grids. That
- * incoherence is what reads as unprofessional — far more than the absence of
- * any particular icon library.
+ * On a Mac every icon is an SF Symbol — named in symbols.json exactly as
+ * Apple's SF Symbols app lists it, and drawn by macOS at the size and weight it
+ * is shown at. nankiv ships none of Apple's artwork: the symbols are licensed
+ * for Apple platforms only, the same code builds for Windows, and so they come
+ * from the system at run time the way a native app's do. See src/lib/symbols.ts.
  *
- * So: one system, applied without exception.
+ * Everywhere else — Windows, macOS before 11, the browser preview — the icons
+ * are nankiv's own drawings, held to one system so the fallback is still a set:
  *
  *   grid      20 × 20, matching the SF Symbols small optical size
  *   stroke    1.5 at 20px, scaled proportionally by `size`
  *   caps      round, joins round
  *   alignment shapes sit on the half-pixel grid so 1.5px strokes stay crisp
  *
- * The geometry follows the conventions SF Symbols uses — consistent optical
- * weight, generous interior counters, terminals that stop short of the bounding
- * box — but every path here is original. Apple's own artwork is licensed for
- * Apple platforms only and may not be embedded in a distributed product, and
- * nankiv ships for Windows too.
+ * Every path here is original.
  */
 
-import type { SVGProps } from "react";
+import type { CSSProperties } from "react";
+import type { SymbolImage, SymbolWeight } from "../lib/api";
+import { symbolScale, useSymbol } from "../lib/symbols";
+import SYMBOLS from "./symbols.json";
 
-export type IconName =
-  | "back"
-  | "check"
-  | "chevronRight"
-  | "close"
-  | "compare"
-  | "dash"
-  | "gear"
-  | "people"
-  | "plus"
-  | "question"
-  | "search"
-  | "sheet"
-  | "trash"
-  | "tray"
-  | "warning";
+export type IconName = keyof typeof SYMBOLS;
 
 /**
  * Path data on a 20×20 grid.
@@ -88,12 +74,39 @@ const CIRCLES: Partial<Record<IconName, [number, number, number]>> = {
   gear: [10, 10, 3.15],
 };
 
-interface Props extends Omit<SVGProps<SVGSVGElement>, "name"> {
+/** How much heavier than regular each weight draws the fallback stroke. */
+const STROKE_WEIGHT: Record<SymbolWeight, number> = {
+  ultralight: 0.5,
+  thin: 0.65,
+  light: 0.8,
+  regular: 1,
+  medium: 1.2,
+  semibold: 1.6,
+  bold: 1.8,
+  heavy: 2,
+  black: 2.2,
+};
+
+interface Props {
   name: IconName;
-  /** Rendered size in px. Stroke weight scales with it to hold optical weight. */
+  /** The square the icon occupies in the layout, in px. */
   size?: number;
-  /** Draw the stroke on first paint. For arrivals only. */
+  /** As in San Francisco: the symbol's weight should match its label's. */
+  weight?: SymbolWeight;
+  /** Draw the icon in on first paint. For arrivals only. */
   draw?: boolean;
+  className?: string;
+}
+
+/**
+ * The SF Symbols point size for an icon occupying a `size` square.
+ *
+ * A symbol's point size is a font size, not a box: its drawing runs taller
+ * than the size and, for wide symbols, wider. Four-fifths keeps the set's
+ * largest symbols inside their square at every size nankiv uses.
+ */
+export function pointSizeFor(size: number): number {
+  return Math.round(size * 0.8 * 2) / 2;
 }
 
 /**
@@ -109,7 +122,71 @@ export function strokeFor(size: number): number {
   return Number(w.toFixed(3));
 }
 
-export function Icon({ name, size = 17, draw = false, ...rest }: Props) {
+export function Icon({
+  name,
+  size = 17,
+  weight = "regular",
+  draw = false,
+  className,
+}: Props) {
+  const symbol = useSymbol({
+    name: SYMBOLS[name],
+    pointSize: pointSizeFor(size),
+    weight,
+  });
+
+  if (symbol === null) {
+    return (
+      <Drawn
+        name={name}
+        size={size}
+        weight={weight}
+        draw={draw}
+        className={className}
+      />
+    );
+  }
+
+  // The square holds the layout; the symbol sits centred in it at its own
+  // size, and is only there once macOS has drawn it — a frame at most.
+  const classes = ["sym", draw && "sym-draw", className].filter(Boolean);
+  return (
+    <span
+      className={classes.join(" ")}
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      {symbol && <span className="sym-glyph" style={glyph(symbol, size)} />}
+    </span>
+  );
+}
+
+/**
+ * Centres the symbol in its square, snapped to device pixels so the drawing
+ * macOS made for this density is not resampled across two.
+ */
+function glyph(symbol: SymbolImage, size: number): CSSProperties {
+  const scale = symbolScale();
+  const snap = (v: number) => Math.round(v * scale) / scale;
+  const mask = `url("${symbol.url}")`;
+  return {
+    left: snap((size - symbol.width) / 2),
+    top: snap((size - symbol.height) / 2),
+    width: symbol.width,
+    height: symbol.height,
+    WebkitMaskImage: mask,
+    maskImage: mask,
+  };
+}
+
+/** nankiv's own drawing, where SF Symbols are not available. */
+function Drawn({
+  name,
+  size,
+  weight,
+  draw,
+  className,
+}: Required<Omit<Props, "className">> & { className?: string }) {
   const circle = CIRCLES[name];
   const dot = DOTS[name];
 
@@ -120,12 +197,12 @@ export function Icon({ name, size = 17, draw = false, ...rest }: Props) {
       viewBox="0 0 20 20"
       fill="none"
       stroke="currentColor"
-      strokeWidth={strokeFor(size)}
+      strokeWidth={strokeFor(size) * STROKE_WEIGHT[weight]}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
-      {...rest}
+      className={className}
     >
       {circle && <circle cx={circle[0]} cy={circle[1]} r={circle[2]} />}
       {/* `draw` lets the stroke draw itself once, for the single moment in the

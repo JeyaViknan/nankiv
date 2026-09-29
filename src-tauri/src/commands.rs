@@ -1029,6 +1029,18 @@ pub fn tap() {
     }
 }
 
+/// SF Symbols for the interface's icons, drawn by macOS; see `symbols`.
+///
+/// One call for every icon on screen, so a view that shows ten of them does not
+/// cross the bridge ten times. Each answer is `None` where the system cannot
+/// supply the symbol, and the interface draws its own in that place.
+#[tauri::command]
+pub fn symbols(
+    requests: Vec<crate::symbols::SymbolRequest>,
+) -> Vec<Option<crate::symbols::SymbolImage>> {
+    requests.iter().map(crate::symbols::render).collect()
+}
+
 /// How the season is going, for the strip in the toolbar.
 #[tauri::command]
 pub fn season(state: tauri::State<AppState>) -> R<crate::widget::Season> {

@@ -14,6 +14,7 @@ pub mod model;
 pub mod parse;
 pub mod reference;
 pub mod store;
+pub mod symbols;
 pub mod widget;
 
 use commands::AppState;
@@ -140,6 +141,7 @@ pub fn run() {
             commands::season,
             commands::tap,
             commands::stage_dropped_file,
+            commands::symbols,
         ])
         .build(tauri::generate_context!())
         .expect("error while building nankiv")

@@ -324,19 +324,7 @@ function Preview() {
           <Section title="The invitation">
             <button className="invite">
               <span className="invite-icon">
-                <svg
-                  width="34"
-                  height="34"
-                  viewBox="0 0 40 40"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 7v17M13.5 17.5L20 24l6.5-6.5" />
-                  <path d="M7 26v4.5A2.5 2.5 0 0 0 9.5 33h21a2.5 2.5 0 0 0 2.5-2.5V26" />
-                </svg>
+                <Icon name="tray" size={32} />
               </span>
               <span className="invite-text">
                 <span className="invite-title">Drop a shortlist</span>
@@ -444,25 +432,7 @@ function Preview() {
           <Section title="Import — unreadable file">
             <div className="import-status failed">
               <span className="import-icon">
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                >
-                  <circle cx="10" cy="10" r="7.5" />
-                  <path d="M10 6.2v4.4" />
-                  <circle
-                    cx="10"
-                    cy="13.8"
-                    r="0.9"
-                    fill="currentColor"
-                    stroke="none"
-                  />
-                </svg>
+                <Icon name="warning" size={17} />
               </span>
               <div className="import-body">
                 <p className="import-headline">

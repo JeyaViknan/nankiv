@@ -49,7 +49,7 @@ export function OnboardingScreen() {
   return (
     <div className="onboard">
       <div className="onboard-mark" aria-hidden="true">
-        <Icon name="check" size={20} strokeWidth={2.4} />
+        <Icon name="check" size={20} weight="semibold" />
       </div>
 
       <h1>Who are you?</h1>

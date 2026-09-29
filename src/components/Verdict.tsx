@@ -128,7 +128,7 @@ export function VerdictPill({ verdict }: { verdict: Verdict }) {
   if (verdict.status === "shortlisted") {
     return (
       <span className="pill yes">
-        <Icon name="check" size={24} /> In
+        <Icon name="check" size={12} weight="semibold" /> In
       </span>
     );
   }
