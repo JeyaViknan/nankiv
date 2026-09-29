@@ -83,12 +83,17 @@ pub fn run() {
                 .filter_map(|a| desktop::spreadsheet(a))
                 .map(|p| p.to_string_lossy().into_owned())
                 .collect();
+            // And macOS hands them over before this point; see `EARLY`.
+            let early = EARLY
+                .lock()
+                .map(|mut e| std::mem::take(&mut *e))
+                .unwrap_or_default();
 
             app.manage(AppState {
                 store: Mutex::new(store),
                 widget: Some(publisher),
-                pending_route: Mutex::new(launch_route),
-                pending_files: Mutex::new(launch_files),
+                pending_route: Mutex::new(early.route.or(launch_route)),
+                pending_files: Mutex::new([launch_files, early.files].concat()),
             });
 
             // Publish once at launch, so the widget reflects anything that
@@ -163,24 +168,39 @@ pub fn run() {
         });
 }
 
-/// Brings the window forward and hands a route to the interface.
+/// Links and shortlists macOS handed over before the app had finished starting.
 ///
-/// The route is both stored and emitted. If the interface is already running it
-/// acts on the event and then clears the stored copy; if the link launched the
-/// app, nothing is listening yet, and the interface collects the stored copy
-/// once it has loaded. Opening the same drive twice is harmless, so the overlap
-/// needs no coordination.
+/// Dropping a shortlist on nankiv's Dock icon while it is closed, or clicking
+/// the widget, launches the app with an open-URLs event — and AppKit sends that
+/// event before it reports the launch finished, which is before `setup` has run
+/// and made anywhere to keep it. Without this, the file that launched the app
+/// was silently dropped. It waits here until `setup` moves it into `AppState`.
+static EARLY: Mutex<Early> = Mutex::new(Early {
+    route: None,
+    files: Vec::new(),
+});
+
+#[derive(Default)]
+struct Early {
+    route: Option<widget::Route>,
+    files: Vec<String>,
+}
+
 /// Hands the interface shortlists the desktop opened with nankiv.
 ///
-/// The same two paths as a link: acted on immediately if the interface is
-/// running, held for it to collect if the drop is what launched the app.
+/// The same paths as a link: acted on immediately if the interface is running,
+/// held for it to collect if the drop is what launched the app.
 #[cfg_attr(not(any(target_os = "macos", target_os = "ios")), allow(dead_code))]
 fn open_files(app: &tauri::AppHandle, files: Vec<String>) {
     use tauri::Emitter;
-    if let Some(state) = app.try_state::<AppState>() {
-        if let Ok(mut pending) = state.pending_files.lock() {
-            pending.clone_from(&files);
+    let Some(state) = app.try_state::<AppState>() else {
+        if let Ok(mut early) = EARLY.lock() {
+            early.files.extend(files);
         }
+        return;
+    };
+    if let Ok(mut pending) = state.pending_files.lock() {
+        pending.clone_from(&files);
     }
     let _ = app.emit("open-files", &files);
     if let Some(window) = app.get_webview_window("main") {
@@ -190,13 +210,24 @@ fn open_files(app: &tauri::AppHandle, files: Vec<String>) {
     }
 }
 
+/// Brings the window forward and hands a route to the interface.
+///
+/// The route is both stored and emitted. If the interface is already running it
+/// acts on the event and then clears the stored copy; if the link launched the
+/// app, nothing is listening yet, and the interface collects the stored copy
+/// once it has loaded. Opening the same drive twice is harmless, so the overlap
+/// needs no coordination.
 #[cfg_attr(not(any(target_os = "macos", target_os = "ios")), allow(dead_code))]
 fn open_route(app: &tauri::AppHandle, route: widget::Route) {
     use tauri::Emitter;
-    if let Some(state) = app.try_state::<AppState>() {
-        if let Ok(mut pending) = state.pending_route.lock() {
-            *pending = Some(route.clone());
+    let Some(state) = app.try_state::<AppState>() else {
+        if let Ok(mut early) = EARLY.lock() {
+            early.route = Some(route);
         }
+        return;
+    };
+    if let Ok(mut pending) = state.pending_route.lock() {
+        *pending = Some(route.clone());
     }
     let _ = app.emit("deep-link", &route);
     if let Some(window) = app.get_webview_window("main") {
