@@ -112,7 +112,14 @@ export function SearchField({
       />
 
       {open && (
-        <div className="popover" role="listbox" aria-label="Search results">
+        // It opens inside the toolbar, which moves the window from anywhere
+        // in it; pressing on the results must not.
+        <div
+          className="popover"
+          role="listbox"
+          aria-label="Search results"
+          data-tauri-drag-region="false"
+        >
           {busy && <p className="pop-note">Searching…</p>}
 
           {!busy && byName?.kind === "found" && (

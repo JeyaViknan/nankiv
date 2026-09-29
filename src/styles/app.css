@@ -249,6 +249,10 @@ body {
   font-feature-settings: "ss01", "cv01";
   font-variant-numeric: tabular-nums;
   overflow: hidden;
+  /* Interface text is not a document: pressing on a label, or grabbing the
+     title bar to move the window, must not start a selection. WebKit only
+     honours the prefixed property; without it everything was selectable. */
+  -webkit-user-select: none;
   user-select: none;
   cursor: default;
 }
@@ -256,6 +260,7 @@ body {
 .selectable,
 input,
 textarea {
+  -webkit-user-select: text;
   user-select: text;
 }
 
@@ -635,7 +640,6 @@ kbd {
   display: flex;
   align-items: center;
   gap: 10px;
-  -webkit-app-region: drag;
 }
 
 .season-rule {

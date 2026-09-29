@@ -154,8 +154,11 @@ export default function App() {
   return (
     <div className="app">
       {/* The toolbar doubles as the window drag region, which is what makes a
-          chrome-less window feel native rather than like a page. */}
-      <header className="toolbar" data-tauri-drag-region>
+          chrome-less window feel native rather than like a page. "deep" makes
+          that true of everything in it — a bare attribute only counts presses
+          on the bar's own background, which its children almost entirely
+          cover. Buttons and the search field still take their own clicks. */}
+      <header className="toolbar" data-tauri-drag-region="deep">
         <div className="toolbar-left">
           {inDrive ? (
             <button
