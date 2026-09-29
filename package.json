@@ -15,6 +15,7 @@
     "widget:build": "node scripts/build_widget.mjs",
     "widget:test": "swift test --package-path widgets/macos/Core",
     "widget:renders": "swift run --package-path widgets/macos/Core nankiv-widget-render",
+    "icon:build": "bash src-tauri/icons/build.sh",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run src/e2e",

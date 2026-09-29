@@ -61,7 +61,8 @@
       "minimumSystemVersion": "10.15",
       "signingIdentity": "-",
       "files": {
-        "PlugIns/NankivWidget.appex": "../widgets/macos/build/NankivWidget.appex"
+        "PlugIns/NankivWidget.appex": "../widgets/macos/build/NankivWidget.appex",
+        "Resources/Assets.car": "icons/Assets.car"
       }
     },
     "windows": {

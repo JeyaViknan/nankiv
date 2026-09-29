@@ -12,9 +12,16 @@
   icon a drop target: drag a shortlist onto nankiv in the Dock or Finder and it
   imports straight away. The rank is Alternate — nankiv is somewhere you can
   send a spreadsheet, not the app that should own every one on the machine.
+
+  And names the icon in Assets.car, compiled from icons/AppIcon.icon. That is
+  what lets macOS 26 and later draw it in Liquid Glass and in the dark, tinted
+  and clear styles; icon.icns remains for anything that does not look there.
 -->
 <plist version="1.0">
 <dict>
+  <key>CFBundleIconName</key>
+  <string>AppIcon</string>
+
   <key>CFBundleURLTypes</key>
   <array>
     <dict>

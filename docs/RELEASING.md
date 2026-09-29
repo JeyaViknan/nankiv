@@ -28,6 +28,23 @@ The `ci.yml` workflow also builds installers on every push, but those are
 workflow artifacts: they need a GitHub login and expire after 14 days. A
 release is what produces a link anyone can use.
 
+## The app icon
+
+The icon is an Icon Composer document, `src-tauri/icons/AppIcon.icon`: a
+background and two groups of layers, with separate colours for dark mode and
+for the tinted and clear styles. To change it, open it in Icon Composer, save,
+and run:
+
+```bash
+npm run icon:build
+```
+
+That compiles `Assets.car` (the layered icon macOS 26 and later draw with
+Liquid Glass, plus flat renderings for older versions of macOS) and
+`icon.icns`, and renders the Windows and Linux icons from the same document.
+The outputs are committed, because compiling an `.icon` needs Xcode 26 or later
+and the release runners are not guaranteed to have it.
+
 ## Code signing
 
 Builds are unsigned by default, and unsigned builds cost real adoption: macOS
