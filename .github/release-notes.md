@@ -1,3 +1,20 @@
+## What's new in 0.1.1
+
+- **A new icon.** Built in Icon Composer: on macOS 26 and later it is drawn
+  in Liquid Glass and follows the dark, tinted and clear icon styles.
+- **The answer gets its moment.** A shortlist you made it onto is shown large,
+  with a single trackpad tap. The season so far — how many you are in — sits
+  in the toolbar.
+- **Feels like a Mac app.** SF Symbols throughout, one title bar with the
+  window buttons on its centreline, drag the window from anywhere on that bar,
+  and no more text highlighting when you grab it.
+- **Drop a shortlist on the Dock icon, even when nankiv is closed.** It opens
+  and imports it. Before, a closed app opened and lost the file.
+- The import button and the circle count are gone from the toolbar: drop a
+  file anywhere in the window, or press ⌘O.
+
+## Download
+
 Offline placement shortlist analysis. Take the one file for your machine:
 
 | Your machine | File |
