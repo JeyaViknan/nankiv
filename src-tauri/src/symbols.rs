@@ -60,6 +60,7 @@ pub fn plausible(request: &SymbolRequest) -> bool {
 }
 
 /// Parses what the bridge returns: "width height base64png".
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn parse(raw: &str) -> Option<SymbolImage> {
     let mut parts = raw.splitn(3, ' ');
     let width: f64 = parts.next()?.parse().ok()?;
