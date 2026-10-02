@@ -172,7 +172,6 @@ export interface ImportOutcome {
   unreadable_headers: string[] | null;
 }
 
-/** How the season is going: one verdict per drive, counted by the core. */
 /** The nine weights of San Francisco, which SF Symbols share. */
 export type SymbolWeight =
   | "ultralight"
@@ -201,6 +200,7 @@ export interface SymbolImage {
   url: string;
 }
 
+/** How the season is going: one verdict per drive, counted by the core. */
 export interface Season {
   drives: number;
   shortlisted: number;

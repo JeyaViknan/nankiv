@@ -164,37 +164,6 @@ export function DriveScreen({
     }
   }
 
-  const notShortlisted = outcome.you.verdict.status === "not_shortlisted";
-
-  // When the answer is no, the first question is "what did it take?" — so the
-  // analysis moves above the circle. When the answer is yes, your people come
-  // first, because the next thing you do is look for them.
-  const analysis = (
-    <section className="block">
-      <div className="list-head">
-        <span className="eyebrow">What this shortlist suggests</span>
-      </div>
-
-      {/* Two different situations that were being shown as one. No academic
-              records at all is a setup step, not a thin sample. */}
-      {stats?.academics_known === 0 ? (
-        <NeedsReference />
-      ) : !a.sufficient ? (
-        <InsufficientSample analysis={a} />
-      ) : (
-        <>
-          <CoverageNotice analysis={a} />
-          {a.cutoff && <CutoffCard report={a.cutoff} />}
-          {a.your_percentile && <StandingCard percentile={a.your_percentile} />}
-          {a.cgpa && (
-            <DistributionCard dist={a.cgpa.value} yourCgpa={outcome.you.cgpa} />
-          )}
-          {a.branches && <BranchCard report={a.branches} />}
-        </>
-      )}
-    </section>
-  );
-
   return (
     <div className="surface">
       <VerdictBanner
@@ -214,8 +183,6 @@ export function DriveScreen({
           keyed by {outcome.primary_key === "reg_no" ? "reg number" : "Neo ID"}
         </span>
       </div>
-
-      {notShortlisted && analysis}
 
       <section className="block">
         <div className="list-head">
@@ -307,7 +274,36 @@ export function DriveScreen({
         </section>
       )}
 
-      {!notShortlisted && analysis}
+      {/* Last, whatever the answer was. Your people come straight after it
+          every time; the page never rearranges itself around a no. */}
+      <section className="block">
+        <div className="list-head">
+          <span className="eyebrow">What this shortlist suggests</span>
+        </div>
+
+        {/* Two different situations that were being shown as one. No academic
+            records at all is a setup step, not a thin sample. */}
+        {stats?.academics_known === 0 ? (
+          <NeedsReference />
+        ) : !a.sufficient ? (
+          <InsufficientSample analysis={a} />
+        ) : (
+          <>
+            <CoverageNotice analysis={a} />
+            {a.cutoff && <CutoffCard report={a.cutoff} />}
+            {a.your_percentile && (
+              <StandingCard percentile={a.your_percentile} />
+            )}
+            {a.cgpa && (
+              <DistributionCard
+                dist={a.cgpa.value}
+                yourCgpa={outcome.you.cgpa}
+              />
+            )}
+            {a.branches && <BranchCard report={a.branches} />}
+          </>
+        )}
+      </section>
 
       <footer className="drive-foot">
         <div className="btn-row">
