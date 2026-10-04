@@ -127,6 +127,24 @@ const MIGRATIONS: &[(&str, &str)] = &[
     ALTER TABLE profile ADD COLUMN cgpa_updated_at TEXT;
     "#,
     ),
+    (
+        "0004_member_origins",
+        r#"
+    -- Where each identifier sat in the file it was read from — sheet, row and
+    -- column — so a verdict can show the student its evidence. Positions of
+    -- identifiers already in drive_members, and nothing else from the file.
+    CREATE TABLE drive_member_origins (
+        drive_id    INTEGER NOT NULL REFERENCES drives(id) ON DELETE CASCADE,
+        kind        TEXT NOT NULL,
+        value       TEXT NOT NULL,
+        sheet       TEXT NOT NULL,
+        row_number  INTEGER NOT NULL,
+        col         TEXT,
+        header      TEXT,
+        PRIMARY KEY (drive_id, kind, value)
+    );
+    "#,
+    ),
 ];
 
 /// Applies any migrations the database has not seen.
@@ -189,6 +207,7 @@ mod tests {
             "name_spellings",
             "academics",
             "baseline_values",
+            "drive_member_origins",
         ] {
             let n: i64 = c
                 .query_row(

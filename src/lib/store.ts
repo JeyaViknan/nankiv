@@ -12,7 +12,7 @@ import {
   api,
   toApiError,
   type ApiError,
-  type DriveRecord,
+  type DriveListItem,
   type DriveSnapshot,
   type ExportFormat,
   type Friend,
@@ -59,7 +59,7 @@ interface State {
   view: View;
   profile: Profile | null;
   friends: Friend[];
-  drives: DriveRecord[];
+  drives: DriveListItem[];
   /** How the season is going, counted by the core. Null until first loaded. */
   season: Season | null;
   stats: IdentityStats | null;

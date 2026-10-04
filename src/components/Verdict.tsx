@@ -7,9 +7,36 @@
  * so a new state cannot be added without deciding how it looks.
  */
 
-import type { Verdict, UndeterminedReason } from "../lib/api";
+import type { Evidence, Verdict, UndeterminedReason } from "../lib/api";
+import { explainVerdict } from "../lib/evidence";
 import { Icon } from "./Icon";
 import { CountUp } from "./CountUp";
+
+/**
+ * The working behind an answer, one click away. Closed by default: the answer
+ * is the news, and the evidence is for whoever wants to check it.
+ */
+function Why({
+  question,
+  verdict,
+  evidence,
+}: {
+  question: string;
+  verdict: Verdict;
+  evidence?: Evidence;
+}) {
+  const text = evidence && explainVerdict(verdict, evidence);
+  if (!text) return null;
+  return (
+    <details className="why">
+      <summary>
+        {question}
+        <Icon name="chevronRight" size={11} className="why-chevron" />
+      </summary>
+      <p>{text}</p>
+    </details>
+  );
+}
 
 /** Plain-language explanation for why we can't answer. */
 export function undeterminedText(r: UndeterminedReason): {
@@ -49,6 +76,8 @@ interface BannerProps {
   totalStudents: number;
   /** Opens Settings on the field that would answer the question. */
   onFix?: () => void;
+  /** What the answer rests on. */
+  evidence?: Evidence;
 }
 
 /** The hero of the application: one unmistakable answer. */
@@ -57,6 +86,7 @@ export function VerdictBanner({
   company,
   totalStudents,
   onFix,
+  evidence,
 }: BannerProps) {
   // The answer people hope for gets the room, the motion and the one flourish
   // in the application. The other two are deliberately quieter: a rejection
@@ -72,6 +102,11 @@ export function VerdictBanner({
           <p className="verdict-detail">
             {company} — <CountUp value={totalStudents} /> students shortlisted
           </p>
+          <Why
+            question="Why does it think I'm in?"
+            verdict={verdict}
+            evidence={evidence}
+          />
         </div>
       </div>
     );
@@ -89,6 +124,7 @@ export function VerdictBanner({
             You're not on the {company} shortlist of{" "}
             {totalStudents.toLocaleString()}. What it took is below.
           </p>
+          <Why question="Why not?" verdict={verdict} evidence={evidence} />
         </div>
       </div>
     );

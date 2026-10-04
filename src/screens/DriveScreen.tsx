@@ -26,6 +26,7 @@ import { useStore } from "../lib/store";
 import { NeedsReference } from "../components/NeedsReference";
 import { MenuButton } from "../components/MenuButton";
 import { VerdictBanner, VerdictPill } from "../components/Verdict";
+import { RoundTrail, neighbour } from "../components/Rounds";
 import {
   BranchCard,
   CoverageNotice,
@@ -99,16 +100,22 @@ function EditableName({ id, name }: { id: number; name: string }) {
     );
   }
 
+  // Nothing in the file named it, so ask rather than show a placeholder as if
+  // it were a name.
+  const unnamed = name === UNNAMED;
   return (
     <button
-      className="name-button"
+      className={`name-button${unnamed ? " prompt" : ""}`}
       onClick={() => setEditing(true)}
       title="Rename this drive"
     >
-      {name}
+      {unnamed ? "Name this drive" : name}
     </button>
   );
 }
+
+/** What the core calls a drive nothing in its file could name. */
+const UNNAMED = "Unnamed drive";
 
 export function DriveScreen({
   outcome,
@@ -118,7 +125,8 @@ export function DriveScreen({
   /** Opens Settings when the answer is "can't tell" and a field would fix it. */
   onFix: () => void;
 }) {
-  const { showToast, drives, openDrive, stats, exportNames } = useStore();
+  const { showToast, openDrive, refreshDrives, stats, exportNames } =
+    useStore();
   const [copied, setCopied] = useState(false);
   const a = outcome.analysis;
 
@@ -127,20 +135,35 @@ export function DriveScreen({
   ).length;
 
   // Comparison is offered where it is relevant rather than through a selection
-  // mode. Other drives from the same company are almost always what you want
-  // to compare against, so they are the ones offered.
-  const siblings = drives.filter(
-    (d) => d.id !== outcome.drive_id && d.company === outcome.company,
-  );
+  // mode: against the round before this one, or after it for a first round.
+  const rounds = outcome.progression;
+  const other = rounds ? neighbour(rounds, outcome.drive_id) : null;
   const [diff, setDiff] = useState<Awaited<
     ReturnType<typeof api.compareRounds>
   > | null>(null);
+  useEffect(() => setDiff(null), [outcome.drive_id]);
 
-  async function compareWith(otherId: number) {
+  async function compare() {
+    if (!other) return;
+    const [from, to] = other.earlier
+      ? [other.step.drive_id, outcome.drive_id]
+      : [outcome.drive_id, other.step.drive_id];
     try {
-      setDiff(await api.compareRounds(otherId, outcome.drive_id));
+      setDiff(await api.compareRounds(from, to));
     } catch {
       showToast("Couldn't compare those rounds");
+    }
+  }
+
+  // Rounds are linked only on strong evidence, but evidence can still be
+  // wrong; undoing a link is one click and never touches either list.
+  async function separate() {
+    try {
+      await api.setDriveRound(outcome.drive_id, null);
+      await Promise.all([refreshDrives(), openDrive(outcome.drive_id)]);
+      showToast("Separated — it's its own drive now");
+    } catch {
+      showToast("Couldn't separate those rounds");
     }
   }
 
@@ -163,6 +186,7 @@ export function DriveScreen({
         company={outcome.company}
         totalStudents={outcome.total_students}
         onFix={onFix}
+        evidence={outcome.evidence}
       />
 
       {/* Provenance, stated once, quietly, directly under the answer. */}
@@ -200,11 +224,16 @@ export function DriveScreen({
         )}
       </section>
 
-      {siblings.length > 0 && (
+      {rounds && (
         <section className="block">
           <div className="list-head">
             <span className="eyebrow">Rounds</span>
           </div>
+          <RoundTrail
+            progression={rounds}
+            current={outcome.drive_id}
+            onOpen={(id) => void openDrive(id)}
+          />
           {diff ? (
             <div className="panel">
               <div className="stats">
@@ -237,26 +266,20 @@ export function DriveScreen({
               </button>
             </div>
           ) : (
-            <div className="list">
-              {siblings.map((s) => (
-                <div className="row" key={s.id}>
-                  <button
-                    className="row-main"
-                    onClick={() => void openDrive(s.id)}
-                  >
-                    <span className="row-title">{s.company}</span>
-                    <span className="row-meta">
-                      {s.total_students.toLocaleString()} shortlisted
-                    </span>
-                  </button>
-                  <button
-                    className="btn small"
-                    onClick={() => void compareWith(s.id)}
-                  >
-                    Compare
-                  </button>
-                </div>
-              ))}
+            <div className="btn-row round-actions">
+              {other && (
+                <button className="btn small" onClick={() => void compare()}>
+                  Compare with {other.step.label}
+                </button>
+              )}
+              {other?.earlier && (
+                <button
+                  className="btn small plain"
+                  onClick={() => void separate()}
+                >
+                  Not a round of this drive? Separate it
+                </button>
+              )}
             </div>
           )}
         </section>

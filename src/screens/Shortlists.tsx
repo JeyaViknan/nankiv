@@ -13,11 +13,12 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DriveRecord } from "../lib/api";
+import type { DriveListItem } from "../lib/api";
 import { useStore } from "../lib/store";
 import { ImportStatus } from "../components/ImportStatus";
 import { NeedsReference } from "../components/NeedsReference";
 import { Icon } from "../components/Icon";
+import { VerdictPill } from "../components/Verdict";
 
 function relativeDay(iso: string): string {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -40,20 +41,31 @@ function DriveRow({
   onOpen,
   onDelete,
 }: {
-  drive: DriveRecord;
+  drive: DriveListItem;
   active: boolean;
   onOpen: () => void;
   onDelete: () => void;
 }) {
   return (
     <div className={`row${active ? " active" : ""}`}>
-      <button className="row-main" onClick={onOpen} tabIndex={-1}>
-        <span className="row-title">{drive.company}</span>
-        <span className="row-meta">
-          {drive.total_students.toLocaleString()} shortlisted
-          <span className="row-dot">·</span>
-          {relativeDay(drive.imported_at)}
+      <button className="row-main split" onClick={onOpen} tabIndex={-1}>
+        <span className="row-stack">
+          <span className="row-title">{drive.company}</span>
+          <span className="row-meta">
+            {drive.round && (
+              <>
+                <span className="row-round">{drive.round}</span>
+                <span className="row-dot">·</span>
+              </>
+            )}
+            {drive.total_students.toLocaleString()} shortlisted
+            <span className="row-dot">·</span>
+            {relativeDay(drive.imported_at)}
+          </span>
         </span>
+        {/* Your answer on every row, so the season reads without opening each
+            drive. Words, never colour alone. */}
+        <VerdictPill verdict={drive.verdict} />
       </button>
       <button
         className="row-action"

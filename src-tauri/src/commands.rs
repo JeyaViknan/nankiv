@@ -111,6 +111,10 @@ pub struct ImportOutcome {
     /// The CGPA the student entered for themselves, for their own place on
     /// the distribution. Nobody else's CGPA is ever sent to the interface.
     pub your_cgpa: Option<f64>,
+    /// Where your answer came from, for "Why does it think I'm in?".
+    pub evidence: engine::Evidence,
+    /// This drive's rounds, when it is one of several.
+    pub progression: Option<engine::Progression>,
     pub friends: Vec<PersonResult>,
     pub analysis: DriveAnalysis,
     /// What this file taught the identity graph.
@@ -310,7 +314,6 @@ fn import_shortlist_inner(
         .map_err(|e| CommandError::new("parse_failed", format!("Couldn't read that file — {e}")))?;
 
     let s = store(&state);
-    let profile = s.profile()?;
 
     // One drop target has to work for both kinds of spreadsheet a student
     // receives. Without this, dropping the batch CGPA sheet — which is keyed by
@@ -335,6 +338,28 @@ fn import_shortlist_inner(
         }
     }
 
+    drop(s);
+    record_shortlist(
+        &state,
+        &parsed,
+        &filename,
+        company_override,
+        replace_existing,
+    )
+}
+
+/// Records a parsed shortlist and answers it. Files and pasted lists both end
+/// here, so a list is checked, named, linked to its earlier rounds and
+/// answered the same way however it arrived.
+fn record_shortlist(
+    state: &tauri::State<AppState>,
+    parsed: &parse::ParsedFile,
+    filename: &str,
+    company_override: Option<String>,
+    replace_existing: Option<bool>,
+) -> R<ImportOutcome> {
+    let s = store(state);
+
     // A file we cannot key on tells us nothing. Report it as such rather than
     // recording an empty drive that would read as a rejection.
     if !parsed.shape.is_usable() {
@@ -350,9 +375,10 @@ fn import_shortlist_inner(
         }));
     }
 
+    let named = crate::naming::infer(filename, &parsed.titles, &parsed.sheet_names);
     let (company, drive_date) = match &company_override {
         Some(c) if !c.trim().is_empty() => (c.trim().to_string(), None),
-        _ => infer_company_and_date(&filename),
+        _ => (named.company, named.date),
     };
 
     if replace_existing.unwrap_or(false) {
@@ -364,62 +390,59 @@ fn import_shortlist_inner(
     let drive_id = s.insert_drive(
         &company,
         drive_date.as_deref(),
-        &filename,
+        filename,
         &parsed.content_hash,
         shape_label(parsed.shape),
         parsed.primary_key.map(key_label),
         &parsed.neo_ids,
         &parsed.reg_nos,
-        None,
+        named.round.as_deref(),
     )?;
+    s.record_origins(drive_id, &member_origins(parsed))?;
 
     // Harvest identity links before resolving, so this file improves its own
     // analysis as well as every future one.
-    let harvest = engine::harvest_identity(&s, &parsed, &filename)?;
+    let harvest = engine::harvest_identity(&s, parsed, filename)?;
     let identity = engine::build_graph(&s)?;
+    engine::link_round(&s, drive_id)?;
 
-    let you = resolve_person(
-        "You",
-        profile.neo_id.as_deref(),
-        profile.reg_no.as_deref(),
-        &parsed,
-        &identity,
-    )?;
+    let profile = s.profile()?;
+    let mut outcome = drive_outcome(&s, drive_id, &identity, &profile)?;
+    outcome.learned_verified = harvest.verified_links;
+    outcome.learned_named = harvest.named_links;
+    Ok(outcome)
+}
 
-    let mut friends = Vec::new();
-    for f in s.friends()? {
-        friends.push(resolve_person(
-            &f.label,
-            f.neo_id.as_deref(),
-            f.reg_no.as_deref(),
-            &parsed,
-            &identity,
-        )?);
+/// Where each identifier in a parsed file sat, ready to store.
+fn member_origins(parsed: &parse::ParsedFile) -> Vec<crate::store::MemberOrigin> {
+    let mut out = Vec::new();
+    for (row, origin) in parsed.rows.iter().zip(&parsed.origins) {
+        let ids = [
+            (
+                row.neo_id.as_ref().map(|n| n.as_str()),
+                "neo_id",
+                &origin.neo_column,
+            ),
+            (
+                row.reg_no.as_ref().map(|r| r.as_str()),
+                "reg_no",
+                &origin.reg_column,
+            ),
+        ];
+        for (value, kind, column) in ids {
+            if let Some(value) = value {
+                out.push(crate::store::MemberOrigin {
+                    kind: kind.to_string(),
+                    value: value.to_string(),
+                    sheet: origin.sheet.clone(),
+                    row: origin.row,
+                    column: column.as_ref().map(|c| c.letter.clone()),
+                    header: column.as_ref().and_then(|c| c.header.clone()),
+                });
+            }
+        }
     }
-    // Shortlisted first, then undetermined, then not shortlisted.
-    friends.sort_by_key(|f| match f.verdict {
-        Verdict::Shortlisted => 0,
-        Verdict::Undetermined(_) => 1,
-        Verdict::NotShortlisted => 2,
-    });
-
-    let analysis = engine::analyse_drive(&s, drive_id, &identity, &profile)?;
-
-    Ok(ImportOutcome {
-        drive_id,
-        company,
-        drive_date,
-        total_students: parsed.student_count(),
-        shape: parsed.shape,
-        primary_key: parsed.primary_key,
-        you,
-        your_cgpa: profile.cgpa.and_then(sanitise_cgpa),
-        friends,
-        analysis,
-        learned_verified: harvest.verified_links,
-        learned_named: harvest.named_links,
-        unreadable_headers: None,
-    })
+    out
 }
 
 fn resolve_person(
@@ -448,65 +471,6 @@ fn resolve_person(
     })
 }
 
-/// Infers a company name and date from the filename. Always a suggestion the
-/// student can edit, never a silent decision.
-pub fn infer_company_and_date(filename: &str) -> (String, Option<String>) {
-    let stem = filename
-        .rsplit_once('.')
-        .map(|(a, _)| a)
-        .unwrap_or(filename);
-
-    // Pull a trailing date like 28_07_26 or 1-9-26 before stripping noise.
-    let date = once_cell::sync::Lazy::new(|| {
-        regex::Regex::new(r"(\d{1,2})[-_](\d{1,2})[-_](\d{2,4})").unwrap()
-    });
-    let found_date = date
-        .captures(stem)
-        .map(|c| format!("{}-{}-{}", &c[1], &c[2], &c[3]));
-
-    let mut name = stem.to_string();
-    for pat in [
-        "shortlisted list",
-        "shortlist",
-        "shortlisted",
-        "test",
-        "interview",
-        "additonal",
-        "additional",
-        "with neo id",
-        "list",
-    ] {
-        let re = regex::RegexBuilder::new(&regex::escape(pat))
-            .case_insensitive(true)
-            .build()
-            .expect("static pattern");
-        name = re.replace_all(&name, " ").to_string();
-    }
-    // Strip dates, bracketed suffixes and separators.
-    name = regex::Regex::new(r"\d{1,2}[-_]\d{1,2}[-_]\d{2,4}")
-        .unwrap()
-        .replace_all(&name, " ")
-        .to_string();
-    name = regex::Regex::new(r"\((\d+)\)")
-        .unwrap()
-        .replace_all(&name, " ")
-        .to_string();
-    name = regex::Regex::new(r"[_\-]+")
-        .unwrap()
-        .replace_all(&name, " ")
-        .to_string();
-    name = regex::Regex::new(r"\s+")
-        .unwrap()
-        .replace_all(&name, " ")
-        .trim()
-        .to_string();
-
-    if name.is_empty() {
-        name = "Unnamed drive".to_string();
-    }
-    (name, found_date)
-}
-
 fn shape_label(s: FileShape) -> &'static str {
     match s {
         FileShape::NeoIdOnly => "neo_id_only",
@@ -528,8 +492,41 @@ fn key_label(k: KeyKind) -> &'static str {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn list_drives(state: tauri::State<AppState>) -> R<Vec<DriveRecord>> {
-    Ok(store(&state).drives()?)
+pub fn list_drives(state: tauri::State<AppState>) -> R<Vec<DriveListItem>> {
+    let s = store(&state);
+    let profile = s.profile()?;
+    let drives = s.drives()?;
+    let rounds = engine::round_labels(&drives);
+    drives
+        .into_iter()
+        .map(|d| {
+            let verdict = engine::verdict_in_drive(
+                &s,
+                &d,
+                profile.neo_id.as_deref(),
+                profile.reg_no.as_deref(),
+            )?;
+            // Its place among linked rounds, or the stage the file named:
+            // two lists both called "Infosys" are told apart by "Interview"
+            // and "Batch 2".
+            let round = rounds.get(&d.id).cloned().or(d.round_label.clone());
+            Ok(DriveListItem {
+                drive: d,
+                verdict,
+                round,
+            })
+        })
+        .collect()
+}
+
+/// A drive as the list shows it: with your answer on it, so the history can
+/// be read without opening each one, and its round or stage when known.
+#[derive(Debug, Clone, Serialize)]
+pub struct DriveListItem {
+    #[serde(flatten)]
+    pub drive: DriveRecord,
+    pub verdict: Verdict,
+    pub round: Option<String>,
 }
 
 /// Deletes a drive and hands back everything needed to put it back.
@@ -609,17 +606,8 @@ pub fn drive_outcome(
 
     let neo_ids = s.drive_neo_ids(id)?;
     let reg_nos = s.drive_reg_nos(id)?;
-    let primary_key = match drive.primary_key.as_deref() {
-        Some("reg_no") => Some(KeyKind::RegNo),
-        Some("neo_id") => Some(KeyKind::NeoId),
-        _ => None,
-    };
-    let shape = match drive.shape.as_str() {
-        "reg_no_only" => FileShape::RegNoOnly,
-        "linked" => FileShape::Linked,
-        "unrecognised" => FileShape::Unrecognised,
-        _ => FileShape::NeoIdOnly,
-    };
+    let primary_key = engine::stored_key(drive.primary_key.as_deref());
+    let shape = engine::stored_shape(&drive.shape);
 
     let synthetic = parse::ParsedFile {
         rows: vec![],
@@ -630,6 +618,8 @@ pub fn drive_outcome(
         content_hash: drive.content_hash.clone(),
         observed_headers: vec![],
         sheet_names: vec![],
+        origins: vec![],
+        titles: vec![],
     };
 
     let you = resolve_person(
@@ -656,6 +646,8 @@ pub fn drive_outcome(
     });
 
     let analysis = engine::analyse_drive(s, id, identity, profile)?;
+    let evidence = engine::evidence(s, &drive, profile)?;
+    let progression = engine::progression(s, id, profile)?;
 
     Ok(ImportOutcome {
         drive_id: id,
@@ -666,6 +658,8 @@ pub fn drive_outcome(
         primary_key,
         you,
         your_cgpa: profile.cgpa.and_then(sanitise_cgpa),
+        evidence,
+        progression,
         friends,
         analysis,
         learned_verified: 0,
@@ -1115,45 +1109,5 @@ mod dropped_file_tests {
     #[test]
     fn a_very_long_name_is_trimmed() {
         assert_eq!(safe_filename(&"a".repeat(500)).chars().count(), 200);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn company_inference_handles_the_real_filenames() {
-        let cases = [
-            ("Siemens SISW shortlist 2027.xlsx", "Siemens SISW 2027"),
-            ("Fractal Analytics shortlist.xlsx", "Fractal Analytics"),
-            ("hpe shortlisted list.xlsx", "hpe"),
-            ("Tekion additonal shortlist.xlsx", "Tekion"),
-            ("amazon shortlist (1).xlsx", "amazon"),
-            ("Elgi test shortlist.xlsx", "Elgi"),
-            ("Epsilon interview shortlist with neo id.xlsx", "Epsilon"),
-            ("BlackRock - Test Shortlist.xlsx", "BlackRock"),
-        ];
-        for (file, expected) in cases {
-            let (got, _) = infer_company_and_date(file);
-            assert_eq!(got, expected, "for {file}");
-        }
-    }
-
-    #[test]
-    fn dates_are_pulled_out_of_filenames() {
-        let (company, date) = infer_company_and_date("Zluri Shortlist 28_07_26.xlsx");
-        assert_eq!(company, "Zluri");
-        assert_eq!(date.as_deref(), Some("28-07-26"));
-
-        let (company, date) = infer_company_and_date("Tredence shortlisted list_1-9-26.xlsx");
-        assert_eq!(company, "Tredence");
-        assert_eq!(date.as_deref(), Some("1-9-26"));
-    }
-
-    #[test]
-    fn an_unnameable_file_still_gets_a_label() {
-        let (company, _) = infer_company_and_date("shortlist.xlsx");
-        assert_eq!(company, "Unnamed drive");
     }
 }

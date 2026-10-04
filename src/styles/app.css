@@ -421,6 +421,50 @@ p {
   margin-top: 12px;
 }
 
+/* The working behind an answer: a quiet link that opens in place. */
+.why {
+  margin-top: 10px;
+  font-size: 12.5px;
+}
+
+.why summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 520;
+  list-style: none;
+  border-radius: var(--r-sm);
+}
+
+.why summary::-webkit-details-marker {
+  display: none;
+}
+
+.why-chevron {
+  transition: transform 0.16s ease;
+}
+
+.why[open] .why-chevron {
+  transform: rotate(90deg);
+}
+
+.why summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Selectable: it is the one sentence someone may want to paste elsewhere. */
+.why p {
+  margin: 8px 0 0;
+  color: var(--text-2);
+  line-height: 1.55;
+  max-width: 54ch;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* A yes, at the size a yes deserves. */
 .verdict.yes {
   gap: 22px;
@@ -586,6 +630,86 @@ p {
   background: var(--warn-subtle);
   color: var(--warn);
   border-color: var(--warn-border);
+}
+
+/* A drive's rounds on one line: R1 ✓ → R2 ✓ → Next ? */
+.round-trail {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.round-trail li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.round-arrow {
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.round-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-3);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.round-step.shortlisted {
+  color: var(--ok);
+  border-color: var(--ok-border);
+  background: var(--ok-subtle);
+}
+
+.round-step.undetermined {
+  color: var(--warn);
+}
+
+button.round-step {
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+
+button.round-step:hover {
+  filter: brightness(0.97);
+}
+
+/* The round you are looking at: ringed, not recoloured, so its answer still
+   reads the same as every other step's. */
+.round-step.current {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.round-step.next {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-3);
+  font-weight: 520;
+}
+
+.round-actions {
+  margin-top: 2px;
+}
+
+/* A round label in a shortlist row's metadata: R2, Final. */
+.row-round {
+  font-weight: 620;
+  color: var(--text-2);
 }
 
 .pill.quiet {
@@ -1165,6 +1289,21 @@ kbd {
   color: var(--text);
 }
 
+/* A row that carries an answer at its end, inside the same click target. */
+.row-main.split {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.row-stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
 .row-main.static {
   cursor: default;
 }
@@ -1264,6 +1403,11 @@ kbd {
 .name-button:hover {
   background: var(--surface-3);
   color: var(--text);
+}
+
+.name-button.prompt {
+  color: var(--accent);
+  cursor: pointer;
 }
 
 .name-input {

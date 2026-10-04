@@ -74,6 +74,48 @@ export interface PersonResult {
   confidence: Confidence;
 }
 
+/** Where one identifier sat in the file its drive came from. */
+export interface MemberOrigin {
+  kind: "neo_id" | "reg_no";
+  value: string;
+  sheet: string;
+  /** 1-based, as the spreadsheet numbers it. */
+  row: number;
+  column: string | null;
+  header: string | null;
+}
+
+export interface Evidence {
+  /** What the file lists students by. */
+  key: KeyKind | null;
+  /** Your identifier of that kind, as you entered it. */
+  yours: string | null;
+  /** How many identifiers of that kind the file lists. */
+  listed: number;
+  /** Where yours appears; absent for drives imported before this was kept. */
+  found_at: MemberOrigin | null;
+}
+
+export interface RoundStep {
+  drive_id: number;
+  /** "R1", "R2", "Final" — the file's word for it, or its position. */
+  label: string;
+  verdict: Verdict;
+}
+
+export interface Progression {
+  steps: RoundStep[];
+  /** You're in the latest round, and nothing says it was the last. */
+  next_pending: boolean;
+}
+
+/** A drive as the list shows it: with your answer, and its round. */
+export interface DriveListItem extends DriveRecord {
+  verdict: Verdict;
+  /** Its place among linked rounds, or the stage its file named. */
+  round: string | null;
+}
+
 export interface DriveRecord {
   id: number;
   company: string;
@@ -167,6 +209,10 @@ export interface ImportOutcome {
   primary_key: KeyKind | null;
   you: PersonResult;
   your_cgpa: number | null;
+  /** What your answer rests on, for "Why does it think I'm in?". */
+  evidence: Evidence;
+  /** This drive's rounds, when it is one of several. */
+  progression: Progression | null;
   friends: PersonResult[];
   analysis: DriveAnalysis;
   learned_verified: number;
@@ -308,7 +354,7 @@ export const api = {
   importReference: (path: string) =>
     invoke<ReferenceImportResult>("import_reference", { path }),
 
-  listDrives: () => invoke<DriveRecord[]>("list_drives"),
+  listDrives: () => invoke<DriveListItem[]>("list_drives"),
   deleteDrive: (id: number) =>
     invoke<DriveSnapshot | null>("delete_drive", { id }),
   restoreDrive: (snapshot: DriveSnapshot) =>

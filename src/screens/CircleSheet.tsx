@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, toApiError, type SearchResult } from "../lib/api";
+import { api, toApiError, type Friend, type SearchResult } from "../lib/api";
 import { useStore } from "../lib/store";
 import { Sheet } from "../components/Sheet";
 import { Icon } from "../components/Icon";
@@ -83,10 +83,17 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
     await add(q, NEO.test(q) ? q : null, REG.test(q) ? q : null);
   }
 
-  async function remove(id: number, label: string) {
-    await api.removeFriend(id);
+  // Removal is immediate, with Undo, rather than behind "Are you sure?": the
+  // common case costs nothing and the rare slip is one click to reverse.
+  async function remove(friend: Friend) {
+    await api.removeFriend(friend.id);
     await refreshFriends();
-    showToast(`Removed ${label}`);
+    showToast(`Removed ${friend.label}`, () => {
+      void api
+        .addFriend(friend.label, friend.neo_id, friend.reg_no, friend.group_tag)
+        .then(refreshFriends)
+        .then(() => showToast(`${friend.label} is back`));
+    });
   }
 
   const identifierMode = looksLikeIdentifier(query);
@@ -198,7 +205,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
                   className="row-action"
                   aria-label={`Remove ${f.label}`}
                   title="Remove"
-                  onClick={() => void remove(f.id, f.label)}
+                  onClick={() => void remove(f)}
                 >
                   <Icon name="close" size={14} />
                 </button>

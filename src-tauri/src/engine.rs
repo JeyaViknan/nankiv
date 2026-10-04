@@ -13,7 +13,7 @@ use crate::identity::{
 };
 use crate::model::*;
 use crate::parse::{FileShape, ParsedFile};
-use crate::store::{Profile, Store, StoreError};
+use crate::store::{DriveRecord, Profile, Store, StoreError};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -30,6 +30,27 @@ pub fn membership_verdict(
     neo_ids: &BTreeSet<NeoId>,
     reg_nos: &BTreeSet<RegNo>,
 ) -> Verdict {
+    membership_verdict_by(
+        file_key,
+        shape,
+        subject_neo,
+        subject_reg,
+        |n| neo_ids.contains(n),
+        |r| reg_nos.contains(r),
+    )
+}
+
+/// [`membership_verdict`], with the lookups supplied by the caller, so a
+/// stored drive can be answered without loading every member it lists. The
+/// rule is the same and lives in one place.
+pub fn membership_verdict_by(
+    file_key: Option<KeyKind>,
+    shape: FileShape,
+    subject_neo: Option<&str>,
+    subject_reg: Option<&str>,
+    has_neo: impl FnOnce(&NeoId) -> bool,
+    has_reg: impl FnOnce(&RegNo) -> bool,
+) -> Verdict {
     if !shape.is_usable() {
         return Verdict::Undetermined(Undetermined::FileNotUnderstood);
     }
@@ -42,7 +63,7 @@ pub fn membership_verdict(
 
     match key {
         KeyKind::NeoId => match subject_neo.and_then(NeoId::parse) {
-            Some(id) => Verdict::from_lookup(neo_ids.contains(&id)),
+            Some(id) => Verdict::from_lookup(has_neo(&id)),
             // The file is keyed by Neo ID and we don't have one for this person.
             // Their absence means nothing.
             None => Verdict::Undetermined(Undetermined::KeyKindNotConfigured {
@@ -50,12 +71,310 @@ pub fn membership_verdict(
             }),
         },
         KeyKind::RegNo => match subject_reg.and_then(RegNo::parse) {
-            Some(id) => Verdict::from_lookup(reg_nos.contains(&id)),
+            Some(id) => Verdict::from_lookup(has_reg(&id)),
             None => Verdict::Undetermined(Undetermined::KeyKindNotConfigured {
                 file_key: KeyKind::RegNo,
             }),
         },
     }
+}
+
+/// The key a stored drive was recorded with.
+pub fn stored_key(label: Option<&str>) -> Option<KeyKind> {
+    match label {
+        Some("reg_no") => Some(KeyKind::RegNo),
+        Some("neo_id") => Some(KeyKind::NeoId),
+        _ => None,
+    }
+}
+
+/// The shape a stored drive was recorded with.
+pub fn stored_shape(label: &str) -> FileShape {
+    match label {
+        "reg_no_only" => FileShape::RegNoOnly,
+        "linked" => FileShape::Linked,
+        "unrecognised" => FileShape::Unrecognised,
+        _ => FileShape::NeoIdOnly,
+    }
+}
+
+/// A person's verdict on a stored drive, asked of the store directly.
+pub fn verdict_in_drive(
+    store: &Store,
+    drive: &DriveRecord,
+    neo: Option<&str>,
+    reg: Option<&str>,
+) -> Result<Verdict, StoreError> {
+    // Asked up front so a storage error is an error, not a "no".
+    let neo_in = match neo.and_then(NeoId::parse) {
+        Some(n) => store.drive_has(drive.id, KeyKind::NeoId, n.as_str())?,
+        None => false,
+    };
+    let reg_in = match reg.and_then(RegNo::parse) {
+        Some(r) => store.drive_has(drive.id, KeyKind::RegNo, r.as_str())?,
+        None => false,
+    };
+    Ok(membership_verdict_by(
+        stored_key(drive.primary_key.as_deref()),
+        stored_shape(&drive.shape),
+        neo,
+        reg,
+        |_| neo_in,
+        |_| reg_in,
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// Rounds
+// ---------------------------------------------------------------------------
+
+/// How much of a new list must have been on an earlier one, from the same
+/// company, for the two to be read as rounds of one drive. A later round is
+/// drawn from the earlier one; two roles at the same company barely overlap.
+/// Below this, they are left apart: a wrong link is worse than none.
+pub const ROUND_OVERLAP: f64 = 0.6;
+
+fn company_key(company: &str) -> String {
+    company
+        .to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn share_of<T: Ord>(new: &BTreeSet<T>, earlier: &BTreeSet<T>) -> Option<f64> {
+    (!new.is_empty() && !earlier.is_empty())
+        .then(|| new.intersection(earlier).count() as f64 / new.len() as f64)
+}
+
+/// Links a newly stored drive to the earlier round it continues, if one does.
+pub fn link_round(store: &Store, drive_id: i64) -> Result<Option<i64>, StoreError> {
+    let Some(new) = store.drive(drive_id)? else {
+        return Ok(None);
+    };
+    let key = company_key(&new.company);
+    if new.parent_drive_id.is_some() || key == company_key(crate::naming::UNNAMED) {
+        return Ok(new.parent_drive_id);
+    }
+    let (new_neo, new_reg) = (
+        store.drive_neo_ids(drive_id)?,
+        store.drive_reg_nos(drive_id)?,
+    );
+
+    // Newest first, so a third round attaches to the second, not the first.
+    for earlier in store.drives()? {
+        let before =
+            (earlier.imported_at.as_str(), earlier.id) < (new.imported_at.as_str(), new.id);
+        if !before || company_key(&earlier.company) != key {
+            continue;
+        }
+        let share = share_of(&new_neo, &store.drive_neo_ids(earlier.id)?)
+            .or(share_of(&new_reg, &store.drive_reg_nos(earlier.id)?));
+        if share.is_some_and(|s| s >= ROUND_OVERLAP) {
+            store.set_drive_parent(drive_id, Some(earlier.id))?;
+            return Ok(Some(earlier.id));
+        }
+    }
+    Ok(None)
+}
+
+/// Gives drives imported under the old naming rules the names today's rules
+/// would, once. Only a name the old rules produced is replaced: if it differs
+/// from what they make of the drive's filename, a student chose it, and it is
+/// left alone. Every drive also gets the stage its filename names, if any.
+pub fn upgrade_legacy_names(store: &Store) -> Result<usize, StoreError> {
+    const DONE: &str = "names_upgraded_v1";
+    if store.meta(DONE)?.is_some() {
+        return Ok(0);
+    }
+    let mut renamed = 0;
+    for d in store.drives()? {
+        let fresh = crate::naming::infer(&d.source_filename, &[], &[]);
+        if d.company == crate::naming::legacy_name(&d.source_filename) && fresh.company != d.company
+        {
+            store.rename_drive(d.id, &fresh.company)?;
+            renamed += 1;
+        }
+        if d.round_label.is_none() && fresh.round.is_some() {
+            store.set_round_label(d.id, fresh.round.as_deref())?;
+        }
+    }
+    store.set_meta(DONE, "1")?;
+    Ok(renamed)
+}
+
+/// Links rounds among drives imported before linking existed, oldest first,
+/// by the same rule as an import. Runs once per database: a link the student
+/// has since separated is never quietly made again.
+pub fn link_existing_rounds(store: &Store) -> Result<usize, StoreError> {
+    // v2: names were improved after v1 ran, which can reveal rounds it missed.
+    const DONE: &str = "rounds_linked_v2";
+    if store.meta(DONE)?.is_some() {
+        return Ok(0);
+    }
+    let mut linked = 0;
+    for d in store.drives()?.into_iter().rev() {
+        if d.parent_drive_id.is_none() && link_round(store, d.id)?.is_some() {
+            linked += 1;
+        }
+    }
+    store.set_meta(DONE, "1")?;
+    Ok(linked)
+}
+
+/// One round in a progression, with your answer in it.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RoundStep {
+    pub drive_id: i64,
+    /// What the file called the round, or its position: "R1", "R2", "Final".
+    pub label: String,
+    pub verdict: Verdict,
+}
+
+/// A drive's rounds, earliest first: `R1 ✓ → R2 ✓ → next ?`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Progression {
+    pub steps: Vec<RoundStep>,
+    /// You are in the latest round, and nothing says it was the last.
+    pub next_pending: bool,
+}
+
+/// The label of every drive that is part of a chain of rounds: the file's own
+/// word for it where it gave one, its position otherwise.
+pub fn round_labels(drives: &[DriveRecord]) -> BTreeMap<i64, String> {
+    let by_id: BTreeMap<i64, &DriveRecord> = drives.iter().map(|d| (d.id, d)).collect();
+    let has_child: BTreeSet<i64> = drives.iter().filter_map(|d| d.parent_drive_id).collect();
+    let mut labels = BTreeMap::new();
+    for d in drives {
+        let mut depth = 0;
+        let mut seen = BTreeSet::from([d.id]);
+        let mut cur = d.parent_drive_id;
+        while let Some(p) = cur.filter(|p| by_id.contains_key(p) && seen.insert(*p)) {
+            depth += 1;
+            cur = by_id[&p].parent_drive_id;
+        }
+        if depth > 0 || has_child.contains(&d.id) {
+            let label = d.round_label.clone().unwrap_or(format!("R{}", depth + 1));
+            labels.insert(d.id, label);
+        }
+    }
+    labels
+}
+
+/// The rounds around one drive, and your answer in each.
+pub fn progression(
+    store: &Store,
+    drive_id: i64,
+    profile: &Profile,
+) -> Result<Option<Progression>, StoreError> {
+    let drives = store.drives()?;
+    let by_id: BTreeMap<i64, &DriveRecord> = drives.iter().map(|d| (d.id, d)).collect();
+    if !by_id.contains_key(&drive_id) {
+        return Ok(None);
+    }
+
+    // Up to the first round...
+    let mut seen = BTreeSet::from([drive_id]);
+    let mut path = vec![drive_id];
+    let mut cur = by_id[&drive_id].parent_drive_id;
+    while let Some(p) = cur.filter(|p| by_id.contains_key(p) && seen.insert(*p)) {
+        path.push(p);
+        cur = by_id[&p].parent_drive_id;
+    }
+    path.reverse();
+    // ...and down through the latest round that followed this one. `drives`
+    // is newest first, so the first child found is the latest.
+    let mut cur = drive_id;
+    while let Some(next) = drives
+        .iter()
+        .find(|d| d.parent_drive_id == Some(cur) && !seen.contains(&d.id))
+    {
+        seen.insert(next.id);
+        path.push(next.id);
+        cur = next.id;
+    }
+    if path.len() < 2 {
+        return Ok(None);
+    }
+
+    let labels = round_labels(&drives);
+    let mut steps = Vec::new();
+    for id in path {
+        let d = by_id[&id];
+        steps.push(RoundStep {
+            drive_id: id,
+            label: labels.get(&id).cloned().unwrap_or_default(),
+            verdict: verdict_in_drive(
+                store,
+                d,
+                profile.neo_id.as_deref(),
+                profile.reg_no.as_deref(),
+            )?,
+        });
+    }
+    let last = steps.last().expect("at least two rounds");
+    let next_pending = last.verdict == Verdict::Shortlisted && last.label != "Final";
+    Ok(Some(Progression {
+        steps,
+        next_pending,
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// Evidence
+// ---------------------------------------------------------------------------
+
+/// What a verdict rests on, in terms a student can check against the file.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Evidence {
+    /// What the file lists students by.
+    pub key: Option<KeyKind>,
+    /// Your identifier of that kind, as you entered it.
+    pub yours: Option<String>,
+    /// How many identifiers of that kind the file lists.
+    pub listed: usize,
+    /// Where yours appears, when it does and the file's layout was recorded.
+    /// Drives imported before positions were kept have none.
+    pub found_at: Option<crate::store::MemberOrigin>,
+}
+
+/// The evidence behind your verdict on a stored drive.
+pub fn evidence(
+    store: &Store,
+    drive: &DriveRecord,
+    profile: &Profile,
+) -> Result<Evidence, StoreError> {
+    let key = stored_key(drive.primary_key.as_deref());
+    let (kind, yours) = match key {
+        Some(KeyKind::NeoId) => (
+            "neo_id",
+            profile
+                .neo_id
+                .as_deref()
+                .and_then(NeoId::parse)
+                .map(|n| n.as_str().to_string()),
+        ),
+        Some(KeyKind::RegNo) => (
+            "reg_no",
+            profile
+                .reg_no
+                .as_deref()
+                .and_then(RegNo::parse)
+                .map(|r| r.as_str().to_string()),
+        ),
+        None => ("", None),
+    };
+    let found_at = match &yours {
+        Some(v) => store.origin(drive.id, kind, v)?,
+        None => None,
+    };
+    Ok(Evidence {
+        key,
+        yours,
+        listed: drive.total_students,
+        found_at,
+    })
 }
 
 /// Loads the whole identity graph from storage and resolves it.
@@ -564,6 +883,8 @@ mod tests {
             content_hash: "H".into(),
             observed_headers: vec![],
             sheet_names: vec!["Sheet1".into()],
+            origins: vec![],
+            titles: vec![],
         };
         let r = harvest_identity(&s, &parsed, "tredence").unwrap();
         assert_eq!(r.verified_links, 1, "neo <-> reg");
@@ -706,6 +1027,244 @@ mod tests {
         let a = analyse_drive(&s, id, &identity, &profile).unwrap();
         let standing = a.your_percentile.expect("a standing from the entered CGPA");
         assert!(standing.value < 0.05, "placed by 7.0, not by 8.95");
+    }
+
+    /// `n` distinct, valid Neo IDs, starting from `from`.
+    fn ids(from: usize, n: usize) -> BTreeSet<NeoId> {
+        (from..from + n)
+            .map(|i| {
+                let d: Vec<char> = format!("{i:04}").chars().collect();
+                NeoId::parse(&format!("A{}B{}C{}D{}", d[0], d[1], d[2], d[3])).unwrap()
+            })
+            .collect()
+    }
+
+    fn stored(
+        s: &Store,
+        company: &str,
+        hash: &str,
+        members: &BTreeSet<NeoId>,
+        round: Option<&str>,
+    ) -> i64 {
+        s.insert_drive(
+            company,
+            None,
+            "f.xlsx",
+            hash,
+            "neo_id_only",
+            Some("neo_id"),
+            members,
+            &BTreeSet::new(),
+            round,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn a_later_round_is_linked_to_the_one_it_was_drawn_from() {
+        let s = Store::open_in_memory().unwrap();
+        let first = stored(&s, "Siemens SISW", "a", &ids(0, 40), None);
+        let second = stored(&s, "siemens  sisw", "b", &ids(0, 20), None);
+        assert_eq!(link_round(&s, second).unwrap(), Some(first));
+
+        // A third round attaches to the second, not back to the first.
+        let third = stored(&s, "Siemens SISW", "c", &ids(0, 8), None);
+        assert_eq!(link_round(&s, third).unwrap(), Some(second));
+    }
+
+    #[test]
+    fn old_automatic_names_are_upgraded_and_chosen_ones_are_not() {
+        let s = Store::open_in_memory().unwrap();
+        let add = |company: &str, file: &str, hash: &str| {
+            s.insert_drive(
+                company,
+                None,
+                file,
+                hash,
+                "neo_id_only",
+                Some("neo_id"),
+                &ids(0, 5),
+                &BTreeSet::new(),
+                None,
+            )
+            .unwrap()
+        };
+        let auto = add(
+            "Infosys s 03rd & 5th oct",
+            "Infosys_interviews_03rd & 5th oct.xlsx",
+            "a",
+        );
+        let chosen = add(
+            "Infosys Pune",
+            "Infosys_interviews_03rd & 5th oct.xlsx",
+            "b",
+        );
+
+        assert_eq!(upgrade_legacy_names(&s).unwrap(), 1);
+        let auto = s.drive(auto).unwrap().unwrap();
+        assert_eq!(auto.company, "Infosys");
+        assert_eq!(auto.round_label.as_deref(), Some("Interview"));
+        let chosen = s.drive(chosen).unwrap().unwrap();
+        assert_eq!(chosen.company, "Infosys Pune", "a name someone chose stays");
+        assert_eq!(chosen.round_label.as_deref(), Some("Interview"));
+
+        // Once only: a later rename by the student is never undone.
+        s.rename_drive(auto.id, "Infosys s 03rd & 5th oct").unwrap();
+        assert_eq!(upgrade_legacy_names(&s).unwrap(), 0);
+    }
+
+    #[test]
+    fn drives_from_before_linking_are_linked_once() {
+        let s = Store::open_in_memory().unwrap();
+        let r1 = stored(&s, "Infosys", "a", &ids(0, 40), None);
+        let r2 = stored(&s, "Infosys", "b", &ids(0, 20), None);
+        assert_eq!(link_existing_rounds(&s).unwrap(), 1);
+        assert_eq!(s.drive(r2).unwrap().unwrap().parent_drive_id, Some(r1));
+
+        // Separated by the student, and left that way on the next launch.
+        s.set_drive_parent(r2, None).unwrap();
+        assert_eq!(link_existing_rounds(&s).unwrap(), 0);
+        assert_eq!(s.drive(r2).unwrap().unwrap().parent_drive_id, None);
+    }
+
+    #[test]
+    fn two_roles_at_one_company_are_not_mistaken_for_rounds() {
+        let s = Store::open_in_memory().unwrap();
+        stored(&s, "Amazon", "a", &ids(0, 40), None);
+        // Mostly different students: another role, not a next round.
+        let other = stored(&s, "Amazon", "b", &ids(30, 40), None);
+        assert_eq!(link_round(&s, other).unwrap(), None);
+    }
+
+    #[test]
+    fn rounds_need_the_same_company_and_a_name_to_link_by() {
+        let s = Store::open_in_memory().unwrap();
+        stored(&s, "Zoho", "a", &ids(0, 40), None);
+        let elsewhere = stored(&s, "Zluri", "b", &ids(0, 20), None);
+        assert_eq!(link_round(&s, elsewhere).unwrap(), None);
+
+        stored(&s, crate::naming::UNNAMED, "c", &ids(100, 40), None);
+        let unnamed = stored(&s, crate::naming::UNNAMED, "d", &ids(100, 20), None);
+        assert_eq!(link_round(&s, unnamed).unwrap(), None, "nothing to link by");
+    }
+
+    #[test]
+    fn a_progression_shows_each_round_and_whether_one_is_still_to_come() {
+        let s = Store::open_in_memory().unwrap();
+        let you = "A0B0C0D5"; // in ids(0, n) for every n > 5
+        let profile = Profile {
+            neo_id: Some(you.into()),
+            ..Default::default()
+        };
+        let r1 = stored(&s, "Elgi", "a", &ids(0, 40), None);
+        let r2 = stored(&s, "Elgi", "b", &ids(0, 20), None);
+        link_round(&s, r2).unwrap();
+
+        let p = progression(&s, r1, &profile).unwrap().expect("two rounds");
+        let labels: Vec<_> = p.steps.iter().map(|r| r.label.as_str()).collect();
+        assert_eq!(labels, ["R1", "R2"]);
+        assert!(p.steps.iter().all(|r| r.verdict == Verdict::Shortlisted));
+        assert!(p.next_pending, "in the latest round, and it isn't the last");
+
+        // A round the file calls final has nothing after it.
+        let last = stored(&s, "Elgi", "c", &ids(0, 6), Some("Final"));
+        link_round(&s, last).unwrap();
+        let p = progression(&s, r2, &profile).unwrap().unwrap();
+        assert_eq!(p.steps.last().unwrap().label, "Final");
+        assert!(!p.next_pending);
+
+        // Out of the latest round: nothing pending either.
+        let s2 = Store::open_in_memory().unwrap();
+        let a = stored(&s2, "Elgi", "a", &ids(0, 40), None);
+        let b = stored(&s2, "Elgi", "b", &ids(10, 20), None);
+        link_round(&s2, b).unwrap();
+        let p = progression(&s2, a, &profile).unwrap().unwrap();
+        assert_eq!(p.steps[1].verdict, Verdict::NotShortlisted);
+        assert!(!p.next_pending);
+    }
+
+    #[test]
+    fn a_drive_on_its_own_has_no_progression_or_round_label() {
+        let s = Store::open_in_memory().unwrap();
+        let only = stored(&s, "Tekion", "a", &ids(0, 10), None);
+        assert_eq!(progression(&s, only, &Profile::default()).unwrap(), None);
+        assert!(round_labels(&s.drives().unwrap()).is_empty());
+    }
+
+    #[test]
+    fn evidence_points_at_the_row_a_student_can_check() {
+        use crate::store::MemberOrigin;
+        let s = Store::open_in_memory().unwrap();
+        let members = ids(0, 10);
+        let id = stored(&s, "HPE", "a", &members, None);
+        s.record_origins(
+            id,
+            &[MemberOrigin {
+                kind: "neo_id".into(),
+                value: "A0B0C0D3".into(),
+                sheet: "Round 2".into(),
+                row: 42,
+                column: Some("C".into()),
+                header: Some("Neo ID".into()),
+            }],
+        )
+        .unwrap();
+        let drive = s.drive(id).unwrap().unwrap();
+
+        let profile = Profile {
+            neo_id: Some("a0b0c0d3".into()),
+            ..Default::default()
+        };
+        let e = evidence(&s, &drive, &profile).unwrap();
+        assert_eq!(e.key, Some(KeyKind::NeoId));
+        assert_eq!(
+            e.yours.as_deref(),
+            Some("A0B0C0D3"),
+            "as stored, not as typed"
+        );
+        assert_eq!(e.listed, 10);
+        let at = e.found_at.expect("where it was");
+        assert_eq!(
+            (at.sheet.as_str(), at.row, at.column.as_deref()),
+            ("Round 2", 42, Some("C"))
+        );
+
+        // Someone not on the list has a count to compare against, and no row.
+        let absent = Profile {
+            neo_id: Some("Z9Y9X9W9".into()),
+            ..Default::default()
+        };
+        let e = evidence(&s, &drive, &absent).unwrap();
+        assert_eq!(e.found_at, None);
+        assert_eq!(e.listed, 10);
+    }
+
+    #[test]
+    fn the_stored_verdict_agrees_with_the_rule_in_every_case() {
+        let s = Store::open_in_memory().unwrap();
+        let members = ids(0, 5);
+        let id = stored(&s, "X", "a", &members, None);
+        let drive = s.drive(id).unwrap().unwrap();
+        for (neo, reg) in [
+            (Some("A0B0C0D1"), None),
+            (Some("Z9Y9X9W9"), None),
+            (None, Some("23BAI0002")),
+            (None, None),
+            (Some("not an id"), None),
+        ] {
+            assert_eq!(
+                verdict_in_drive(&s, &drive, neo, reg).unwrap(),
+                membership_verdict(
+                    Some(KeyKind::NeoId),
+                    FileShape::NeoIdOnly,
+                    neo,
+                    reg,
+                    &members,
+                    &BTreeSet::new()
+                ),
+                "{neo:?} {reg:?}"
+            );
+        }
     }
 
     #[test]

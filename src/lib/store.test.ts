@@ -10,7 +10,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "./store";
 import { api } from "./api";
-import type { DriveRecord, DriveSnapshot, ImportOutcome } from "./api";
+import type { DriveListItem, DriveSnapshot, ImportOutcome } from "./api";
 
 vi.mock("./api", async () => {
   const actual = await vi.importActual<typeof import("./api")>("./api");
@@ -50,6 +50,8 @@ function outcome(id: number, company: string): ImportOutcome {
       confidence: "verified",
     },
     your_cgpa: null,
+    evidence: { key: "neo_id", yours: "V9H0G6C4", listed: 166, found_at: null },
+    progression: null,
     friends: [],
     analysis: {
       total_students: 166,
@@ -281,7 +283,7 @@ describe("dropping a reference sheet", () => {
 });
 
 describe("following a widget link", () => {
-  function record(id: number, company: string): DriveRecord {
+  function record(id: number, company: string): DriveListItem {
     return {
       id,
       company,
@@ -294,6 +296,8 @@ describe("following a widget link", () => {
       total_students: 166,
       round_label: null,
       parent_drive_id: null,
+      verdict: { status: "shortlisted" },
+      round: null,
     };
   }
 

@@ -30,7 +30,6 @@ use crate::analytics::CutoffVerdict;
 use crate::commands::{drive_outcome, ImportOutcome, PersonResult};
 use crate::engine;
 use crate::model::{KeyKind, Undetermined, Verdict};
-use crate::parse::FileShape;
 use crate::store::{Store, StoreError};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -360,15 +359,6 @@ pub fn format_now(now: OffsetDateTime) -> String {
         .unwrap_or_else(|_| "1970-01-01T00:00:00Z".into())
 }
 
-fn shape_of(label: &str) -> FileShape {
-    match label {
-        "reg_no_only" => FileShape::RegNoOnly,
-        "linked" => FileShape::Linked,
-        "unrecognised" => FileShape::Unrecognised,
-        _ => FileShape::NeoIdOnly,
-    }
-}
-
 /// How the season is going: one verdict per drive, counted.
 ///
 /// Shared with the interface, which shows it in the toolbar, so the number on
@@ -382,19 +372,12 @@ pub fn season_tally(store: &Store) -> Result<Season, StoreError> {
         ..Default::default()
     };
     for d in &drives {
-        let key = match d.primary_key.as_deref() {
-            Some("reg_no") => Some(KeyKind::RegNo),
-            Some("neo_id") => Some(KeyKind::NeoId),
-            _ => None,
-        };
-        let v = engine::membership_verdict(
-            key,
-            shape_of(&d.shape),
+        let v = engine::verdict_in_drive(
+            store,
+            d,
             profile.neo_id.as_deref(),
             profile.reg_no.as_deref(),
-            &store.drive_neo_ids(d.id)?,
-            &store.drive_reg_nos(d.id)?,
-        );
+        )?;
         match v {
             Verdict::Shortlisted => season.shortlisted += 1,
             Verdict::NotShortlisted => season.not_shortlisted += 1,

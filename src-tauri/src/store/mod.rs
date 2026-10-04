@@ -89,6 +89,25 @@ pub struct DriveSnapshot {
     pub round_label: Option<String>,
     pub neo_ids: Vec<String>,
     pub reg_nos: Vec<String>,
+    /// Where each identifier sat in the file, so Undo brings the evidence
+    /// back with the drive. Absent from snapshots taken before it existed.
+    #[serde(default)]
+    pub origins: Vec<MemberOrigin>,
+}
+
+/// Where one identifier sat in the file its drive was imported from.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemberOrigin {
+    /// `neo_id` or `reg_no`.
+    pub kind: String,
+    pub value: String,
+    pub sheet: String,
+    /// 1-based, as the spreadsheet numbers it.
+    pub row: u32,
+    /// The column letter, e.g. `C`.
+    pub column: Option<String>,
+    /// The column's heading as the file wrote it.
+    pub header: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -302,19 +321,93 @@ impl Store {
         )?;
         let id = self.conn.last_insert_rowid();
 
-        for n in neo_ids {
-            self.conn.execute(
+        // One transaction for the whole list: a statement per member, each
+        // committed on its own, made a five-thousand-row file crawl.
+        let tx = self.conn.unchecked_transaction()?;
+        {
+            let mut neo = tx.prepare(
                 "INSERT OR IGNORE INTO drive_members (drive_id, neo_id, reg_no) VALUES (?1, ?2, '')",
-                params![id, n.as_str()],
             )?;
-        }
-        for r in reg_nos {
-            self.conn.execute(
+            for n in neo_ids {
+                neo.execute(params![id, n.as_str()])?;
+            }
+            let mut reg = tx.prepare(
                 "INSERT OR IGNORE INTO drive_members (drive_id, neo_id, reg_no) VALUES (?1, '', ?2)",
-                params![id, r.as_str()],
             )?;
+            for r in reg_nos {
+                reg.execute(params![id, r.as_str()])?;
+            }
         }
+        tx.commit()?;
         Ok(id)
+    }
+
+    /// Records where each identifier sat in the file. The first sighting of an
+    /// identifier wins, as it is the row a student would find first.
+    pub fn record_origins(
+        &self,
+        drive_id: i64,
+        origins: &[MemberOrigin],
+    ) -> Result<(), StoreError> {
+        let tx = self.conn.unchecked_transaction()?;
+        {
+            let mut stmt = tx.prepare(
+                "INSERT OR IGNORE INTO drive_member_origins
+                    (drive_id, kind, value, sheet, row_number, col, header)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            )?;
+            for o in origins {
+                stmt.execute(params![
+                    drive_id, o.kind, o.value, o.sheet, o.row, o.column, o.header
+                ])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Where one identifier sat in a drive's file, if that was recorded.
+    pub fn origin(
+        &self,
+        drive_id: i64,
+        kind: &str,
+        value: &str,
+    ) -> Result<Option<MemberOrigin>, StoreError> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT kind, value, sheet, row_number, col, header
+                 FROM drive_member_origins WHERE drive_id = ?1 AND kind = ?2 AND value = ?3",
+                params![drive_id, kind, value],
+                map_origin,
+            )
+            .optional()?)
+    }
+
+    pub fn origins(&self, drive_id: i64) -> Result<Vec<MemberOrigin>, StoreError> {
+        let mut stmt = self.conn.prepare(
+            "SELECT kind, value, sheet, row_number, col, header
+             FROM drive_member_origins WHERE drive_id = ?1 ORDER BY sheet, row_number",
+        )?;
+        let rows = stmt
+            .query_map(params![drive_id], map_origin)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Whether a drive lists one identifier, without loading the whole list.
+    pub fn drive_has(&self, drive_id: i64, kind: KeyKind, value: &str) -> Result<bool, StoreError> {
+        let sql = match kind {
+            KeyKind::NeoId => {
+                "SELECT EXISTS(SELECT 1 FROM drive_members WHERE drive_id = ?1 AND neo_id = ?2)"
+            }
+            KeyKind::RegNo => {
+                "SELECT EXISTS(SELECT 1 FROM drive_members WHERE drive_id = ?1 AND reg_no = ?2)"
+            }
+        };
+        Ok(self
+            .conn
+            .query_row(sql, params![drive_id, value], |r| r.get(0))?)
     }
 
     pub fn drives(&self) -> Result<Vec<DriveRecord>, StoreError> {
@@ -362,6 +455,14 @@ impl Store {
     }
 
     /// Records that one drive is a later round of another.
+    pub fn set_round_label(&self, id: i64, label: Option<&str>) -> Result<(), StoreError> {
+        self.conn.execute(
+            "UPDATE drives SET round_label = ?2 WHERE id = ?1",
+            params![id, label],
+        )?;
+        Ok(())
+    }
+
     pub fn set_drive_parent(&self, id: i64, parent: Option<i64>) -> Result<(), StoreError> {
         self.conn.execute(
             "UPDATE drives SET parent_drive_id = ?2 WHERE id = ?1",
@@ -398,6 +499,7 @@ impl Store {
                 .into_iter()
                 .map(|r| r.as_str().to_string())
                 .collect(),
+            origins: self.origins(id)?,
         }))
     }
 
@@ -413,7 +515,7 @@ impl Store {
             .iter()
             .filter_map(|s| RegNo::parse(s))
             .collect();
-        self.insert_drive(
+        let id = self.insert_drive(
             &snap.company,
             snap.drive_date.as_deref(),
             &snap.source_filename,
@@ -423,7 +525,9 @@ impl Store {
             &neo,
             &reg,
             snap.round_label.as_deref(),
-        )
+        )?;
+        self.record_origins(id, &snap.origins)?;
+        Ok(id)
     }
 
     pub fn drive_neo_ids(&self, drive_id: i64) -> Result<BTreeSet<NeoId>, StoreError> {
@@ -683,6 +787,17 @@ impl Store {
     pub fn connection(&self) -> &Connection {
         &self.conn
     }
+}
+
+fn map_origin(r: &rusqlite::Row<'_>) -> rusqlite::Result<MemberOrigin> {
+    Ok(MemberOrigin {
+        kind: r.get(0)?,
+        value: r.get(1)?,
+        sheet: r.get(2)?,
+        row: r.get(3)?,
+        column: r.get(4)?,
+        header: r.get(5)?,
+    })
 }
 
 fn map_drive(r: &rusqlite::Row) -> rusqlite::Result<DriveRecord> {

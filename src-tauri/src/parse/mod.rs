@@ -67,6 +67,48 @@ impl ParsedRow {
     }
 }
 
+/// Where in its file a row was read from: enough to show a student the
+/// evidence behind a verdict, and nothing more.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RowOrigin {
+    pub sheet: String,
+    /// 1-based, as the spreadsheet itself numbers its rows.
+    pub row: u32,
+    pub neo_column: Option<ColumnRef>,
+    pub reg_column: Option<ColumnRef>,
+}
+
+/// A column as a student would find it: its letter, and its heading if the
+/// file gave it one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ColumnRef {
+    pub letter: String,
+    pub header: Option<String>,
+}
+
+/// A spreadsheet's column letter: 0 is A, 25 is Z, 26 is AA.
+pub fn column_letter(index: usize) -> String {
+    let mut n = index + 1;
+    let mut out = Vec::new();
+    while n > 0 {
+        n -= 1;
+        out.push(b'A' + (n % 26) as u8);
+        n /= 26;
+    }
+    out.reverse();
+    String::from_utf8(out).expect("ASCII")
+}
+
+/// One sheet's grid, and where its top-left cell sits in the sheet. A used
+/// range need not start at A1, and row numbers shown to a student must be the
+/// ones their spreadsheet shows.
+struct Sheet {
+    name: String,
+    grid: Vec<Vec<Data>>,
+    first_row: u32,
+    first_col: u32,
+}
+
 /// The result of reading a spreadsheet.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedFile {
@@ -85,6 +127,11 @@ pub struct ParsedFile {
     /// understand this file" message only, never for detection.
     pub observed_headers: Vec<String>,
     pub sheet_names: Vec<String>,
+    /// Where each of `rows` came from, index for index.
+    pub origins: Vec<RowOrigin>,
+    /// Text a company put above its table — "Shortlisted candidates for …" —
+    /// which names a drive better than a filename like `list (1).xlsx`.
+    pub titles: Vec<String>,
 }
 
 impl ParsedFile {
@@ -106,13 +153,18 @@ pub fn parse_file(path: &Path) -> Result<ParsedFile, ParseError> {
 
     // A CSV has no workbook structure, so it is read separately and presented
     // to the rest of the pipeline as a single sheet.
-    let sheets: Vec<(String, Vec<Vec<Data>>)> = if csv::is_csv(path) {
+    let sheets: Vec<Sheet> = if csv::is_csv(path) {
         let text = std::fs::read_to_string(path).map_err(|e| ParseError::Io(e.to_string()))?;
         let grid = csv::parse_grid(&text);
         if grid.is_empty() {
             return Err(ParseError::Empty);
         }
-        vec![("Sheet1".to_string(), grid)]
+        vec![Sheet {
+            name: "Sheet1".to_string(),
+            grid,
+            first_row: 0,
+            first_col: 0,
+        }]
     } else {
         let mut workbook =
             open_workbook_auto(path).map_err(|e| ParseError::Open(friendly_open_error(&e)))?;
@@ -124,28 +176,36 @@ pub fn parse_file(path: &Path) -> Result<ParsedFile, ParseError> {
             .into_iter()
             .filter_map(|name| {
                 let range = workbook.worksheet_range(&name).ok()?;
+                let (first_row, first_col) = range.start().unwrap_or((0, 0));
                 let grid: Vec<Vec<Data>> = range
                     .rows()
                     .take(MAX_ROWS)
                     .map(|r| r.iter().take(MAX_COLS).cloned().collect())
                     .collect();
-                Some((name, grid))
+                Some(Sheet {
+                    name,
+                    grid,
+                    first_row,
+                    first_col,
+                })
             })
             .collect()
     };
 
-    let sheet_names: Vec<String> = sheets.iter().map(|(n, _)| n.clone()).collect();
+    let sheet_names: Vec<String> = sheets.iter().map(|s| s.name.clone()).collect();
     let mut all_rows: Vec<ParsedRow> = Vec::new();
+    let mut origins: Vec<RowOrigin> = Vec::new();
+    let mut titles: Vec<String> = Vec::new();
     let mut headers: Vec<String> = Vec::new();
 
     // Every sheet is scanned. One sampled file keeps its data on `Sheet2` with
     // `Sheet1` empty; another carries two empty trailing sheets. Assuming the
     // first sheet would silently return nothing for both.
-    for (_name, grid) in &sheets {
-        if grid.is_empty() {
+    for sheet in &sheets {
+        if sheet.grid.is_empty() {
             continue;
         }
-        let grid = grid.as_slice();
+        let grid = sheet.grid.as_slice();
 
         let layout = shape::elect_columns(grid);
         if layout.is_barren() {
@@ -161,10 +221,32 @@ pub fn parse_file(path: &Path) -> Result<ParsedFile, ParseError> {
             continue;
         }
 
-        for row in grid {
+        let first_data = grid.iter().position(|row| !layout.extract(row).is_empty());
+        let column = |c: Option<usize>| {
+            c.map(|i| ColumnRef {
+                letter: column_letter(sheet.first_col as usize + i),
+                header: first_data.and_then(|f| heading_above(grid, i, f)),
+            })
+        };
+        let (neo_column, reg_column) = (column(layout.neo_col), column(layout.reg_col));
+        if let Some(f) = first_data {
+            for t in titles_above(grid, f) {
+                if titles.len() < MAX_TITLES && !titles.contains(&t) {
+                    titles.push(t);
+                }
+            }
+        }
+
+        for (i, row) in grid.iter().enumerate() {
             let parsed = layout.extract(row);
             if !parsed.is_empty() {
                 all_rows.push(parsed);
+                origins.push(RowOrigin {
+                    sheet: sheet.name.clone(),
+                    row: sheet.first_row + i as u32 + 1,
+                    neo_column: neo_column.clone(),
+                    reg_column: reg_column.clone(),
+                });
             }
         }
         for h in layout.header_labels(grid) {
@@ -205,7 +287,50 @@ pub fn parse_file(path: &Path) -> Result<ParsedFile, ParseError> {
         content_hash,
         observed_headers: headers,
         sheet_names,
+        origins,
+        titles,
     })
+}
+
+const MAX_TITLES: usize = 3;
+const MAX_LABEL_CHARS: usize = 120;
+
+/// The heading of a column: the nearest text above its first identifier that
+/// is not itself an identifier.
+fn heading_above(grid: &[Vec<Data>], col: usize, first_data: usize) -> Option<String> {
+    (0..first_data).rev().find_map(|i| {
+        let t = grid[i].get(col).map(cell_text)?;
+        let plain = !t.is_empty() && NeoId::parse(&t).is_none() && RegNo::parse(&t).is_none();
+        plain.then(|| clip(&t))
+    })
+}
+
+/// Lines above a table's headings that carry one or two cells of text:
+/// titles. The nearest non-empty row above the data is the headings
+/// themselves, even when a one-column table has only one of them.
+fn titles_above(grid: &[Vec<Data>], first_data: usize) -> Vec<String> {
+    let has_text = |row: &Vec<Data>| row.iter().any(|c| !cell_text(c).is_empty());
+    let Some(headings) = (0..first_data).rev().find(|&i| has_text(&grid[i])) else {
+        return Vec::new();
+    };
+    grid[..headings]
+        .iter()
+        .filter_map(|row| {
+            let cells: Vec<String> = row
+                .iter()
+                .map(cell_text)
+                .filter(|t| t.chars().filter(|c| c.is_alphabetic()).count() >= 3)
+                .collect();
+            (1..=2)
+                .contains(&cells.len())
+                .then(|| clip(&cells.join(" ")))
+        })
+        .collect()
+}
+
+fn clip(text: &str) -> String {
+    let t = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    t.chars().take(MAX_LABEL_CHARS).collect()
 }
 
 /// Stable hash over the sorted identifier set. Independent of row order,
@@ -256,6 +381,90 @@ pub fn cell_text(cell: &Data) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn columns_are_lettered_as_a_spreadsheet_letters_them() {
+        for (i, l) in [
+            (0, "A"),
+            (2, "C"),
+            (25, "Z"),
+            (26, "AA"),
+            (27, "AB"),
+            (701, "ZZ"),
+            (702, "AAA"),
+        ] {
+            assert_eq!(column_letter(i), l, "{i}");
+        }
+    }
+
+    /// A workbook laid out the way companies send them: a title, a gap, then
+    /// the table — and a second sheet whose table starts well away from A1.
+    fn titled_workbook(dir: &Path) -> std::path::PathBuf {
+        use rust_xlsxwriter::Workbook;
+        let mut book = Workbook::new();
+        let first = book.add_worksheet();
+        first.set_name("Round 2").unwrap();
+        first
+            .write(0, 0, "Siemens SISW – Shortlisted candidates for Round 2")
+            .unwrap();
+        for (c, h) in ["S.No", "Name", "Neo ID"].iter().enumerate() {
+            first.write(3, c as u16, *h).unwrap();
+        }
+        for (r, id) in ["V9H0G6C4", "C5U6K1E7", "E2S8L9L8"].iter().enumerate() {
+            let r = 4 + r as u32;
+            first.write(r, 0, r - 3).unwrap();
+            first.write(r, 1, "A Student").unwrap();
+            first.write(r, 2, *id).unwrap();
+        }
+        let second = book.add_worksheet();
+        second.set_name("Late additions").unwrap();
+        second.write(4, 2, "NEO ID ").unwrap();
+        second.write(5, 2, "K3M9P2R7").unwrap();
+        second.write(6, 2, "B4D6F8H2").unwrap();
+        let path = dir.join("list (1).xlsx");
+        book.save(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn every_row_knows_where_it_came_from() {
+        let dir = tempfile::tempdir().unwrap();
+        let parsed = parse_file(&titled_workbook(dir.path())).unwrap();
+        assert_eq!(parsed.rows.len(), parsed.origins.len());
+
+        let at = |id: &str| {
+            let i = parsed
+                .rows
+                .iter()
+                .position(|r| r.neo_id.as_ref().map(|n| n.as_str()) == Some(id))
+                .unwrap_or_else(|| panic!("{id} not read"));
+            parsed.origins[i].clone()
+        };
+
+        let first = at("V9H0G6C4");
+        assert_eq!((first.sheet.as_str(), first.row), ("Round 2", 5));
+        let col = first.neo_column.unwrap();
+        assert_eq!(col.letter, "C");
+        assert_eq!(col.header.as_deref(), Some("Neo ID"));
+
+        // The used range on this sheet starts at C5, not A1: the row and
+        // column a student is told must still be the ones they will see.
+        let late = at("K3M9P2R7");
+        assert_eq!((late.sheet.as_str(), late.row), ("Late additions", 6));
+        let col = late.neo_column.unwrap();
+        assert_eq!(col.letter, "C");
+        assert_eq!(col.header.as_deref(), Some("NEO ID"));
+    }
+
+    #[test]
+    fn titles_above_a_table_are_kept_and_its_headings_are_not() {
+        let dir = tempfile::tempdir().unwrap();
+        let parsed = parse_file(&titled_workbook(dir.path())).unwrap();
+        assert_eq!(
+            parsed.titles,
+            vec!["Siemens SISW – Shortlisted candidates for Round 2".to_string()]
+        );
+    }
 
     #[test]
     fn numeric_cells_do_not_grow_decimal_tails() {

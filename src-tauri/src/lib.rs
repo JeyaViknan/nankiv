@@ -11,6 +11,7 @@ pub mod engine;
 pub mod export;
 pub mod identity;
 pub mod model;
+pub mod naming;
 pub mod parse;
 pub mod reference;
 pub mod store;
@@ -50,6 +51,15 @@ pub fn run() {
                 }
                 Err(e) => eprintln!("reference seeding failed, continuing: {e}"),
                 _ => {}
+            }
+            // Drives imported under older rules get today's names, and then
+            // their rounds linked by the rule an import now applies. Each runs
+            // once, and never touches a name or a link the student chose.
+            if let Err(e) = engine::upgrade_legacy_names(&store) {
+                eprintln!("could not upgrade older drive names, continuing: {e}");
+            }
+            if let Err(e) = engine::link_existing_rounds(&store) {
+                eprintln!("could not link earlier rounds, continuing: {e}");
             }
             // Geometry has to be read before the store moves into managed state.
             if let Some(window) = app.get_webview_window("main") {
