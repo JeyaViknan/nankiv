@@ -6,4 +6,13 @@
 
 import { detectMac } from "./shortcuts";
 
-export const MOD = detectMac() ? "⌘" : "Ctrl";
+export const IS_MAC = detectMac();
+
+export const MOD = IS_MAC ? "⌘" : "Ctrl";
+
+/** A shortcut as the platform writes one: ⇧⌘E on a Mac, Ctrl+Shift+E elsewhere. */
+export function chord(key: string, shift = false): string {
+  return IS_MAC
+    ? `${shift ? "⇧" : ""}⌘${key}`
+    : `Ctrl+${shift ? "Shift+" : ""}${key}`;
+}

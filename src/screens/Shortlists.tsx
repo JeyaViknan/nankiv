@@ -110,9 +110,17 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
         e.preventDefault();
         const d = drives[cursor];
         if (d) void openDrive(d.id);
+      } else if (
+        cursor >= 0 &&
+        (e.key === "Delete" || (e.key === "Backspace" && e.metaKey))
+      ) {
+        // ⌘Delete on a Mac, Delete elsewhere — and Undo, as with the mouse.
+        e.preventDefault();
+        const d = drives[cursor];
+        if (d) void deleteDrive(d.id, d.company);
       }
     },
-    [drives, cursor, openDrive],
+    [drives, cursor, openDrive, deleteDrive],
   );
 
   useEffect(() => {

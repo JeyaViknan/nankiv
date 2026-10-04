@@ -29,6 +29,7 @@ import { VerdictBanner, VerdictPill } from "../components/Verdict";
 import { RoundTrail, neighbour } from "../components/Rounds";
 import { ShareSheet } from "../components/ShareSheet";
 import { lateNightLine } from "../lib/eggs";
+import { MOD, chord } from "../lib/keys";
 import {
   BranchCard,
   CoverageNotice,
@@ -226,7 +227,7 @@ export function DriveScreen({
         {outcome.friends.length === 0 ? (
           <p className="search-note">
             Add people once and they're checked on every shortlist from then on.
-            Press <kbd>⌘</kbd>
+            Press <kbd>{MOD}</kbd>
             <kbd>D</kbd> to open your circle.
           </p>
         ) : (
@@ -337,8 +338,12 @@ export function DriveScreen({
           <MenuButton
             label="Download names"
             choices={[
-              { id: "xlsx", label: "Excel workbook", hint: ".xlsx  ⌘E" },
-              { id: "csv", label: "CSV", hint: ".csv  ⇧⌘E" },
+              {
+                id: "xlsx",
+                label: "Excel workbook",
+                hint: `.xlsx  ${chord("E")}`,
+              },
+              { id: "csv", label: "CSV", hint: `.csv  ${chord("E", true)}` },
             ]}
             onChoose={(id) => void exportNames(id as ExportFormat)}
           />

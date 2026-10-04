@@ -871,6 +871,43 @@ button.round-step:hover {
   text-align: center;
 }
 
+/* Keyboard shortcuts: what, and which keys. */
+.keys-group + .keys-group {
+  margin-top: 18px;
+}
+
+.keys-group h2 {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 6px;
+}
+
+.keys {
+  margin: 0;
+}
+
+.keys-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+
+.keys-row dt {
+  color: var(--text-2);
+}
+
+.keys-row dd {
+  margin: 0;
+  flex: none;
+}
+
 /* What a paste found, before it becomes a drive. */
 .paste-found {
   font-size: 14px;
@@ -926,17 +963,22 @@ kbd {
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   flex: none;
-  /* The traffic lights float over this bar (titleBarStyle: Overlay), so the
-     leading edge is reserved for them.
-     Measured on macOS 26: 14pt across, 23pt apart, starting 20pt in, so they
-     end at 80, and the 8pt that follows is the gap before the first control.
+}
 
-     trafficLightPosition in tauri.conf.json puts them on this bar's centre.
-     Its `y` is not a coordinate: tao sets the title bar container to
-     buttonHeight + y and leaves the buttons where they sit inside it, so the
-     centre lands at y - 2. Hence 23.5 for a centre of 21.5 — which is this
-     bar's own centre, and where every control in it sits. Change the height
-     above and that number has to move with it. */
+/* On a Mac the traffic lights float over this bar (titleBarStyle: Overlay),
+   so the leading edge is reserved for them. Windows keeps its own title bar
+   above the window's content, and the bar starts at the ordinary edge.
+
+   Measured on macOS 26: 14pt across, 23pt apart, starting 20pt in, so they
+   end at 80, and the 8pt that follows is the gap before the first control.
+
+   trafficLightPosition in tauri.conf.json puts them on this bar's centre.
+   Its `y` is not a coordinate: tao sets the title bar container to
+   buttonHeight + y and leaves the buttons where they sit inside it, so the
+   centre lands at y - 2. Hence 23.5 for a centre of 21.5 — which is this
+   bar's own centre, and where every control in it sits. Change the height
+   above and that number has to move with it. */
+:root[data-platform="mac"] .toolbar {
   padding-left: 88px;
 }
 

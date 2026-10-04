@@ -31,9 +31,12 @@ import { DriveScreen } from "./screens/DriveScreen";
 import { OnboardingScreen } from "./screens/Onboarding";
 import { SettingsSheet } from "./screens/Settings";
 import { PasteSheet } from "./components/PasteSheet";
+import { ShortcutsSheet } from "./components/ShortcutsSheet";
+import { Announcer } from "./components/Announcer";
 import { usePastedShortlist } from "./lib/paste";
 import { useWatchedImports } from "./lib/watched";
 import { useUpdateReminder } from "./lib/updates";
+import { chord } from "./lib/keys";
 import { Shortlists } from "./screens/Shortlists";
 
 export default function App() {
@@ -54,6 +57,7 @@ export default function App() {
   // Settings opened by Check for Updates starts the check itself.
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [pasted, setPasted] = useState<string | null>(null);
+  const [keysOpen, setKeysOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -152,6 +156,7 @@ export default function App() {
     back: goBack,
     export_xlsx: () => void useStore.getState().exportNames("xlsx"),
     export_csv: () => void useStore.getState().exportNames("csv"),
+    shortcuts: () => setKeysOpen((v) => !v),
   });
 
   // Escape is not a menu accelerator, so it has only the one path and needs no
@@ -212,7 +217,7 @@ export default function App() {
             className="icon-btn"
             onClick={() => setCircleOpen(true)}
             aria-label="Circle"
-            title="Circle (⌘D)"
+            title={`Circle (${chord("D")})`}
           >
             <Icon name="people" size={17} />
           </button>
@@ -220,7 +225,7 @@ export default function App() {
             className="icon-btn"
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
-            title="Settings (⌘,)"
+            title={`Settings (${chord(",")})`}
           >
             <Icon name="gear" size={17} />
           </button>
@@ -266,6 +271,8 @@ export default function App() {
           }}
         />
       )}
+      {keysOpen && <ShortcutsSheet onClose={() => setKeysOpen(false)} />}
+      <Announcer />
       {pasted !== null && (
         <PasteSheet text={pasted} onClose={() => setPasted(null)} />
       )}

@@ -28,6 +28,7 @@
 import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 import { wrongFileReply } from "../lib/eggs";
+import { useStore } from "../lib/store";
 
 const SPREADSHEET = ["xlsx", "xls", "xlsm", "ods", "csv"];
 
@@ -112,6 +113,13 @@ export function DropSurface({
         return;
       }
       if (!chosen.ok) {
+        // The veil is visual; a screen reader is told in words.
+        useStore
+          .getState()
+          .announce(
+            wrongFileReply(chosen.file.name)?.title ??
+              `${chosen.file.name} won't work. nankiv reads spreadsheets.`,
+          );
         setDrag({ phase: "invalid", name: chosen.file.name });
         window.setTimeout(() => setDrag({ phase: "idle" }), 2500);
         return;

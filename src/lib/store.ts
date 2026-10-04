@@ -8,6 +8,7 @@
 
 import { create } from "zustand";
 import { save } from "@tauri-apps/plugin-dialog";
+import { undeterminedText } from "../components/Verdict";
 import {
   api,
   toApiError,
@@ -94,12 +95,29 @@ interface State {
   dismissImport: () => void;
   clearError: () => void;
   showToast: (message: string, undo?: () => void, label?: string) => void;
+  /** Said to a screen reader: the newest result, or why a drop was refused. */
+  announcement: { text: string; n: number } | null;
+  announce: (text: string) => void;
   /** When the title last turned round, for the name's small surprise. */
   nameTurnedAt: number | null;
   turnTheName: () => void;
   /** The drive just imported, and when — so a result can know it is new. */
   fresh: { driveId: number; at: number } | null;
   dismissToast: () => void;
+}
+
+/** A result, as a sentence a screen reader can say on arrival. */
+export function resultSentence(outcome: ImportOutcome): string {
+  const v = outcome.you.verdict;
+  const n = outcome.total_students.toLocaleString();
+  switch (v.status) {
+    case "shortlisted":
+      return `You're in. ${outcome.company}, one of ${n} shortlisted.`;
+    case "not_shortlisted":
+      return `Not this time. You're not on the ${outcome.company} shortlist of ${n}.`;
+    case "undetermined":
+      return `${undeterminedText(v).title}. ${outcome.company}.`;
+  }
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -117,6 +135,7 @@ export const useStore = create<State>((set, get) => ({
   toast: null,
   nameTurnedAt: null,
   fresh: null,
+  announcement: null,
 
   go: (view) => set({ view, error: null }),
 
@@ -269,6 +288,7 @@ export const useStore = create<State>((set, get) => ({
     set({ importStage: { phase: "reading", filename }, error: null });
     try {
       const outcome = await call();
+      get().announce(resultSentence(outcome));
       set({
         fresh: { driveId: outcome.drive_id, at: Date.now() },
         current: outcome,
@@ -425,6 +445,9 @@ export const useStore = create<State>((set, get) => ({
     // Undoable toasts linger, because acting on one takes a decision.
     toastTimer = setTimeout(() => set({ toast: null }), undo ? 8000 : 2800);
   },
+
+  announce: (text) =>
+    set({ announcement: { text, n: (get().announcement?.n ?? 0) + 1 } }),
 
   turnTheName: () => {
     // Once per search, not once per keystroke after it.

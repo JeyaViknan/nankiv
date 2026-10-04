@@ -30,6 +30,28 @@ use tauri::Manager;
 /// leaves the machine. There is no network client in this binary.
 pub fn run() {
     tauri::Builder::default()
+        // First, as the plugin requires: a second launch hands its file or
+        // link to the copy already running instead of opening the database
+        // twice. macOS does this itself; Windows and Linux need telling.
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let args: Vec<String> = args.into_iter().skip(1).collect();
+            if let Some(route) = args.iter().find_map(|a| widget::parse_route(a)) {
+                open_route(app, route);
+            }
+            let files: Vec<String> = args
+                .iter()
+                .filter_map(|a| desktop::spreadsheet(a))
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect();
+            if !files.is_empty() {
+                open_files(app, files);
+            }
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -217,7 +239,6 @@ struct Early {
 ///
 /// The same paths as a link: acted on immediately if the interface is running,
 /// held for it to collect if the drop is what launched the app.
-#[cfg_attr(not(any(target_os = "macos", target_os = "ios")), allow(dead_code))]
 fn open_files(app: &tauri::AppHandle, files: Vec<String>) {
     use tauri::Emitter;
     let Some(state) = app.try_state::<AppState>() else {
@@ -244,7 +265,6 @@ fn open_files(app: &tauri::AppHandle, files: Vec<String>) {
 /// app, nothing is listening yet, and the interface collects the stored copy
 /// once it has loaded. Opening the same drive twice is harmless, so the overlap
 /// needs no coordination.
-#[cfg_attr(not(any(target_os = "macos", target_os = "ios")), allow(dead_code))]
 fn open_route(app: &tauri::AppHandle, route: widget::Route) {
     use tauri::Emitter;
     let Some(state) = app.try_state::<AppState>() else {

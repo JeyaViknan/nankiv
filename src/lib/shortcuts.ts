@@ -26,7 +26,8 @@ export type ShortcutId =
   | "circle"
   | "back"
   | "export_xlsx"
-  | "export_csv";
+  | "export_csv"
+  | "shortcuts";
 
 export interface Chord {
   /** Lowercase `KeyboardEvent.key`, e.g. `"o"` or `","`. */
@@ -51,6 +52,7 @@ export const CHORDS: Record<ShortcutId, Chord> = {
   search: { key: "f", shift: false },
   circle: { key: "d", shift: false },
   back: { key: "[", shift: false },
+  shortcuts: { key: "/", shift: false },
 };
 
 export const SHORTCUT_IDS = Object.keys(CHORDS) as ShortcutId[];

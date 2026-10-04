@@ -146,7 +146,7 @@ export function DistributionCard({
       <div
         className="hist"
         role="img"
-        aria-label={`CGPA distribution: median ${dist.median.toFixed(2)}, range ${dist.min.toFixed(2)} to ${dist.max.toFixed(2)}`}
+        aria-label={`CGPA distribution: median ${dist.median.toFixed(2)}, range ${dist.min.toFixed(2)} to ${dist.max.toFixed(2)}${yourCgpa !== null ? `; yours is ${yourCgpa.toFixed(2)}` : ""}`}
       >
         {shown.map((b, i) => (
           <div

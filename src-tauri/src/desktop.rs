@@ -42,6 +42,39 @@ pub fn default_size(screen_w: f64, screen_h: f64) -> (f64, f64) {
     (w.round(), h.round())
 }
 
+/// The project's pages behind Help, opened in the browser. A problem report
+/// starts with the version and the operating system filled in — nothing else,
+/// and nothing about anyone: the person reporting writes the rest.
+fn help_url(id: &str, version: &str) -> Option<String> {
+    const REPO: &str = "https://github.com/JeyaViknan/nankiv";
+    match id {
+        "report_problem" => {
+            let body = format!(
+                "nankiv {version} on {os}\n\nWhat happened:\n\n\nWhat you expected:\n\n\n(Please leave out Neo IDs, registration numbers and anyone's name.)\n",
+                os = std::env::consts::OS,
+            );
+            Some(format!(
+                "{REPO}/issues/new?body={}",
+                encode_component(&body)
+            ))
+        }
+        "privacy" => Some(format!("{REPO}/blob/master/docs/PRIVACY.md")),
+        _ => None,
+    }
+}
+
+/// Percent-encodes a URL query value.
+fn encode_component(text: &str) -> String {
+    text.bytes()
+        .map(|b| match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                (b as char).to_string()
+            }
+            _ => format!("%{b:02X}"),
+        })
+        .collect()
+}
+
 /// Builds the application menu.
 ///
 /// Every accelerator here mirrors a handler the interface already has, so the
@@ -161,8 +194,32 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .close_window()
         .build()?;
 
+    // Help, titled so on a Mac it also carries the system's menu search.
+    let help_menu = SubmenuBuilder::new(app, "Help")
+        .item(
+            &MenuItemBuilder::new("Keyboard Shortcuts")
+                .id("shortcuts")
+                .accelerator("CmdOrCtrl+/")
+                .build(app)?,
+        )
+        .separator()
+        .item(
+            &MenuItemBuilder::new("Report a Problem…")
+                .id("report_problem")
+                .build(app)?,
+        )
+        .item(&MenuItemBuilder::new("Privacy").id("privacy").build(app)?)
+        .build()?;
+
     let menu = MenuBuilder::new(app)
-        .items(&[&app_menu, &file_menu, &edit_menu, &view_menu, &window_menu])
+        .items(&[
+            &app_menu,
+            &file_menu,
+            &edit_menu,
+            &view_menu,
+            &window_menu,
+            &help_menu,
+        ])
         .build()?;
 
     app.set_menu(menu)?;
@@ -183,11 +240,15 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 | "back"
                 | "export_xlsx"
                 | "export_csv"
+                | "shortcuts"
         ) {
             let _ = handle.emit("menu", id);
         } else if id == "check_updates" {
             // No keyboard shortcut, so not a shortcut id: its own event.
             let _ = handle.emit("check-updates", ());
+        } else if let Some(url) = help_url(id, &handle.package_info().version.to_string()) {
+            use tauri_plugin_opener::OpenerExt;
+            let _ = handle.opener().open_url(url, None::<&str>);
         }
     });
 
@@ -383,6 +444,28 @@ pub fn percent_decode(raw: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_problem_report_carries_the_version_and_nothing_personal() {
+        let url = help_url("report_problem", "0.1.3").unwrap();
+        assert!(url.starts_with("https://github.com/JeyaViknan/nankiv/issues/new?body="));
+        assert!(url.contains("nankiv%200.1.3%20on%20"));
+        assert!(url.contains("Please%20leave%20out%20Neo%20IDs"));
+        assert!(!url.contains(' ') && !url.contains('\n'));
+    }
+
+    #[test]
+    fn help_opens_only_the_project_s_own_pages() {
+        assert!(help_url("privacy", "0.1.3")
+            .unwrap()
+            .ends_with("docs/PRIVACY.md"));
+        assert_eq!(help_url("settings", "0.1.3"), None);
+    }
+
+    #[test]
+    fn query_values_are_fully_encoded() {
+        assert_eq!(encode_component("a b&c=d/é"), "a%20b%26c%3Dd%2F%C3%A9");
+    }
 
     #[test]
     fn a_file_url_becomes_a_path() {

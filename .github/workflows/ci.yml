@@ -21,11 +21,11 @@ jobs:
     name: Lint, typecheck and test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install system dependencies
@@ -84,7 +84,7 @@ jobs:
     name: macOS widget
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Widget model tests
         # Decodes the shared fixtures, which the Rust tests generate. A change
@@ -112,7 +112,7 @@ jobs:
           ! echo "$entitlements" | grep -q 'get-task-allow'
           ! echo "$entitlements" | grep -q 'files.all'
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: widget-renders
           retention-days: 14
@@ -132,8 +132,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "8.0.x"
       - name: Provider tests
@@ -147,8 +147,8 @@ jobs:
     name: Fixture privacy check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install openpyxl
@@ -201,11 +201,11 @@ jobs:
             args: ""
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install system dependencies
@@ -243,7 +243,7 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nankiv-${{ matrix.target }}
           retention-days: 14
