@@ -20,7 +20,6 @@ function person(label: string, verdict: Verdict): PersonResult {
     reg_no: null,
     verdict,
     confidence: "verified",
-    cgpa: null,
   };
 }
 
@@ -33,6 +32,7 @@ function outcome(you: Verdict): ImportOutcome {
     shape: "neo_id_only",
     primary_key: "neo_id",
     you: person("You", you),
+    your_cgpa: null,
     friends: [
       person("Arjun", { status: "shortlisted" }),
       person("Meera", { status: "not_shortlisted" }),

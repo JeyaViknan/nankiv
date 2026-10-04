@@ -33,7 +33,24 @@ the application now distributes roughly 2,500 classmates' names and CGPAs. That
 is a materially different act from a file circulating inside the cohort, and it
 carries exposure under India's DPDP Act 2023. Anyone deploying this should have
 their placement cell's agreement first, and should decide deliberately whether
-the repository holding `reference/pack.json` ought to be public.
+the repository holding the pack ought to be public.
+
+Two things limit that exposure, and one thing does not:
+
+- **No screen shows it.** The pack exists for aggregate analysis — whether a
+  shortlist looks CGPA-based, roughly where its cutoff sits. Every answer the
+  interface receives about it is an aggregate. See *The only CGPA on screen*
+  below.
+- **It ships unreadable.** `reference/pack.bin` is the JSON compressed and
+  masked with a fixed keystream, so it cannot be browsed on GitHub, found by
+  searching the app bundle, or read by opening it in an editor. A test asserts
+  that no JSON key and no registration number survive in the shipped bytes.
+- **That is obfuscation, not encryption.** nankiv is open source and the decoder
+  is public (`src-tauri/src/reference.rs`), so a determined person with the
+  installer can still unpack it. Shipping data offline to every student means
+  shipping it to anyone; this raises the cost of casual access and no more. The
+  earlier, readable `pack.json` also remains in the repository's git history
+  until that history is rewritten.
 
 ## 2. Minimisation is structural, not procedural
 
@@ -74,9 +91,16 @@ minimisation enforced by developer discipline does not.
   Tests in `src-tauri/src/export.rs` assert all of the above.
 - **Search returns a person, not a table.** One deliberate query at a time. No
   browsable roster view exists.
-- **Individual CGPA is opt-in and off by default.** Aggregate analysis needs no
-  per-person disclosure; only the student themselves and explicitly added
-  friends can show a CGPA, and only with the setting enabled.
+- **The only CGPA on screen is the student's own, as they typed it.** It is
+  entered at setup or in Settings, kept on the machine, and used for their own
+  standing. No one else's CGPA is shown — not search results, not the people in
+  your circle — and the core never sends one to the interface: a person in a
+  result carries an identifier, a label and a verdict, and has no CGPA field to
+  fill. Even "your" figure is never taken from the reference data, because the
+  identity it would hang off is whatever was typed at setup and could be
+  anyone's; a test asserts that typing a classmate's registration number yields
+  no standing at all until you enter your own CGPA. An earlier setting that
+  showed friends' CGPAs is gone.
 - **Share summaries carry aggregates only** — never a list of named individuals,
   and never the student's own status, which is theirs to disclose.
 - **A visible data inventory** in Settings, with a one-click wipe.
@@ -175,10 +199,11 @@ Stated plainly, because a security claim that overreaches is worse than none:
 
 ## For maintainers
 
-The bundled pack at `src-tauri/reference/pack.json` is generated from `Global/`
+The bundled pack at `src-tauri/reference/pack.bin` is generated from `Global/`
 by `cargo run --example build_reference`, and is the one committed artefact that
 carries real names and CGPAs. Regenerate it whenever the source sheets change.
-A test asserts it contains no email address, phone number or document link.
+Tests assert that, decoded, it contains no email address, phone number or
+document link, and that undecoded it contains nothing readable.
 
 Real spreadsheets must never be committed. `.gitignore` excludes `*.xlsx` and
 the `Global/` directory, and CI fails if a spreadsheet appears outside the

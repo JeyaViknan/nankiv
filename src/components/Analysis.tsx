@@ -267,6 +267,27 @@ export function BranchCard({ report }: { report: BranchReport }) {
   );
 }
 
+/**
+ * Where "Where you stand" goes until you have said your CGPA. nankiv will not
+ * borrow one from the reference data: the identity it would come from is only
+ * what was typed at setup, and could be anyone's.
+ */
+export function StandingPrompt({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="card card-row">
+      <div>
+        <h2>Where you stand</h2>
+        <p className="card-text">
+          Add your CGPA to see how it compares with this list.
+        </p>
+      </div>
+      <button className="btn small" onClick={onAdd}>
+        Add your CGPA
+      </button>
+    </div>
+  );
+}
+
 export function StandingCard({
   percentile,
 }: {

@@ -117,6 +117,16 @@ const MIGRATIONS: &[(&str, &str)] = &[
     );
     "#,
     ),
+    (
+        "0003_self_reported_cgpa",
+        r#"
+    -- The student's own CGPA, as they typed it, and when. The only CGPA nankiv
+    -- ever shows anyone. `show_friend_cgpa` above is no longer read: other
+    -- students' CGPAs are used for aggregate analysis and nothing else.
+    ALTER TABLE profile ADD COLUMN cgpa REAL;
+    ALTER TABLE profile ADD COLUMN cgpa_updated_at TEXT;
+    "#,
+    ),
 ];
 
 /// Applies any migrations the database has not seen.

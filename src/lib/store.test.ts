@@ -48,8 +48,8 @@ function outcome(id: number, company: string): ImportOutcome {
       reg_no: null,
       verdict: { status: "shortlisted" },
       confidence: "verified",
-      cgpa: null,
     },
+    your_cgpa: null,
     friends: [],
     analysis: {
       total_students: 166,

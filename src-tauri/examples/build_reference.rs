@@ -5,7 +5,10 @@
 //!
 //! ```text
 //! cargo run --example build_reference
+//! cargo run --example build_reference -- --from-json old/pack.json
 //! ```
+//!
+//! The second form re-encodes an existing JSON pack without the source sheets.
 //!
 //! The expensive, careful part of identity resolution happens here rather than
 //! on every launch: names are normalised, matched through the ambiguity gate,
@@ -25,7 +28,41 @@ use nankiv_core::store::Store;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+fn out_path() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("reference")
+        .join("pack.bin")
+}
+
+/// Writes a pack's JSON in the encoding the application reads.
+fn write_pack(json: &[u8]) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let out = out_path();
+    std::fs::create_dir_all(out.parent().expect("reference directory"))?;
+    let packed = nankiv_core::reference::encode(json);
+    std::fs::write(&out, &packed)?;
+    println!(
+        "\n  wrote {} ({:.0} KB, from {:.0} KB of JSON)",
+        out.display(),
+        packed.len() as f64 / 1024.0,
+        json.len() as f64 / 1024.0
+    );
+    Ok(out)
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let [flag, path] = args.as_slice() {
+        if flag == "--from-json" {
+            let json = std::fs::read(path)?;
+            // Refuse anything that is not a pack rather than encode garbage.
+            serde_json::from_slice::<serde_json::Value>(&json)?
+                .get("version")
+                .ok_or("not a reference pack: no version")?;
+            write_pack(&json)?;
+            return Ok(());
+        }
+    }
+
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("repository root")
@@ -143,11 +180,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "baseline_branch": base_branch,
     });
 
-    let out_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("reference");
-    std::fs::create_dir_all(&out_dir)?;
-    let out = out_dir.join("pack.json");
     let text = serde_json::to_string(&pack)?;
-    std::fs::write(&out, &text)?;
+    write_pack(text.as_bytes())?;
 
     let verified = edges
         .iter()
@@ -155,9 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .count();
     let high = edges.iter().filter(|e| e[2] == "high").count();
     println!(
-        "\n  wrote {} ({:.0} KB)\n    {} students resolvable to academic data ({verified} verified, {high} exact-name, {} approximate)\n    {} academic records, {} baseline values",
-        out.display(),
-        text.len() as f64 / 1024.0,
+        "    {} students resolvable to academic data ({verified} verified, {high} exact-name, {} approximate)\n    {} academic records, {} baseline values",
         edges.len(),
         edges.len() - verified - high,
         academics.len(),

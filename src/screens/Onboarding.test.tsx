@@ -31,7 +31,8 @@ beforeEach(() => {
     reg_no: null,
     display_name: null,
     cohort: null,
-    show_friend_cgpa: false,
+    cgpa: null,
+    cgpa_updated_at: null,
   });
 });
 
@@ -74,6 +75,53 @@ describe("finishing setup", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(useStore.getState().view).toBe("shortlists");
+  });
+});
+
+describe("your CGPA", () => {
+  it("is saved when given", async () => {
+    const user = userEvent.setup();
+    render(<OnboardingScreen />);
+
+    await user.type(screen.getByLabelText("Neo ID"), "V9H0G6C4");
+    await user.type(screen.getByLabelText(/Your CGPA/), "8.42");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(vi.mocked(api.saveProfile)).toHaveBeenCalledWith(
+      expect.objectContaining({ neo_id: "V9H0G6C4", cgpa: 8.42 }),
+    );
+  });
+
+  it("is optional: setup finishes without one", async () => {
+    const user = userEvent.setup();
+    render(<OnboardingScreen />);
+
+    await user.type(screen.getByLabelText("Neo ID"), "V9H0G6C4");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(vi.mocked(api.saveProfile)).toHaveBeenCalledWith(
+      expect.objectContaining({ cgpa: null }),
+    );
+    expect(useStore.getState().view).toBe("shortlists");
+  });
+
+  it("refuses a percentage, and saves nothing until it is fixed", async () => {
+    const user = userEvent.setup();
+    render(<OnboardingScreen />);
+
+    await user.type(screen.getByLabelText("Neo ID"), "V9H0G6C4");
+    await user.type(screen.getByLabelText(/Your CGPA/), "84.2");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(vi.mocked(api.saveProfile)).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("A CGPA is out of 10 — like 8.42."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Your CGPA/)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(useStore.getState().view).toBe("onboarding");
   });
 });
 

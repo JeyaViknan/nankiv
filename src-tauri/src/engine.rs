@@ -432,19 +432,10 @@ pub fn analyse_drive(
         .collect();
     let baseline = Baseline::from_values(&base_cgpa).with_branches(&canon_branches);
 
-    // The student's own CGPA, for the standing figure.
-    let your_cgpa = profile
-        .reg_no
-        .as_deref()
-        .or_else(|| {
-            profile
-                .neo_id
-                .as_deref()
-                .and_then(|n| identity.reg_of_neo(n))
-        })
-        .and_then(|r| store.academic(r).ok().flatten())
-        .and_then(|(c, _)| c)
-        .and_then(sanitise_cgpa);
+    // The student's own CGPA, for the standing figure: the one they entered.
+    // Never the reference data's figure for their identifier — that identifier
+    // is unverified, so it would show anyone's CGPA to whoever typed their ID.
+    let your_cgpa = profile.cgpa.and_then(sanitise_cgpa);
 
     Ok(DriveAnalysis::build(
         &cgpas, &branches, total, &baseline, your_cgpa,
@@ -670,6 +661,51 @@ mod tests {
         assert_eq!(a.0, Some(8.24));
         let (base, _) = s.baseline(Some("23")).unwrap();
         assert_eq!(base.len(), 1, "baseline gets an anonymous copy");
+    }
+
+    #[test]
+    fn your_standing_comes_from_the_cgpa_you_entered_never_the_reference() {
+        let s = Store::open_in_memory().unwrap();
+        // A shortlist of forty, every one with reference academic data.
+        let mut regs = BTreeSet::new();
+        for i in 0..40 {
+            let r = RegNo::parse(&format!("23BCE{:04}", 1000 + i)).unwrap();
+            s.upsert_academic(&r, Some(7.0 + i as f64 * 0.05), Some("CSE"), "ref")
+                .unwrap();
+            regs.insert(r);
+        }
+        let id = s
+            .insert_drive(
+                "X",
+                None,
+                "x.xlsx",
+                "H",
+                "reg_no_only",
+                Some("reg_no"),
+                &BTreeSet::new(),
+                &regs,
+                None,
+            )
+            .unwrap();
+        let identity = build_graph(&s).unwrap();
+
+        // Whoever typed this registration number at setup — the reference
+        // data's top student, 8.95 — must not be handed that student's place.
+        let mut profile = Profile {
+            reg_no: Some("23BCE1039".into()),
+            ..Default::default()
+        };
+        let a = analyse_drive(&s, id, &identity, &profile).unwrap();
+        assert!(a.sufficient);
+        assert!(
+            a.your_percentile.is_none(),
+            "no CGPA entered means no standing, never the reference's"
+        );
+
+        profile.cgpa = Some(7.0);
+        let a = analyse_drive(&s, id, &identity, &profile).unwrap();
+        let standing = a.your_percentile.expect("a standing from the entered CGPA");
+        assert!(standing.value < 0.05, "placed by 7.0, not by 8.95");
     }
 
     #[test]

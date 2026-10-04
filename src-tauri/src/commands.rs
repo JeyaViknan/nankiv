@@ -97,8 +97,6 @@ pub struct PersonResult {
     pub reg_no: Option<String>,
     pub verdict: Verdict,
     pub confidence: String,
-    /// Only ever populated when the profile opted in *and* the link is strong.
-    pub cgpa: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -110,6 +108,9 @@ pub struct ImportOutcome {
     pub shape: FileShape,
     pub primary_key: Option<KeyKind>,
     pub you: PersonResult,
+    /// The CGPA the student entered for themselves, for their own place on
+    /// the distribution. Nobody else's CGPA is ever sent to the interface.
+    pub your_cgpa: Option<f64>,
     pub friends: Vec<PersonResult>,
     pub analysis: DriveAnalysis,
     /// What this file taught the identity graph.
@@ -177,6 +178,14 @@ pub fn save_profile(state: tauri::State<AppState>, profile: Profile) -> R<()> {
             return Err(CommandError::new(
                 "bad_neo_id",
                 "That doesn't look like a Neo ID. They're eight characters, alternating letter and digit — like V9H0G6C4.",
+            ));
+        }
+    }
+    if let Some(c) = profile.cgpa {
+        if sanitise_cgpa(c).is_none() {
+            return Err(CommandError::new(
+                "bad_cgpa",
+                "A CGPA is out of 10 — like 8.42.",
             ));
         }
     }
@@ -375,9 +384,6 @@ fn import_shortlist_inner(
         profile.reg_no.as_deref(),
         &parsed,
         &identity,
-        &s,
-        profile.show_friend_cgpa,
-        true,
     )?;
 
     let mut friends = Vec::new();
@@ -388,9 +394,6 @@ fn import_shortlist_inner(
             f.reg_no.as_deref(),
             &parsed,
             &identity,
-            &s,
-            profile.show_friend_cgpa,
-            false,
         )?);
     }
     // Shortlisted first, then undetermined, then not shortlisted.
@@ -410,6 +413,7 @@ fn import_shortlist_inner(
         shape: parsed.shape,
         primary_key: parsed.primary_key,
         you,
+        your_cgpa: profile.cgpa.and_then(sanitise_cgpa),
         friends,
         analysis,
         learned_verified: harvest.verified_links,
@@ -418,16 +422,12 @@ fn import_shortlist_inner(
     })
 }
 
-#[allow(clippy::too_many_arguments)]
 fn resolve_person(
     label: &str,
     neo: Option<&str>,
     reg: Option<&str>,
     parsed: &parse::ParsedFile,
     identity: &ResolvedIdentity,
-    s: &Store,
-    show_cgpa: bool,
-    is_self: bool,
 ) -> R<PersonResult> {
     let verdict = engine::membership_verdict(
         parsed.primary_key,
@@ -439,26 +439,12 @@ fn resolve_person(
     );
     let resolved = identity.resolve(neo, reg);
 
-    // CGPA is shown for the student themselves always, and for friends only
-    // when they have explicitly opted in.
-    let cgpa = if is_self || show_cgpa {
-        resolved
-            .reg_no
-            .as_ref()
-            .and_then(|r| s.academic(r.as_str()).ok().flatten())
-            .and_then(|(c, _)| c)
-            .and_then(sanitise_cgpa)
-    } else {
-        None
-    };
-
     Ok(PersonResult {
         label: label.to_string(),
         neo_id: neo.map(|s| s.to_string()),
         reg_no: reg.map(|s| s.to_string()),
         verdict,
         confidence: resolved.confidence.label().to_string(),
-        cgpa,
     })
 }
 
@@ -652,9 +638,6 @@ pub fn drive_outcome(
         profile.reg_no.as_deref(),
         &synthetic,
         identity,
-        s,
-        profile.show_friend_cgpa,
-        true,
     )?;
     let mut friends = Vec::new();
     for f in s.friends()? {
@@ -664,9 +647,6 @@ pub fn drive_outcome(
             f.reg_no.as_deref(),
             &synthetic,
             identity,
-            s,
-            profile.show_friend_cgpa,
-            false,
         )?);
     }
     friends.sort_by_key(|f| match f.verdict {
@@ -685,6 +665,7 @@ pub fn drive_outcome(
         shape,
         primary_key,
         you,
+        your_cgpa: profile.cgpa.and_then(sanitise_cgpa),
         friends,
         analysis,
         learned_verified: 0,
@@ -729,7 +710,6 @@ pub fn lookup_identifier(state: tauri::State<AppState>, query: String) -> R<Vec<
                 reg_no: reg_s.clone(),
                 verdict: Verdict::Shortlisted,
                 confidence: resolved.confidence.label().to_string(),
-                cgpa: None,
             });
         }
     }

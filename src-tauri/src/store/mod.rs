@@ -30,13 +30,19 @@ pub struct Store {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Profile {
     pub neo_id: Option<String>,
     pub reg_no: Option<String>,
     pub display_name: Option<String>,
     pub cohort: Option<String>,
-    /// Off by default. Aggregates need no per-person disclosure.
-    pub show_friend_cgpa: bool,
+    /// The student's own CGPA, as they entered it. It drives their own
+    /// standing and is the only CGPA the interface ever displays: the reference
+    /// data's figure for "you" is never used, because the identity it hangs
+    /// off is whatever was typed at setup, and could be anyone's.
+    pub cgpa: Option<f64>,
+    /// When `cgpa` last changed, so the interface can say how current it is.
+    pub cgpa_updated_at: Option<String>,
 }
 
 impl Profile {
@@ -124,7 +130,7 @@ impl Store {
         let p = self
             .conn
             .query_row(
-                "SELECT neo_id, reg_no, display_name, cohort, show_friend_cgpa
+                "SELECT neo_id, reg_no, display_name, cohort, cgpa, cgpa_updated_at
                  FROM profile WHERE id = 1",
                 [],
                 |r| {
@@ -133,7 +139,8 @@ impl Store {
                         reg_no: r.get(1)?,
                         display_name: r.get(2)?,
                         cohort: r.get(3)?,
-                        show_friend_cgpa: r.get::<_, i64>(4)? != 0,
+                        cgpa: r.get(4)?,
+                        cgpa_updated_at: r.get(5)?,
                     })
                 },
             )
@@ -151,21 +158,20 @@ impl Store {
                 .map(|r| r.admission_year().to_string())
         });
         self.conn.execute(
-            "INSERT INTO profile (id, neo_id, reg_no, display_name, cohort, show_friend_cgpa, created_at)
-             VALUES (1, ?1, ?2, ?3, ?4, ?5, datetime('now'))
+            "INSERT INTO profile (id, neo_id, reg_no, display_name, cohort, cgpa, cgpa_updated_at, created_at)
+             VALUES (1, ?1, ?2, ?3, ?4, ?5, CASE WHEN ?5 IS NULL THEN NULL ELSE datetime('now') END, datetime('now'))
              ON CONFLICT(id) DO UPDATE SET
                 neo_id = excluded.neo_id,
                 reg_no = excluded.reg_no,
                 display_name = excluded.display_name,
                 cohort = excluded.cohort,
-                show_friend_cgpa = excluded.show_friend_cgpa",
-            params![
-                p.neo_id,
-                p.reg_no,
-                p.display_name,
-                cohort,
-                p.show_friend_cgpa as i64
-            ],
+                cgpa_updated_at = CASE
+                    WHEN excluded.cgpa IS profile.cgpa THEN profile.cgpa_updated_at
+                    WHEN excluded.cgpa IS NULL THEN NULL
+                    ELSE datetime('now')
+                END,
+                cgpa = excluded.cgpa",
+            params![p.neo_id, p.reg_no, p.display_name, cohort, p.cgpa],
         )?;
         Ok(())
     }
@@ -746,7 +752,8 @@ mod tests {
             reg_no: Some("23BAI0002".into()),
             display_name: Some("Me".into()),
             cohort: None,
-            show_friend_cgpa: false,
+            cgpa: None,
+            cgpa_updated_at: None,
         })
         .unwrap();
         let p = s.profile().unwrap();
@@ -756,14 +763,40 @@ mod tests {
     }
 
     #[test]
-    fn friend_cgpa_defaults_to_hidden() {
+    fn your_cgpa_records_when_it_last_changed() {
         let s = store();
-        s.save_profile(&Profile {
+        let mut p = Profile {
             neo_id: Some("V9H0G6C4".into()),
             ..Default::default()
-        })
-        .unwrap();
-        assert!(!s.profile().unwrap().show_friend_cgpa);
+        };
+        s.save_profile(&p).unwrap();
+        assert_eq!(s.profile().unwrap().cgpa, None);
+        assert_eq!(s.profile().unwrap().cgpa_updated_at, None);
+
+        p.cgpa = Some(8.42);
+        s.save_profile(&p).unwrap();
+        let first = s.profile().unwrap();
+        assert_eq!(first.cgpa, Some(8.42));
+        assert!(first.cgpa_updated_at.is_some(), "a new CGPA is dated");
+
+        // Saving something else leaves the date alone: it says when the CGPA
+        // changed, not when the profile was last touched.
+        s.conn
+            .execute(
+                "UPDATE profile SET cgpa_updated_at = '2026-01-01 00:00:00'",
+                [],
+            )
+            .unwrap();
+        p.display_name = Some("Me".into());
+        s.save_profile(&p).unwrap();
+        assert_eq!(
+            s.profile().unwrap().cgpa_updated_at.as_deref(),
+            Some("2026-01-01 00:00:00")
+        );
+
+        p.cgpa = None;
+        s.save_profile(&p).unwrap();
+        assert_eq!(s.profile().unwrap().cgpa_updated_at, None);
     }
 
     #[test]

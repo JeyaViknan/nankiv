@@ -874,7 +874,7 @@ mod tests {
         s.save_profile(&Profile {
             neo_id: Some("V9H0G6C4".into()),
             reg_no: Some("23BAI0002".into()),
-            show_friend_cgpa: true,
+            cgpa: Some(9.12),
             ..Default::default()
         })
         .unwrap();
@@ -891,7 +891,16 @@ mod tests {
 
         let snap = build_snapshot(&s, Activity::Idle, NOW).unwrap();
         let json = serde_json::to_string(&snap).unwrap();
-        for leak in ["V9H0G6C4", "C5U6K1E7", "23BAI0002", "23BAI0009", "9.41"] {
+        // Neither the reference figure nor the one the student typed: the
+        // desktop is visible to anyone walking past.
+        for leak in [
+            "V9H0G6C4",
+            "C5U6K1E7",
+            "23BAI0002",
+            "23BAI0009",
+            "9.41",
+            "9.12",
+        ] {
             assert!(!json.contains(leak), "snapshot must not contain {leak}");
         }
     }

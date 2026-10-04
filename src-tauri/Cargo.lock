@@ -2295,6 +2295,7 @@ name = "nankiv"
 version = "0.1.2"
 dependencies = [
  "calamine",
+ "flate2",
  "once_cell",
  "proptest",
  "regex",

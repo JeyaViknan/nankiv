@@ -10,16 +10,23 @@
  * The registration number is no longer labelled "optional". It was, technically,
  * and that label buried the fact that two of the fifteen real shortlist formats
  * are keyed by it — without it, those files can never be answered.
+ *
+ * The CGPA is genuinely optional, and says so: verdicts need only an
+ * identifier. It is what places you on each shortlist's distribution, and it
+ * is the only CGPA nankiv will ever show — yours, as you typed it.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../components/Icon";
+import { readCgpa } from "../lib/cgpa";
 import { useStore } from "../lib/store";
 
 export function OnboardingScreen() {
   const { saveProfile, error, clearError, go } = useStore();
   const [neoId, setNeoId] = useState("");
   const [regNo, setRegNo] = useState("");
+  const [cgpa, setCgpa] = useState("");
+  const [cgpaError, setCgpaError] = useState(false);
   const first = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -30,13 +37,17 @@ export function OnboardingScreen() {
 
   async function save() {
     clearError();
+    const typed = readCgpa(cgpa);
+    setCgpaError(typed.kind === "invalid");
+    if (typed.kind === "invalid") return;
     setSaving(true);
     const ok = await saveProfile({
       neo_id: neoId.trim() || null,
       reg_no: regNo.trim() || null,
       display_name: null,
       cohort: null,
-      show_friend_cgpa: false,
+      cgpa: typed.kind === "valid" ? typed.value : null,
+      cgpa_updated_at: null,
     });
     setSaving(false);
     // Saving used to leave the student sitting here with no way forward; the
@@ -91,6 +102,33 @@ export function OnboardingScreen() {
         <span className="hint">
           Worth adding: some companies key their shortlists by this instead, and
           those files can't be answered for you without it.
+        </span>
+      </div>
+
+      <div className="field">
+        <label htmlFor="ob-cgpa">
+          Your CGPA <span className="label-aside">optional</span>
+        </label>
+        <input
+          id="ob-cgpa"
+          type="text"
+          inputMode="decimal"
+          className="mono-input narrow"
+          placeholder="8.42"
+          maxLength={5}
+          value={cgpa}
+          aria-invalid={cgpaError}
+          aria-describedby="ob-cgpa-hint"
+          onChange={(e) => {
+            setCgpa(e.target.value);
+            setCgpaError(false);
+          }}
+          onKeyDown={(e) => e.key === "Enter" && ready && void save()}
+        />
+        <span className="hint" id="ob-cgpa-hint">
+          {cgpaError
+            ? "A CGPA is out of 10 — like 8.42."
+            : "Shows where you stand on each shortlist. Only you ever see it."}
         </span>
       </div>
 

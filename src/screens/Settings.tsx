@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { api, toApiError } from "../lib/api";
+import { cgpaUpdatedLabel, readCgpa } from "../lib/cgpa";
 import { useStore } from "../lib/store";
 import { getThemeChoice, setThemeChoice, type ThemeChoice } from "../lib/theme";
 import { Sheet } from "../components/Sheet";
@@ -33,7 +34,8 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
 
   const [neoId, setNeoId] = useState(profile?.neo_id ?? "");
   const [regNo, setRegNo] = useState(profile?.reg_no ?? "");
-  const [showCgpa, setShowCgpa] = useState(profile?.show_friend_cgpa ?? false);
+  const [cgpa, setCgpa] = useState(profile?.cgpa?.toString() ?? "");
+  const [cgpaError, setCgpaError] = useState(false);
   const [theme, setTheme] = useState<ThemeChoice>(getThemeChoice);
   const [inventory, setInventory] = useState<[string, number][]>([]);
   const [confirmWipe, setConfirmWipe] = useState(false);
@@ -52,26 +54,21 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
 
   async function saveIdentity() {
     clearError();
+    const typed = readCgpa(cgpa);
+    setCgpaError(typed.kind === "invalid");
+    if (typed.kind === "invalid") return;
     const ok = await saveProfile({
       neo_id: neoId.trim() || null,
       reg_no: regNo.trim() || null,
       display_name: profile?.display_name ?? null,
       cohort: profile?.cohort ?? null,
-      show_friend_cgpa: showCgpa,
+      cgpa: typed.kind === "valid" ? typed.value : null,
+      cgpa_updated_at: profile?.cgpa_updated_at ?? null,
     });
     if (ok) showToast("Saved");
   }
 
-  async function toggleCgpa(next: boolean) {
-    setShowCgpa(next);
-    await saveProfile({
-      neo_id: profile?.neo_id ?? null,
-      reg_no: profile?.reg_no ?? null,
-      display_name: profile?.display_name ?? null,
-      cohort: profile?.cohort ?? null,
-      show_friend_cgpa: next,
-    });
-  }
+  const updated = cgpaUpdatedLabel(profile?.cgpa_updated_at ?? null);
 
   async function importReference() {
     const picked = await open({
@@ -178,6 +175,33 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
             those files can't be answered for you.
           </span>
         </div>
+        <div className="field">
+          <label htmlFor="set-cgpa">
+            Your CGPA
+            {updated && <span className="label-aside">· {updated}</span>}
+          </label>
+          <input
+            id="set-cgpa"
+            type="text"
+            inputMode="decimal"
+            className="mono-input narrow"
+            maxLength={5}
+            placeholder="8.42"
+            value={cgpa}
+            aria-invalid={cgpaError}
+            aria-describedby="set-cgpa-hint"
+            onChange={(e) => {
+              setCgpa(e.target.value);
+              setCgpaError(false);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && void saveIdentity()}
+          />
+          <span className="hint" id="set-cgpa-hint">
+            {cgpaError
+              ? "A CGPA is out of 10 — like 8.42."
+              : "Update it after each semester. It places you on each shortlist, and only you ever see it."}
+          </span>
+        </div>
         {error && <p className="field-error">{error.message}</p>}
         <button className="btn primary" onClick={saveIdentity}>
           Save
@@ -186,21 +210,13 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
 
       <div className="card">
         <h2>Privacy</h2>
-        <label className="switch">
-          <input
-            type="checkbox"
-            checked={showCgpa}
-            onChange={(e) => void toggleCgpa(e.target.checked)}
-          />
-          <span className="switch-text">
-            <strong>Show CGPA for people in my circle</strong>
-            <span>
-              Off by default. Cutoff analysis works without this — it only needs
-              aggregates.
-            </span>
-          </span>
-        </label>
-        <div className="notice" style={{ marginTop: 8, marginBottom: 0 }}>
+        <p className="card-text">
+          The only CGPA nankiv shows is yours, as you typed it. The cohort data
+          it ships with is used for analysis — whether a shortlist looks
+          CGPA-based, and roughly where its cutoff sits — and no screen in the
+          app displays anyone's figure, including the people in your circle.
+        </p>
+        <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
           No account, no server, no telemetry. Contact details in reference
           sheets — phone, email, date of birth, resume links — are discarded as
           the file is read and have nowhere to be stored.

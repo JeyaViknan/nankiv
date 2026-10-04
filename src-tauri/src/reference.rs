@@ -12,14 +12,77 @@
 //! phone numbers, gender, dates of birth and resume links; none of those are
 //! read by the generator and none have a field here to land in.
 //!
+//! None of it is ever shown to anyone. It exists for analysis — whether a
+//! shortlist looks CGPA-driven, where its cutoff seems to sit — and every
+//! answer the interface receives is an aggregate. The one CGPA nankiv displays
+//! is the one the student typed in themselves.
+//!
+//! It ships compressed and masked rather than as readable JSON, so it cannot be
+//! browsed on GitHub, searched with a text tool, or read by opening the app
+//! bundle. That is obfuscation, not encryption: nankiv is open source and the
+//! decoder below is public, so a determined person can still unpack it. What
+//! it removes is casual access, which together with an interface that shows no
+//! one else's CGPA is the practical line for data that has to ship offline.
+//!
 //! Regenerate with `cargo run --example build_reference` after updating `Global/`.
 
 use crate::model::{Confidence, Identifier, NeoId, RegNo};
 use crate::store::{Store, StoreError};
 use serde::Deserialize;
+use std::io::{Read, Write};
 
 /// The pack, compiled into the binary so there is no file to lose.
-const PACK: &str = include_str!("../reference/pack.json");
+const PACK: &[u8] = include_bytes!("../reference/pack.bin");
+
+/// Identifies a pack and the encoding it uses.
+const MAGIC: &[u8; 4] = b"NKP1";
+
+/// Generous for a cohort's worth of records; a sane bound on inflation.
+const MAX_PACK_BYTES: u64 = 64 * 1024 * 1024;
+
+/// Compresses and masks a pack's JSON for bundling.
+pub fn encode(json: &[u8]) -> Vec<u8> {
+    let mut deflater = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::best());
+    deflater
+        .write_all(json)
+        .expect("writing to memory cannot fail");
+    let mut body = deflater.finish().expect("writing to memory cannot fail");
+    mask(&mut body);
+    let mut out = MAGIC.to_vec();
+    out.extend(body);
+    out
+}
+
+/// The inverse of [`encode`], or `None` for anything that is not a pack.
+pub fn decode(bytes: &[u8]) -> Option<Vec<u8>> {
+    let mut body = bytes.strip_prefix(MAGIC.as_slice())?.to_vec();
+    mask(&mut body);
+    let mut json = Vec::new();
+    flate2::read::DeflateDecoder::new(body.as_slice())
+        .take(MAX_PACK_BYTES)
+        .read_to_end(&mut json)
+        .ok()?;
+    Some(json)
+}
+
+/// XORs a fixed keystream over the data; applying it twice restores it.
+fn mask(data: &mut [u8]) {
+    // xorshift64, from a fixed seed. Not a secret — see the module comment.
+    let mut state: u64 = 0x6e61_6e6b_6976_2e31;
+    for chunk in data.chunks_mut(8) {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        for (byte, key) in chunk.iter_mut().zip(state.to_le_bytes()) {
+            *byte ^= key;
+        }
+    }
+}
+
+fn read_pack() -> Result<Pack, String> {
+    let json = decode(PACK).ok_or("not a nankiv reference pack")?;
+    serde_json::from_slice(&json).map_err(|e| e.to_string())
+}
 
 const SEEDED_KEY: &str = "reference_pack_version";
 
@@ -69,7 +132,7 @@ fn parse_confidence(s: &str) -> Confidence {
 /// over the top without disturbing anything the student imported themselves —
 /// their own files produce `Verified` links, which outrank anything here.
 pub fn seed(store: &Store) -> Result<SeedReport, StoreError> {
-    let pack: Pack = match serde_json::from_str(PACK) {
+    let pack: Pack = match read_pack() {
         Ok(p) => p,
         Err(e) => {
             // A malformed pack must not stop the application from starting; the
@@ -155,11 +218,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_bundled_pack_is_valid_json_with_content() {
-        let pack: Pack = serde_json::from_str(PACK).expect("pack parses");
+    fn the_bundled_pack_decodes_with_content() {
+        let pack = read_pack().expect("pack decodes");
         assert_eq!(pack.version, 1);
         assert!(!pack.academics.is_empty(), "pack should carry academics");
         assert!(!pack.edges.is_empty(), "pack should resolve some students");
+    }
+
+    #[test]
+    fn a_pack_round_trips_through_the_encoding() {
+        let json = br#"{"version":1,"academics":[["23BCE0001",8.5,"CSE"]]}"#;
+        let packed = encode(json);
+        assert_eq!(decode(&packed).as_deref(), Some(json.as_slice()));
+    }
+
+    #[test]
+    fn the_bundled_pack_is_not_readable_as_text() {
+        // Neither the JSON keys nor any registration number survive in the
+        // bytes that ship: nothing to find by searching the app bundle.
+        let text = String::from_utf8_lossy(PACK);
+        for needle in ["academics", "baseline", "names", "\"version\""] {
+            assert!(!text.contains(needle), "{needle} is readable");
+        }
+        let reg = regex::Regex::new(r"\d{2}[A-Z]{3}\d{4}").unwrap();
+        assert!(!reg.is_match(&text), "a registration number is readable");
+    }
+
+    #[test]
+    fn anything_else_is_refused() {
+        assert_eq!(decode(b"{\"version\":1}"), None);
+        assert_eq!(decode(b""), None);
+        assert_eq!(decode(b"NKP1not deflate"), None);
     }
 
     #[test]
@@ -210,18 +299,20 @@ mod tests {
 
     #[test]
     fn the_pack_carries_no_contact_details() {
-        // Structural check on what actually ships. The generator never reads
-        // these fields, and this fails loudly if that ever changes.
+        // Structural check on what actually ships, read the way the app reads
+        // it. The generator never reads these fields, and this fails loudly if
+        // that ever changes.
+        let json = String::from_utf8(decode(PACK).expect("pack decodes")).unwrap();
         for needle in ["@gmail", "@vitstudent", "drive.google", "docs.google"] {
             assert!(
-                !PACK.contains(needle),
+                !json.contains(needle),
                 "bundled pack must not contain {needle}"
             );
         }
         // Ten-digit phone numbers.
         let phones = regex::Regex::new(r"\b[6-9]\d{9}\b").unwrap();
         assert!(
-            !phones.is_match(PACK),
+            !phones.is_match(&json),
             "bundled pack must not contain phone numbers"
         );
     }

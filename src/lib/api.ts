@@ -53,7 +53,9 @@ export interface Profile {
   reg_no: string | null;
   display_name: string | null;
   cohort: string | null;
-  show_friend_cgpa: boolean;
+  /** Your own CGPA, as you typed it — the only CGPA nankiv ever shows. */
+  cgpa: number | null;
+  cgpa_updated_at: string | null;
 }
 
 export interface Friend {
@@ -70,7 +72,6 @@ export interface PersonResult {
   reg_no: string | null;
   verdict: Verdict;
   confidence: Confidence;
-  cgpa: number | null;
 }
 
 export interface DriveRecord {
@@ -165,6 +166,7 @@ export interface ImportOutcome {
   shape: FileShape;
   primary_key: KeyKind | null;
   you: PersonResult;
+  your_cgpa: number | null;
   friends: PersonResult[];
   analysis: DriveAnalysis;
   learned_verified: number;

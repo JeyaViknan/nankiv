@@ -33,15 +33,11 @@ import {
   DistributionCard,
   InsufficientSample,
   StandingCard,
+  StandingPrompt,
 } from "../components/Analysis";
 
-function FriendRow({
-  person,
-  showCgpa,
-}: {
-  person: PersonResult;
-  showCgpa: boolean;
-}) {
+/** A person in your circle: their answer, and nothing else about them. */
+function FriendRow({ person }: { person: PersonResult }) {
   return (
     <div className="row">
       <span className="row-main static">
@@ -51,9 +47,6 @@ function FriendRow({
         )}
       </span>
       <span className="row-trail">
-        {showCgpa && person.cgpa !== null && (
-          <span className="row-figure">{person.cgpa.toFixed(2)}</span>
-        )}
         <VerdictPill verdict={person.verdict} />
       </span>
     </div>
@@ -125,8 +118,7 @@ export function DriveScreen({
   /** Opens Settings when the answer is "can't tell" and a field would fix it. */
   onFix: () => void;
 }) {
-  const { showToast, profile, drives, openDrive, stats, exportNames } =
-    useStore();
+  const { showToast, drives, openDrive, stats, exportNames } = useStore();
   const [copied, setCopied] = useState(false);
   const a = outcome.analysis;
 
@@ -202,11 +194,7 @@ export function DriveScreen({
         ) : (
           <div className="list">
             {outcome.friends.map((f) => (
-              <FriendRow
-                key={f.neo_id ?? f.reg_no ?? f.label}
-                person={f}
-                showCgpa={profile?.show_friend_cgpa ?? false}
-              />
+              <FriendRow key={f.neo_id ?? f.reg_no ?? f.label} person={f} />
             ))}
           </div>
         )}
@@ -291,13 +279,15 @@ export function DriveScreen({
           <>
             <CoverageNotice analysis={a} />
             {a.cutoff && <CutoffCard report={a.cutoff} />}
-            {a.your_percentile && (
+            {a.your_percentile ? (
               <StandingCard percentile={a.your_percentile} />
+            ) : (
+              outcome.your_cgpa === null && <StandingPrompt onAdd={onFix} />
             )}
             {a.cgpa && (
               <DistributionCard
                 dist={a.cgpa.value}
-                yourCgpa={outcome.you.cgpa}
+                yourCgpa={outcome.your_cgpa}
               />
             )}
             {a.branches && <BranchCard report={a.branches} />}

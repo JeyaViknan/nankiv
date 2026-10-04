@@ -1626,6 +1626,25 @@ kbd {
   margin: 0;
 }
 
+/* A card that leads with text and offers one action at its end. */
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-row h2 {
+  margin-bottom: 4px;
+}
+
+.card-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+  margin: 0;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
@@ -1835,6 +1854,27 @@ tr.signal td {
   font-size: 11.5px;
   color: var(--text-faint);
   line-height: 1.5;
+}
+
+/* A quiet qualifier beside a label: "optional", or when a value last changed. */
+.label-aside {
+  font-weight: 450;
+  color: var(--text-faint);
+  margin-left: 4px;
+}
+
+/* A figure of a few characters does not need the full width. */
+:where(input).narrow {
+  width: 7.5em;
+}
+
+/* Said by the field itself, not only by the line under it. */
+:where(input[type="text"])[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.field:has([aria-invalid="true"]) .hint {
+  color: var(--danger);
 }
 
 /* Base input styling, wrapped in :where() so it carries zero specificity.
