@@ -269,33 +269,250 @@ pub fn import_shortlist(
     company_override: Option<String>,
     replace_existing: Option<bool>,
 ) -> R<ImportOutcome> {
-    use crate::widget::{self, Signal};
-
     let filename = PathBuf::from(&path)
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "shortlist.xlsx".into());
+    signalled_import(&state, &filename, || {
+        import_shortlist_inner(state.clone(), path, company_override, replace_existing)
+    })
+}
 
-    state.signal(Signal::ImportStarted(filename.clone()));
-    let result = import_shortlist_inner(state.clone(), path, company_override, replace_existing);
+/// Runs an import with the widget told it is happening, and how it ended.
+fn signalled_import(
+    state: &tauri::State<AppState>,
+    filename: &str,
+    import: impl FnOnce() -> R<ImportOutcome>,
+) -> R<ImportOutcome> {
+    use crate::widget::{self, Signal};
+
+    state.signal(Signal::ImportStarted(filename.to_string()));
+    let result = import();
 
     // Remember a genuine failure so the widget can explain a missing result,
     // and forget it as soon as any import goes through. A duplicate or a
     // reference sheet is not a failure: the file was a reasonable thing to
     // drop, it just did not add a new drive.
     {
-        let s = store(&state);
+        let s = store(state);
         let now = time::OffsetDateTime::now_utc();
         let _ = match &result {
             Ok(_) => widget::clear_failure(&s),
             Err(e) if matches!(e.code.as_str(), "duplicate_drive" | "imported_reference") => {
                 widget::clear_failure(&s)
             }
-            Err(_) => widget::record_failure(&s, &filename, now),
+            Err(_) => widget::record_failure(&s, filename, now),
         };
     }
     state.signal(Signal::ImportEnded);
     result
+}
+
+/// Imports a shortlist the Downloads watcher found, or `None` for a file that
+/// is not one to import: unreadable, not a shortlist, a reference sheet, or a
+/// list already imported. Those are passed over without a word — the student
+/// did not hand nankiv this file, so a failure is not theirs to read about.
+pub(crate) fn import_watched(
+    state: &tauri::State<AppState>,
+    path: &std::path::Path,
+) -> Option<R<ImportOutcome>> {
+    let parsed = parse::parse_file(path).ok()?;
+    if !parsed.shape.is_usable() {
+        return None;
+    }
+    let academic = crate::parse::academic::parse_academic_sheet(path).unwrap_or_default();
+    if academic.iter().any(|r| r.cgpa.is_some()) {
+        return None;
+    }
+    if store(state)
+        .find_by_hash(&parsed.content_hash)
+        .ok()?
+        .is_some()
+    {
+        return None;
+    }
+    let filename = path.file_name()?.to_string_lossy().into_owned();
+    Some(signalled_import(state, &filename, || {
+        record_shortlist(state, &parsed, &filename, None, None)
+    }))
+}
+
+/// Whether Downloads is being watched for shortlists.
+#[tauri::command]
+pub fn watch_downloads(state: tauri::State<AppState>) -> R<bool> {
+    Ok(store(&state).meta(crate::watch::SINCE_KEY)?.is_some())
+}
+
+/// Turns watching Downloads on or off. Files already there when it is turned
+/// on are left alone: only what arrives afterwards is checked.
+#[tauri::command]
+pub fn set_watch_downloads(
+    app: tauri::AppHandle,
+    state: tauri::State<AppState>,
+    on: bool,
+) -> R<()> {
+    use tauri::Manager;
+    let s = store(&state);
+    if !on {
+        s.clear_meta(crate::watch::SINCE_KEY)?;
+        return Ok(());
+    }
+    // Look now, so the system's permission prompt follows the switch, and a
+    // refusal is reported here rather than failing quietly later.
+    let dir = app.path().download_dir().map_err(|_| {
+        CommandError::new(
+            "no_downloads",
+            "nankiv couldn't find your Downloads folder.",
+        )
+    })?;
+    std::fs::read_dir(&dir).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::PermissionDenied {
+            CommandError::new(
+                "downloads_denied",
+                "nankiv isn't allowed to look in Downloads. Allow it in System Settings → Privacy & Security → Files and Folders, then turn this on again.",
+            )
+        } else {
+            CommandError::new("no_downloads", format!("Couldn't read Downloads — {e}"))
+        }
+    })?;
+    let now = time::OffsetDateTime::now_utc()
+        .format(&time::format_description::well_known::Rfc3339)
+        .map_err(|e| CommandError::new("clock", e.to_string()))?;
+    s.set_meta(crate::watch::SINCE_KEY, &now)?;
+    Ok(())
+}
+
+/// What a paste would import, shown before it does.
+#[derive(Debug, Clone, Serialize)]
+pub struct PastePreview {
+    pub neo_ids: usize,
+    pub reg_nos: usize,
+    /// Lines of words with no identifier on them, which will be skipped.
+    pub unread_lines: usize,
+    /// A name read from the words around the identifiers, if any named one.
+    pub company: Option<String>,
+}
+
+/// Reads a pasted list without storing anything, so the student can see what
+/// was found and name the drive before it is checked.
+#[tauri::command]
+pub fn preview_paste(text: String) -> R<PastePreview> {
+    let pasted = read_paste(&text)?;
+    let named = crate::naming::infer("", &pasted.parsed.titles, &[]);
+    Ok(PastePreview {
+        neo_ids: pasted.parsed.neo_ids.len(),
+        reg_nos: pasted.parsed.reg_nos.len(),
+        unread_lines: pasted.unread_lines,
+        company: (named.company != crate::naming::UNNAMED).then_some(named.company),
+    })
+}
+
+/// Checks a pasted list of identifiers exactly as a file is checked.
+#[tauri::command]
+pub fn import_pasted(
+    state: tauri::State<AppState>,
+    text: String,
+    company: Option<String>,
+) -> R<ImportOutcome> {
+    let filename = parse::text::PASTED_SHEET;
+    signalled_import(&state, filename, || {
+        let pasted = read_paste(&text)?;
+        record_shortlist(&state, &pasted.parsed, filename, company, None)
+    })
+}
+
+fn read_paste(text: &str) -> R<parse::text::PastedText> {
+    parse::text::parse_text(text).map_err(|e| match e {
+        parse::ParseError::Empty => CommandError::new(
+            "nothing_to_paste",
+            "There are no Neo IDs or registration numbers in what you pasted.",
+        ),
+        parse::ParseError::TooLarge(_) => CommandError::new(
+            "paste_too_large",
+            "That's too much text to be a shortlist. Save it as a spreadsheet and import the file instead.",
+        ),
+        other => CommandError::new("parse_failed", other.to_string()),
+    })
+}
+
+/// A spreadsheet in the Downloads folder, offered for import.
+#[derive(Debug, Clone, Serialize)]
+pub struct RecentDownload {
+    pub path: String,
+    pub name: String,
+    /// RFC 3339.
+    pub modified: String,
+    /// A drive already came from a file of this name.
+    pub imported: bool,
+}
+
+/// How far back "recent" reaches, and how many are offered.
+const RECENT_DAYS: i64 = 14;
+const RECENT_LIMIT: usize = 6;
+
+/// The newest spreadsheets in the Downloads folder.
+///
+/// Read only when asked: on a Mac the first look prompts for access to
+/// Downloads, and that prompt should follow the student's click, never
+/// appear unbidden at launch.
+#[tauri::command]
+pub fn recent_downloads(
+    app: tauri::AppHandle,
+    state: tauri::State<AppState>,
+) -> R<Vec<RecentDownload>> {
+    use tauri::Manager;
+    let dir = app.path().download_dir().map_err(|_| {
+        CommandError::new(
+            "no_downloads",
+            "nankiv couldn't find your Downloads folder.",
+        )
+    })?;
+    let entries = std::fs::read_dir(&dir).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::PermissionDenied {
+            CommandError::new(
+                "downloads_denied",
+                "nankiv isn't allowed to look in Downloads. Allow it in System Settings → Privacy & Security → Files and Folders.",
+            )
+        } else {
+            CommandError::new("no_downloads", format!("Couldn't read Downloads — {e}"))
+        }
+    })?;
+
+    let imported: std::collections::BTreeSet<String> = store(&state)
+        .drives()?
+        .into_iter()
+        .map(|d| d.source_filename)
+        .collect();
+    let cutoff =
+        std::time::SystemTime::now() - std::time::Duration::from_secs(RECENT_DAYS as u64 * 86_400);
+
+    let mut found: Vec<(std::time::SystemTime, PathBuf)> = entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| crate::desktop::spreadsheet(&p.to_string_lossy()).is_some())
+        .filter_map(|p| Some((std::fs::metadata(&p).ok()?.modified().ok()?, p)))
+        .filter(|(m, _)| *m >= cutoff)
+        .collect();
+    found.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
+
+    Ok(found
+        .into_iter()
+        .take(RECENT_LIMIT)
+        .map(|(modified, path)| {
+            let name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            RecentDownload {
+                imported: imported.contains(&name),
+                path: path.to_string_lossy().into_owned(),
+                modified: time::OffsetDateTime::from(modified)
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .unwrap_or_default(),
+                name,
+            }
+        })
+        .collect())
 }
 
 fn import_shortlist_inner(

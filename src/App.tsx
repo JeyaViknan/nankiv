@@ -30,6 +30,9 @@ import { CircleSheet } from "./screens/CircleSheet";
 import { DriveScreen } from "./screens/DriveScreen";
 import { OnboardingScreen } from "./screens/Onboarding";
 import { SettingsSheet } from "./screens/Settings";
+import { PasteSheet } from "./components/PasteSheet";
+import { usePastedShortlist } from "./lib/paste";
+import { useWatchedImports } from "./lib/watched";
 import { Shortlists } from "./screens/Shortlists";
 
 export default function App() {
@@ -47,6 +50,7 @@ export default function App() {
 
   const [circleOpen, setCircleOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pasted, setPasted] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -105,6 +109,21 @@ export default function App() {
   // Dropping a shortlist on the app icon imports it, from anywhere in the
   // system — the Dock, Finder, Open With.
   useOpenedFiles((paths) => void useStore.getState().openFiles(paths));
+
+  // Shortlists the opt-in Downloads watcher found while the app was open.
+  useWatchedImports();
+
+  // A list of IDs copied from an email or a message: ⌘V outside a text field.
+  // Not while another sheet is up, nor before setup, when there is no one to
+  // check the list for.
+  usePastedShortlist(
+    setPasted,
+    !circleOpen &&
+      !settingsOpen &&
+      pasted === null &&
+      view !== "onboarding" &&
+      importStage.phase !== "reading",
+  );
 
   // One implementation per shortcut, reachable from the menu bar and the
   // keyboard alike. The hook guarantees each runs once per press, however many
@@ -227,6 +246,9 @@ export default function App() {
 
       {circleOpen && <CircleSheet onClose={() => setCircleOpen(false)} />}
       {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
+      {pasted !== null && (
+        <PasteSheet text={pasted} onClose={() => setPasted(null)} />
+      )}
 
       <Toast />
     </div>

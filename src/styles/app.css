@@ -712,6 +712,104 @@ button.round-step:hover {
   color: var(--text-2);
 }
 
+/* "Import a recent download", under the drop card. */
+.recent {
+  margin: -6px 0 18px;
+}
+
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.link-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.recent-chevron {
+  transition: transform 0.16s ease;
+}
+
+.link-button[aria-expanded="true"] .recent-chevron {
+  transform: rotate(90deg);
+}
+
+.recent-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.recent-list li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.recent-file {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recent-file:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.recent-file:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.recent-file svg,
+.recent-file .sym {
+  color: var(--ok);
+}
+
+.recent-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-when {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* What a paste found, before it becomes a drive. */
+.paste-found {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin: 0 0 16px;
+}
+
 .pill.quiet {
   background: transparent;
   color: var(--text-faint);

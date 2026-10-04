@@ -16,6 +16,7 @@ pub mod parse;
 pub mod reference;
 pub mod store;
 pub mod symbols;
+pub mod watch;
 pub mod widget;
 
 use commands::AppState;
@@ -114,6 +115,9 @@ pub fn run() {
                 state.widget_changed();
             }
 
+            // Idles until the student turns it on in Settings.
+            watch::spawn(app.handle().clone());
+
             if let Some(window) = app.get_webview_window("main") {
                 desktop::persist_geometry(&window);
             }
@@ -152,6 +156,11 @@ pub fn run() {
             commands::tap,
             commands::stage_dropped_file,
             commands::symbols,
+            commands::preview_paste,
+            commands::import_pasted,
+            commands::recent_downloads,
+            commands::watch_downloads,
+            commands::set_watch_downloads,
         ])
         .build(tauri::generate_context!())
         .expect("error while building nankiv")

@@ -17,6 +17,7 @@ use std::path::Path;
 pub mod academic;
 pub mod csv;
 pub mod shape;
+pub mod text;
 pub use shape::FileShape;
 
 /// Hard caps. A spreadsheet is untrusted input; these prevent a decompression
@@ -335,7 +336,7 @@ fn clip(text: &str) -> String {
 
 /// Stable hash over the sorted identifier set. Independent of row order,
 /// filename, and any extra columns a company happens to include.
-fn hash_content(neo: &BTreeSet<NeoId>, reg: &BTreeSet<RegNo>) -> String {
+pub(crate) fn hash_content(neo: &BTreeSet<NeoId>, reg: &BTreeSet<RegNo>) -> String {
     let mut h = Sha256::new();
     for n in neo {
         h.update(n.as_str().as_bytes());

@@ -19,6 +19,8 @@ import { ImportStatus } from "../components/ImportStatus";
 import { NeedsReference } from "../components/NeedsReference";
 import { Icon } from "../components/Icon";
 import { VerdictPill } from "../components/Verdict";
+import { RecentDownloads } from "../components/RecentDownloads";
+import { MOD } from "../lib/keys";
 
 function relativeDay(iso: string): string {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -136,11 +138,14 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
             {empty ? "Drop a shortlist to begin" : "Drop a shortlist"}
           </span>
           <span className="invite-sub">
-            Anywhere in this window — or press <kbd>⌘</kbd>
-            <kbd>O</kbd> to choose a file
+            Anywhere in this window. Or press <kbd>{MOD}</kbd>
+            <kbd>O</kbd> to choose a file, or <kbd>{MOD}</kbd>
+            <kbd>V</kbd> to paste a list of IDs.
           </span>
         </span>
       </button>
+
+      <RecentDownloads disabled={busy} />
 
       <ImportStatus />
 

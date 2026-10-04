@@ -109,6 +109,26 @@ export interface Progression {
   next_pending: boolean;
 }
 
+/** What a paste would import, shown before it does. */
+export interface PastePreview {
+  neo_ids: number;
+  reg_nos: number;
+  /** Lines of words with no identifier on them, which will be skipped. */
+  unread_lines: number;
+  /** A name read from the words around the identifiers, if any named one. */
+  company: string | null;
+}
+
+/** A spreadsheet in the Downloads folder, offered for import. */
+export interface RecentDownload {
+  path: string;
+  name: string;
+  /** RFC 3339. */
+  modified: string;
+  /** A drive already came from a file of this name. */
+  imported: boolean;
+}
+
 /** A drive as the list shows it: with your answer, and its round. */
 export interface DriveListItem extends DriveRecord {
   verdict: Verdict;
@@ -355,6 +375,17 @@ export const api = {
     invoke<ReferenceImportResult>("import_reference", { path }),
 
   listDrives: () => invoke<DriveListItem[]>("list_drives"),
+  /** Reads a pasted list without storing anything. */
+  previewPaste: (text: string) =>
+    invoke<PastePreview>("preview_paste", { text }),
+  importPasted: (text: string, company: string | null) =>
+    invoke<ImportOutcome>("import_pasted", { text, company }),
+  /** Newest spreadsheets in Downloads. Asks for access on first use. */
+  recentDownloads: () => invoke<RecentDownload[]>("recent_downloads"),
+  watchDownloads: () => invoke<boolean>("watch_downloads"),
+  /** Turning it on reads Downloads once, so any permission prompt follows. */
+  setWatchDownloads: (on: boolean) =>
+    invoke<void>("set_watch_downloads", { on }),
   deleteDrive: (id: number) =>
     invoke<DriveSnapshot | null>("delete_drive", { id }),
   restoreDrive: (snapshot: DriveSnapshot) =>

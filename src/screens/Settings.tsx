@@ -39,6 +39,26 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const [theme, setTheme] = useState<ThemeChoice>(getThemeChoice);
   const [inventory, setInventory] = useState<[string, number][]>([]);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [watching, setWatching] = useState<boolean | null>(null);
+  const [watchError, setWatchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .watchDownloads()
+      .then(setWatching)
+      .catch(() => setWatching(false));
+  }, []);
+
+  async function toggleWatching(next: boolean) {
+    setWatchError(null);
+    try {
+      await api.setWatchDownloads(next);
+      setWatching(next);
+    } catch (e) {
+      setWatchError(toApiError(e).message);
+      setWatching(false);
+    }
+  }
 
   useEffect(() => {
     api
@@ -221,6 +241,32 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
           sheets — phone, email, date of birth, resume links — are discarded as
           the file is read and have nowhere to be stored.
         </div>
+      </div>
+
+      <div className="card">
+        <h2>Downloads</h2>
+        <label className="switch">
+          <input
+            type="checkbox"
+            checked={watching ?? false}
+            disabled={watching === null}
+            onChange={(e) => void toggleWatching(e.target.checked)}
+          />
+          <span className="switch-text">
+            <strong>Check new shortlists in Downloads</strong>
+            <span>
+              While nankiv is open, a shortlist saved to your Downloads folder
+              is checked straight away. Only spreadsheets that arrive after you
+              turn this on are read; anything that isn't a shortlist is left
+              alone.
+            </span>
+          </span>
+        </label>
+        {watchError && (
+          <p className="field-error" role="alert">
+            {watchError}
+          </p>
+        )}
       </div>
 
       <div className="card">

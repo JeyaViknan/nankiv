@@ -99,6 +99,7 @@ const NOISE: &[&str] = &[
     "level",
     "slot",
     "opt",
+    "pasted",
     "jan",
     "feb",
     "mar",

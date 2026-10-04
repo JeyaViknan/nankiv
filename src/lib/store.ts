@@ -66,7 +66,8 @@ interface State {
   current: ImportOutcome | null;
   importStage: ImportStage;
   error: ApiError | null;
-  toast: { message: string; undo?: () => void } | null;
+  /** `undo` is the toast's one action, labelled `label` (Undo by default). */
+  toast: { message: string; undo?: () => void; label?: string } | null;
 
   go: (view: View) => void;
   bootstrap: () => Promise<void>;
@@ -75,6 +76,13 @@ interface State {
   refreshStats: () => Promise<void>;
   saveProfile: (p: Profile) => Promise<boolean>;
   importFile: (path: string) => Promise<void>;
+  /** A list of identifiers pasted as text, checked exactly as a file is. */
+  importPasted: (text: string, company: string | null) => Promise<void>;
+  /** The one path every import takes, however the list arrived. */
+  runImport: (
+    filename: string,
+    call: () => Promise<ImportOutcome>,
+  ) => Promise<void>;
   importReferenceFile: (path: string) => Promise<void>;
   openDrive: (id: number) => Promise<void>;
   renameDrive: (id: number, company: string) => Promise<void>;
@@ -85,7 +93,7 @@ interface State {
   importDropped: (file: File) => Promise<void>;
   dismissImport: () => void;
   clearError: () => void;
-  showToast: (message: string, undo?: () => void) => void;
+  showToast: (message: string, undo?: () => void, label?: string) => void;
   dismissToast: () => void;
 }
 
@@ -243,9 +251,17 @@ export const useStore = create<State>((set, get) => ({
 
   importFile: async (path) => {
     const filename = path.split(/[\\/]/).pop() ?? "shortlist.xlsx";
+    await get().runImport(filename, () => api.importShortlist(path));
+  },
+
+  importPasted: async (text, company) => {
+    await get().runImport("Pasted list", () => api.importPasted(text, company));
+  },
+
+  runImport: async (filename, call) => {
     set({ importStage: { phase: "reading", filename }, error: null });
     try {
-      const outcome = await api.importShortlist(path);
+      const outcome = await call();
       set({
         current: outcome,
         view: "drive",
@@ -395,9 +411,9 @@ export const useStore = create<State>((set, get) => ({
   dismissImport: () => set({ importStage: { phase: "idle" } }),
   clearError: () => set({ error: null }),
 
-  showToast: (message, undo) => {
+  showToast: (message, undo, label) => {
     if (toastTimer) clearTimeout(toastTimer);
-    set({ toast: { message, undo } });
+    set({ toast: { message, undo, label } });
     // Undoable toasts linger, because acting on one takes a decision.
     toastTimer = setTimeout(() => set({ toast: null }), undo ? 8000 : 2800);
   },

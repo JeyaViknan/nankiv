@@ -77,7 +77,10 @@ export function useDeepLinks(follow: (route: Route) => void): void {
  * shortcuts are: re-subscribing on every render leaves two listeners live for a
  * moment, and the same shortlist would be opened twice.
  */
-function useTauriEvent<T>(name: string, handle: (payload: T) => void): void {
+export function useTauriEvent<T>(
+  name: string,
+  handle: (payload: T) => void,
+): void {
   const handler = useRef(handle);
   handler.current = handle;
 

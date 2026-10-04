@@ -25,7 +25,7 @@ export function Toast() {
             run?.();
           }}
         >
-          Undo
+          {toast.label ?? "Undo"}
         </button>
       )}
     </div>

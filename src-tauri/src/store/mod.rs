@@ -740,6 +740,12 @@ impl Store {
             .optional()?)
     }
 
+    pub fn clear_meta(&self, key: &str) -> Result<(), StoreError> {
+        self.conn
+            .execute("DELETE FROM app_meta WHERE key = ?1", [key])?;
+        Ok(())
+    }
+
     pub fn set_meta(&self, key: &str, value: &str) -> Result<(), StoreError> {
         self.conn.execute(
             "INSERT INTO app_meta (key, value) VALUES (?1, ?2)
