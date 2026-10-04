@@ -441,6 +441,11 @@ export const api = {
     invoke<string>("stage_dropped_file", bytes, {
       headers: { "x-filename": encodeURIComponent(name) },
     }),
+  /** Writes a PNG card to a path chosen in the native save panel. */
+  saveShareCard: (path: string, png: ArrayBuffer) =>
+    invoke<void>("save_share_card", png, {
+      headers: { "x-path": encodeURIComponent(path) },
+    }),
   exportShortlist: (driveId: number, path: string, format: ExportFormat) =>
     invoke<ExportSummary>("export_shortlist", { driveId, path, format }),
 };

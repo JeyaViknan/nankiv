@@ -94,6 +94,11 @@ interface State {
   dismissImport: () => void;
   clearError: () => void;
   showToast: (message: string, undo?: () => void, label?: string) => void;
+  /** When the title last turned round, for the name's small surprise. */
+  nameTurnedAt: number | null;
+  turnTheName: () => void;
+  /** The drive just imported, and when — so a result can know it is new. */
+  fresh: { driveId: number; at: number } | null;
   dismissToast: () => void;
 }
 
@@ -110,6 +115,8 @@ export const useStore = create<State>((set, get) => ({
   importStage: { phase: "idle" },
   error: null,
   toast: null,
+  nameTurnedAt: null,
+  fresh: null,
 
   go: (view) => set({ view, error: null }),
 
@@ -263,6 +270,7 @@ export const useStore = create<State>((set, get) => ({
     try {
       const outcome = await call();
       set({
+        fresh: { driveId: outcome.drive_id, at: Date.now() },
         current: outcome,
         view: "drive",
         importStage: { phase: "idle" },
@@ -416,6 +424,14 @@ export const useStore = create<State>((set, get) => ({
     set({ toast: { message, undo, label } });
     // Undoable toasts linger, because acting on one takes a decision.
     toastTimer = setTimeout(() => set({ toast: null }), undo ? 8000 : 2800);
+  },
+
+  turnTheName: () => {
+    // Once per search, not once per keystroke after it.
+    const last = get().nameTurnedAt;
+    if (last && Date.now() - last < 4000) return;
+    set({ nameTurnedAt: Date.now() });
+    get().showToast("made by Viknan, backwards");
   },
 
   dismissToast: () => {

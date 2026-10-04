@@ -25,6 +25,7 @@ import { SeasonStrip } from "./components/SeasonStrip";
 import { MenuButton } from "./components/MenuButton";
 import { Icon, type IconName } from "./components/Icon";
 import { applyTheme, getThemeChoice, type ThemeChoice } from "./lib/theme";
+import { drawCard, type CardFacts } from "./lib/shareCard";
 import type {
   BranchReport,
   CutoffReport,
@@ -153,6 +154,41 @@ const friends: { label: string; id: string; v: Verdict; cgpa?: number }[] = [
   { label: "Nisha Iyer", id: "Q2X9B4S6", v: UNKNOWN },
 ];
 
+/** The share card, drawn exactly as the app draws it. */
+function CardPreview({ facts }: { facts: CardFacts }) {
+  const ref = React.useRef<HTMLCanvasElement>(null);
+  React.useEffect(() => {
+    if (ref.current) void drawCard(ref.current, facts);
+  }, [facts]);
+  return (
+    <canvas
+      ref={ref}
+      style={{ width: 324, height: 405, borderRadius: 14 }}
+      aria-label={`I'm in card for ${facts.company}`}
+    />
+  );
+}
+
+const CARDS: CardFacts[] = [
+  {
+    company: "Siemens SISW",
+    total: 149,
+    rounds: [
+      { label: "Test", current: false },
+      { label: "Interview", current: true },
+    ],
+    ordinal: 4,
+    when: new Date("2026-10-05T10:00:00Z"),
+  },
+  {
+    company: "Deloitte Consultative Offerings",
+    total: 1552,
+    rounds: [],
+    ordinal: 1,
+    when: new Date("2026-09-12T10:00:00Z"),
+  },
+];
+
 function Section({
   title,
   children,
@@ -270,6 +306,14 @@ function Preview() {
                   optical weight held across sizes
                 </span>
               </div>
+            </div>
+          </Section>
+
+          <Section title="Share card — I'm in">
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+              {CARDS.map((f) => (
+                <CardPreview key={f.company} facts={f} />
+              ))}
             </div>
           </Section>
 

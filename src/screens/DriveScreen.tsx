@@ -27,6 +27,8 @@ import { NeedsReference } from "../components/NeedsReference";
 import { MenuButton } from "../components/MenuButton";
 import { VerdictBanner, VerdictPill } from "../components/Verdict";
 import { RoundTrail, neighbour } from "../components/Rounds";
+import { ShareSheet } from "../components/ShareSheet";
+import { lateNightLine } from "../lib/eggs";
 import {
   BranchCard,
   CoverageNotice,
@@ -125,9 +127,15 @@ export function DriveScreen({
   /** Opens Settings when the answer is "can't tell" and a field would fix it. */
   onFix: () => void;
 }) {
-  const { showToast, openDrive, refreshDrives, stats, exportNames } =
+  const { showToast, openDrive, refreshDrives, stats, exportNames, fresh } =
     useStore();
+  // Checked just now, in the small hours: a word to go to sleep.
+  const late =
+    fresh?.driveId === outcome.drive_id
+      ? lateNightLine(new Date(fresh.at))
+      : null;
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const a = outcome.analysis;
 
   const shortlisted = outcome.friends.filter(
@@ -187,7 +195,13 @@ export function DriveScreen({
         totalStudents={outcome.total_students}
         onFix={onFix}
         evidence={outcome.evidence}
+        onShare={() => setSharing(true)}
       />
+      {sharing && (
+        <ShareSheet outcome={outcome} onClose={() => setSharing(false)} />
+      )}
+
+      {late && <p className="late-night">{late}</p>}
 
       {/* Provenance, stated once, quietly, directly under the answer. */}
       <div className="provenance">

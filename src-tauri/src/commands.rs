@@ -1188,6 +1188,33 @@ pub fn stage_dropped_file(app: tauri::AppHandle, request: tauri::ipc::Request<'_
     Ok(path.to_string_lossy().into_owned())
 }
 
+/// The largest card the interface draws, with room to spare.
+const MAX_CARD_BYTES: usize = 16 * 1024 * 1024;
+const PNG_SIGNATURE: &[u8] = b"\x89PNG\r\n\x1a\n";
+
+/// Saves an "I'm in" card where the student chose in the native save panel.
+///
+/// The webview has no file access of its own, so the core writes it — and
+/// only ever a PNG, to a `.png` path: the bytes must carry PNG's signature.
+#[tauri::command]
+pub fn save_share_card(request: tauri::ipc::Request<'_>) -> R<()> {
+    let refuse = || CommandError::new("share_card", "The card couldn't be saved.");
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(refuse());
+    };
+    if !bytes.starts_with(PNG_SIGNATURE) || bytes.len() > MAX_CARD_BYTES {
+        return Err(refuse());
+    }
+    let path = request
+        .headers()
+        .get("x-path")
+        .and_then(|v| v.to_str().ok())
+        .map(crate::desktop::percent_decode)
+        .filter(|p| p.to_lowercase().ends_with(".png"))
+        .ok_or_else(refuse)?;
+    std::fs::write(&path, bytes).map_err(|e| refuse().with_detail(e.to_string()))
+}
+
 /// The name as given, with anything that could point somewhere else removed.
 /// The name matters: the importer takes the company from it.
 pub fn safe_filename(raw: &str) -> String {

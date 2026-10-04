@@ -157,6 +157,7 @@ pub fn run() {
             commands::season,
             commands::tap,
             commands::stage_dropped_file,
+            commands::save_share_card,
             commands::symbols,
             commands::preview_paste,
             commands::import_pasted,

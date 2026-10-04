@@ -78,6 +78,8 @@ interface BannerProps {
   onFix?: () => void;
   /** What the answer rests on. */
   evidence?: Evidence;
+  /** Offered only for a yes: makes an "I'm in" card. */
+  onShare?: () => void;
 }
 
 /** The hero of the application: one unmistakable answer. */
@@ -87,6 +89,7 @@ export function VerdictBanner({
   totalStudents,
   onFix,
   evidence,
+  onShare,
 }: BannerProps) {
   // The answer people hope for gets the room, the motion and the one flourish
   // in the application. The other two are deliberately quieter: a rejection
@@ -102,11 +105,18 @@ export function VerdictBanner({
           <p className="verdict-detail">
             {company} — <CountUp value={totalStudents} /> students shortlisted
           </p>
-          <Why
-            question="Why does it think I'm in?"
-            verdict={verdict}
-            evidence={evidence}
-          />
+          <div className="verdict-links">
+            <Why
+              question="Why does it think I'm in?"
+              verdict={verdict}
+              evidence={evidence}
+            />
+            {onShare && (
+              <button className="link-button share-link" onClick={onShare}>
+                Share
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

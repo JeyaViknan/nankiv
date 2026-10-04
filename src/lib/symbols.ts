@@ -91,3 +91,19 @@ export function resetSymbols(): void {
   asked.clear();
   queue = [];
 }
+
+/**
+ * A symbol for drawing outside the DOM — onto a canvas — or `null` where the
+ * system has none. Not cached: a card is drawn once.
+ */
+export async function symbolImage(
+  request: Omit<SymbolRequest, "scale">,
+): Promise<SymbolImage | null> {
+  if (!symbolsAvailable()) return null;
+  try {
+    const [image] = await api.symbols([{ ...request, scale: 2 }]);
+    return image ?? null;
+  } catch {
+    return null;
+  }
+}
