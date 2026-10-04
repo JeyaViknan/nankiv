@@ -47,6 +47,11 @@ rust_xlsxwriter = "0.92.0"
 # The bundled reference pack ships compressed; see src/reference.rs.
 flate2 = "1"
 
+# Check for Updates: verified, in-place updates from GitHub Releases, run only
+# when the student asks. See src/updates.rs.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+
 [dev-dependencies]
 regex = "1"
 proptest = "1"

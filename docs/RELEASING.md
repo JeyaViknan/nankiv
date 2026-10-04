@@ -115,15 +115,33 @@ and revisit if usage justifies it.
 
 ## Update signing
 
-Separate from OS code signing, and free. It proves an update came from you.
+Separate from OS code signing, and free. It proves an update came from you, and
+it is what lets **Check for Updates** install a new version in place.
 
-```bash
-npx tauri signer generate -w ~/.tauri/nankiv.key
-```
+The key pair already exists: the public half is compiled into the app
+(`plugins.updater.pubkey` in `src-tauri/tauri.conf.json`), the private half is
+`~/.tauri/nankiv-updater.key` on the maintainer's Mac, generated with an empty
+password. To turn signed updates on, add two repository secrets under
+*Settings → Secrets and variables → Actions*:
 
-Set `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` as
-repository secrets. Never commit the private key — `.gitignore` already excludes
-`tauri-signing-key*`.
+| Secret | Value |
+| --- | --- |
+| `TAURI_SIGNING_PRIVATE_KEY` | the full contents of `~/.tauri/nankiv-updater.key` |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | leave empty |
+
+From the next tag on, `release.yml` builds a signed update bundle for each
+platform and attaches `latest.json`, which the app reads. Without the secrets
+the installers build exactly as before, and Check for Updates offers the
+releases page instead.
+
+Keep the private key safe and backed up: lose it and existing installs can
+never accept another update — they would need a manual reinstall with a new
+key. Never commit it; `.gitignore` excludes `tauri-signing-key*` and the key
+lives outside the repository anyway.
+
+A version can only update to a later one through the updater it shipped with,
+so the first release that includes Check for Updates has to be installed by
+hand once.
 
 ## Release checklist
 

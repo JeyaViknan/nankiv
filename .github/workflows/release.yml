@@ -97,9 +97,23 @@ jobs:
       #
       # Signing, when there is a certificate to sign with, is configured in
       # tauri.conf.json and documented in docs/RELEASING.md.
+      # With the update-signing key in the repository's secrets, each build
+      # also produces a signed update bundle for Check for Updates. Without it
+      # the installers build exactly as before, and the app offers the
+      # releases page instead of an in-place update.
       - name: Build installers
         shell: bash
-        run: .github/report npm run tauri build -- ${{ matrix.args }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            .github/report npm run tauri build -- ${{ matrix.args }} \
+              --config '{"bundle":{"createUpdaterArtifacts":true}}'
+          else
+            echo "::notice::No update-signing key; building without update bundles."
+            .github/report npm run tauri build -- ${{ matrix.args }}
+          fi
 
       # Named for the machine they run on rather than for the version, so a
       # link on the front page keeps working after the next release. Which
@@ -115,11 +129,20 @@ jobs:
               *x64.dmg) name=nankiv-macos-intel.dmg ;;
               *-setup.exe) name=nankiv-windows-setup.exe ;;
               *.msi) name=nankiv-windows.msi ;;
+              # Update bundles and their signatures, present only when the
+              # signing key is configured. The two Macs' bundles share a
+              # filename, so the architecture comes from the build directory.
+              *aarch64-apple-darwin/*.app.tar.gz) name=nankiv-macos-apple-silicon.app.tar.gz ;;
+              *aarch64-apple-darwin/*.app.tar.gz.sig) name=nankiv-macos-apple-silicon.app.tar.gz.sig ;;
+              *x86_64-apple-darwin/*.app.tar.gz) name=nankiv-macos-intel.app.tar.gz ;;
+              *x86_64-apple-darwin/*.app.tar.gz.sig) name=nankiv-macos-intel.app.tar.gz.sig ;;
+              *-setup.exe.sig) name=nankiv-windows-setup.exe.sig ;;
               *) continue ;;
             esac
             cp "$file" "installers/$name"
           done < <(find src-tauri/target -path '*release/bundle/*' \
-            \( -name '*.dmg' -o -name '*-setup.exe' -o -name '*.msi' \))
+            \( -name '*.dmg' -o -name '*-setup.exe' -o -name '*.msi' \
+               -o -name '*.app.tar.gz' -o -name '*.sig' \))
           ls -lh installers
           # A job that quietly attaches nothing is worse than one that fails.
           test -n "$(ls -A installers)"
@@ -140,6 +163,30 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
+      # What Check for Updates reads: the newest version, what changed, and
+      # for each platform the bundle to install and its signature. Written
+      # only when the builds were signed; otherwise the app finds no update
+      # and offers the releases page.
+      - name: Describe it for Check for Updates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p signatures
+          gh release download "$TAG" --pattern '*.sig' --dir signatures || true
+          if [ -z "$(ls -A signatures)" ]; then
+            echo "::notice::No signed update bundles; Check for Updates will offer the releases page."
+            exit 0
+          fi
+          python3 .github/latest_json.py signatures .github/release-notes.md > latest.json
+          cat latest.json
+          gh release upload "$TAG" latest.json --clobber
+
       - name: Make it public
         shell: bash
         env:

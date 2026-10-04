@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "./lib/shortcuts";
-import { useDeepLinks, useOpenedFiles } from "./lib/deeplinks";
+import { useDeepLinks, useOpenedFiles, useTauriEvent } from "./lib/deeplinks";
 import { useStore } from "./lib/store";
 import { applyTheme, getThemeChoice, watchSystemTheme } from "./lib/theme";
 import { DropSurface } from "./components/DropSurface";
@@ -33,6 +33,7 @@ import { SettingsSheet } from "./screens/Settings";
 import { PasteSheet } from "./components/PasteSheet";
 import { usePastedShortlist } from "./lib/paste";
 import { useWatchedImports } from "./lib/watched";
+import { useUpdateReminder } from "./lib/updates";
 import { Shortlists } from "./screens/Shortlists";
 
 export default function App() {
@@ -50,6 +51,8 @@ export default function App() {
 
   const [circleOpen, setCircleOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Settings opened by Check for Updates starts the check itself.
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [pasted, setPasted] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -112,6 +115,15 @@ export default function App() {
 
   // Shortlists the opt-in Downloads watcher found while the app was open.
   useWatchedImports();
+
+  // Check for Updates, from the menu or from the offline reminder: Settings,
+  // with the check already under way.
+  const checkUpdates = useCallback(() => {
+    setCheckingUpdates(true);
+    setSettingsOpen(true);
+  }, []);
+  useTauriEvent("check-updates", checkUpdates);
+  useUpdateReminder(checkUpdates);
 
   // A list of IDs copied from an email or a message: ⌘V outside a text field.
   // Not while another sheet is up, nor before setup, when there is no one to
@@ -245,7 +257,15 @@ export default function App() {
       />
 
       {circleOpen && <CircleSheet onClose={() => setCircleOpen(false)} />}
-      {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsSheet
+          checkForUpdates={checkingUpdates}
+          onClose={() => {
+            setSettingsOpen(false);
+            setCheckingUpdates(false);
+          }}
+        />
+      )}
       {pasted !== null && (
         <PasteSheet text={pasted} onClose={() => setPasted(null)} />
       )}

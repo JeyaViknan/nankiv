@@ -61,6 +61,11 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             Some("About nankiv"),
             Some(about),
         )?)
+        .item(
+            &MenuItemBuilder::new("Check for Updates…")
+                .id("check_updates")
+                .build(app)?,
+        )
         .separator()
         .item(
             &MenuItemBuilder::new("Settings…")
@@ -180,6 +185,9 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 | "export_csv"
         ) {
             let _ = handle.emit("menu", id);
+        } else if id == "check_updates" {
+            // No keyboard shortcut, so not a shortcut id: its own event.
+            let _ = handle.emit("check-updates", ());
         }
     });
 

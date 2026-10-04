@@ -16,6 +16,7 @@ pub mod parse;
 pub mod reference;
 pub mod store;
 pub mod symbols;
+pub mod updates;
 pub mod watch;
 pub mod widget;
 
@@ -31,6 +32,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let dir = app
                 .path()
@@ -161,6 +163,9 @@ pub fn run() {
             commands::recent_downloads,
             commands::watch_downloads,
             commands::set_watch_downloads,
+            updates::app_version,
+            updates::check_for_update,
+            updates::install_update,
         ])
         .build(tauri::generate_context!())
         .expect("error while building nankiv")

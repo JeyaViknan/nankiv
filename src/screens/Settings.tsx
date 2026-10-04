@@ -14,6 +14,7 @@ import { cgpaUpdatedLabel, readCgpa } from "../lib/cgpa";
 import { useStore } from "../lib/store";
 import { getThemeChoice, setThemeChoice, type ThemeChoice } from "../lib/theme";
 import { Sheet } from "../components/Sheet";
+import { UpdateCard } from "../components/UpdateCard";
 
 const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: "system", label: "System" },
@@ -21,7 +22,14 @@ const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: "dark", label: "Dark" },
 ];
 
-export function SettingsSheet({ onClose }: { onClose: () => void }) {
+export function SettingsSheet({
+  onClose,
+  checkForUpdates = false,
+}: {
+  onClose: () => void;
+  /** Opened from Check for Updates: go straight to the check. */
+  checkForUpdates?: boolean;
+}) {
   const {
     profile,
     saveProfile,
@@ -358,6 +366,7 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
       >
         nankiv 0.1.0 — works offline
       </p>
+      <UpdateCard autoCheck={checkForUpdates} />
     </Sheet>
   );
 }

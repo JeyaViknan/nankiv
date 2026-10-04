@@ -53,14 +53,14 @@ pub struct CommandError {
 }
 
 impl CommandError {
-    fn new(code: &str, message: impl Into<String>) -> Self {
+    pub(crate) fn new(code: &str, message: impl Into<String>) -> Self {
         CommandError {
             code: code.into(),
             message: message.into(),
             detail: None,
         }
     }
-    fn with_detail(mut self, d: impl Into<String>) -> Self {
+    pub(crate) fn with_detail(mut self, d: impl Into<String>) -> Self {
         self.detail = Some(d.into());
         self
     }

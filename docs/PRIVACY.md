@@ -107,9 +107,20 @@ minimisation enforced by developer discipline does not.
 
 ## What leaves the machine
 
-Nothing. There is no network client in the binary. The only capabilities the
-application declares are a window, a file-open dialog, and opening a URL in the
-system browser:
+Nothing about anyone. One request reaches the network, and only when the
+student asks for it: **Check for Updates** fetches a small `latest.json` from
+this project's GitHub Releases, saying what the newest version is. If they then
+choose to install, the update is downloaded from the same place, its signature
+checked against the public key compiled into the app, and installed over the
+running copy. GitHub sees the request and the address it came from, as it would
+for any download; nothing nankiv knows — no identifier, no result, no CGPA — is
+in it. There is no background check: the reminder to look for an update comes
+from the age of the installed build, which needs no network. The fallback,
+"Open the releases page", opens the browser; the app itself makes no request.
+
+That request is made by the Rust core through the updater plugin. The webview
+still has no network capability; the only capabilities the application declares
+are a window, a file-open dialog, and opening a URL in the system browser:
 
 ```
 core:default
@@ -120,7 +131,9 @@ opener:allow-open-url
 ```
 
 No HTTP capability. No shell capability. No filesystem capability of any kind
-in the webview. A spreadsheet is read through a path the user chose in the
+in the webview. Reading the Downloads folder — for "Import a recent download",
+or the opt-in watcher — is done by the core, only when asked, and only for
+spreadsheets at its top level. A spreadsheet is read through a path the user chose in the
 native open panel, parsed as data — no macros, no formula evaluation, no
 external references — and the results are written to a local SQLite database.
 The one file nankiv writes elsewhere is a names export, and only to the path the

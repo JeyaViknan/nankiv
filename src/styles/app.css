@@ -802,6 +802,25 @@ button.round-step:hover {
   color: var(--text-faint);
 }
 
+/* About nankiv: the update check and what it found. */
+.update-row {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.update-notes {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-3);
+  white-space: pre-line;
+  max-height: 8.5em;
+  overflow: auto;
+}
+
 /* What a paste found, before it becomes a drive. */
 .paste-found {
   font-size: 14px;

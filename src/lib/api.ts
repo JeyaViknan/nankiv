@@ -129,6 +129,16 @@ export interface RecentDownload {
   imported: boolean;
 }
 
+export interface AppVersion {
+  version: string;
+  /** When this copy was built, RFC 3339. */
+  built: string | null;
+}
+
+export type UpdateCheck =
+  | { status: "up_to_date" }
+  | { status: "available"; version: string; notes: string | null };
+
 /** A drive as the list shows it: with your answer, and its round. */
 export interface DriveListItem extends DriveRecord {
   verdict: Verdict;
@@ -382,6 +392,11 @@ export const api = {
     invoke<ImportOutcome>("import_pasted", { text, company }),
   /** Newest spreadsheets in Downloads. Asks for access on first use. */
   recentDownloads: () => invoke<RecentDownload[]>("recent_downloads"),
+  appVersion: () => invoke<AppVersion>("app_version"),
+  /** The app's one network request, made only when the student asks. */
+  checkForUpdate: () => invoke<UpdateCheck>("check_for_update"),
+  /** Downloads, verifies and installs, then restarts into the new version. */
+  installUpdate: () => invoke<void>("install_update"),
   watchDownloads: () => invoke<boolean>("watch_downloads"),
   /** Turning it on reads Downloads once, so any permission prompt follows. */
   setWatchDownloads: (on: boolean) =>
