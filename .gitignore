@@ -22,6 +22,10 @@ dist-ssr/
 build/
 target/
 src-tauri/target/
+# On a Mac the build folder can live in target.noindex, linked from target, so
+# Spotlight never registers the app bundles built inside it as installed apps.
+src-tauri/target
+src-tauri/target.noindex/
 src-tauri/gen/
 *.local
 # Xcode and Swift Package Manager output for the macOS widget. The generated
