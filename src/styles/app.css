@@ -429,7 +429,8 @@ p {
 /* Under a yes: the evidence, and the card. The disclosure opens below. */
 .verdict-links {
   display: flex;
-  align-items: flex-start;
+  /* On one line of text, whatever padding each control carries. */
+  align-items: baseline;
   flex-wrap: wrap;
   column-gap: 18px;
 }
