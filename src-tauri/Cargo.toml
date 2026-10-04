@@ -1,6 +1,6 @@
 [package]
 name = "nankiv"
-version = "0.1.1"
+version = "0.1.2"
 description = "Placement shortlist analysis for students. Offline, local-only."
 authors = ["nankiv"]
 edition = "2021"

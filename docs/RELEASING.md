@@ -52,7 +52,9 @@ reports that the developer cannot be verified, and Windows SmartScreen warns of
 an unrecognised app. Neither is a bug that can be coded around.
 
 Until signing is configured, the download page must carry the workaround:
-right-click → *Open* on macOS, *More info* → *Run anyway* on Windows.
+*System Settings → Privacy & Security → Open Anyway* on macOS 15 and later
+(right-click → *Open* stopped bypassing Gatekeeper there; it still works on 14
+and earlier), *More info* → *Run anyway* on Windows.
 
 ### macOS — Apple Developer Program, $99/year
 

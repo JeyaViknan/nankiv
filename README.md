@@ -18,7 +18,7 @@ network calls. It works with the wifi off.
 
 | Your machine | Download |
 | --- | --- |
-| **Mac** with Apple Silicon — M1, M2, M3, M4 | [nankiv-macos-apple-silicon.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-apple-silicon.dmg) |
+| **Mac** with Apple Silicon — M1 or later | [nankiv-macos-apple-silicon.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-apple-silicon.dmg) |
 | **Mac** with an Intel processor | [nankiv-macos-intel.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-intel.dmg) |
 | **Windows** 10 or 11 | [nankiv-windows-setup.exe](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-windows-setup.exe) |
 | **Windows**, for IT deployment | [nankiv-windows.msi](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-windows.msi) |
@@ -27,8 +27,10 @@ Which Mac do you have? Apple menu → *About This Mac*. "Apple M1" or similar is
 Apple Silicon; anything saying "Intel" is the other one.
 
 First launch shows a security warning, because these builds are not code signed
-yet: on macOS right-click the app and choose *Open*; on Windows click *More
-info* → *Run anyway*. Once only. Every version is on the
+yet. On macOS, open nankiv once and close the warning, then go to *System
+Settings → Privacy & Security* and click *Open Anyway* (on macOS 14 or earlier,
+right-click the app and choose *Open* instead). On Windows click *More info* →
+*Run anyway*. Once only. Every version is on the
 [releases page](https://github.com/JeyaViknan/nankiv/releases).
 
 ---
@@ -96,8 +98,10 @@ people, the other is one person, and no score separates them.
 
 Take the file for your machine from [Download](#download) above.
 
-- **macOS** — open the `.dmg` and drag nankiv to Applications. On first launch,
-  right-click it and choose *Open*, then *Open* again. Once only.
+- **macOS** — open the `.dmg` and drag nankiv to Applications. Open it once
+  and close the warning, then go to *System Settings → Privacy & Security* and
+  click *Open Anyway*. On macOS 14 or earlier, right-click it and choose *Open*
+  instead. Once only.
 - **Windows** — run the installer. SmartScreen will warn; click *More info*,
   then *Run anyway*. Once only.
 
