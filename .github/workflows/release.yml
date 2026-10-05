@@ -89,14 +89,53 @@ jobs:
 
       - run: npm ci
 
+      # macOS ties a permission — Downloads, for "Import a recent download" and
+      # Watch Downloads — to the app's signature. Signed ad hoc, every build has
+      # a new one, so every update asks again. Signed with the same certificate
+      # each time, the answer carries over. The certificate is self-signed
+      # until there is a Developer ID; see docs/RELEASING.md. Without the
+      # secrets this does nothing and the builds stay ad hoc.
+      - name: Load the signing certificate
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MACOS_SIGNING_CERTIFICATE: ${{ secrets.MACOS_SIGNING_CERTIFICATE }}
+          MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MACOS_SIGNING_CERTIFICATE" ]; then
+            echo "::notice::No signing certificate; signing ad hoc."
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(openssl rand -base64 24)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$MACOS_SIGNING_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security import "$RUNNER_TEMP/signing.p12" -k "$keychain" -f pkcs12 \
+            -P "$MACOS_SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/signing.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" \
+            $(security list-keychains -d user | tr -d '"')
+          # By its hash, from every identity rather than the "valid" ones: a
+          # self-signed certificate is not trusted on the runner, so it is
+          # never on that list.
+          identity="$(security find-identity -p codesigning "$keychain" \
+            | awk '/^ *1\)/ { print $2; exit }')"
+          test -n "$identity"
+          echo "APPLE_SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+
       # Built here rather than by tauri-action, which builds a second time with
       # APPLE_SIGNING_IDENTITY set to an empty string when no signing secrets
       # exist. An empty identity overrides the ad-hoc "-" in tauri.conf.json,
       # and signing then fails — which is what sank the first four attempts at
       # this release, while the identical build in a plain step succeeded.
       #
-      # Signing, when there is a certificate to sign with, is configured in
-      # tauri.conf.json and documented in docs/RELEASING.md.
+      # Signing, when there is a certificate to sign with, comes from the step
+      # above and is documented in docs/RELEASING.md.
       # With the update-signing key in the repository's secrets, each build
       # also produces a signed update bundle for Check for Updates. Without it
       # the installers build exactly as before, and the app offers the
@@ -113,6 +152,17 @@ jobs:
           else
             echo "::notice::No update-signing key; building without update bundles."
             .github/report npm run tauri build -- ${{ matrix.args }}
+          fi
+          # A Mac build that was meant to be signed and came out ad hoc would
+          # make every installed copy ask for Downloads again.
+          if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
+            app="$(find src-tauri/target -path '*release/bundle/macos/*.app' -prune | head -1)"
+            requirement="$(codesign -d -r- "$app" 2>&1)"
+            echo "$requirement"
+            case "$requirement" in
+              *"certificate root"* | *"certificate leaf"*) ;;
+              *) echo "::error::$app is not signed with the certificate"; exit 1 ;;
+            esac
           fi
 
       # Named for the machine they run on rather than for the version, so a

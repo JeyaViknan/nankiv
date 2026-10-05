@@ -56,6 +56,50 @@ Until signing is configured, the download page must carry the workaround:
 (right-click → *Open* stopped bypassing Gatekeeper there; it still works on 14
 and earlier), *More info* → *Run anyway* on Windows.
 
+### macOS — one certificate, so permissions survive updates (free)
+
+macOS remembers a permission — Downloads, which "Import a recent download" and
+Watch Downloads need — against the app's code signature. A build signed ad hoc
+is identified by its own hash, so every new build is a stranger and asks again.
+A build signed with a certificate is identified by the certificate, so the
+answer carries over to every later build signed with the same one.
+
+Until there is a Developer ID, that certificate is self-signed. It changes
+nothing Gatekeeper says — the build is still from an unidentified developer —
+but installed copies keep their permissions across updates.
+
+It already exists: `~/.tauri/nankiv-codesign.p12` on the maintainer's Mac, with
+its password in `~/.tauri/nankiv-codesign.password`, common name
+`nankiv Code Signing`. Keep both with the update key, and never commit them.
+
+**Locally**, add it to the login keychain once:
+
+```bash
+security import ~/.tauri/nankiv-codesign.p12 -k ~/Library/Keychains/login.keychain-db -P "$(cat ~/.tauri/nankiv-codesign.password)" -T /usr/bin/codesign
+```
+
+and build with it:
+
+```bash
+APPLE_SIGNING_IDENTITY="nankiv Code Signing" npm run tauri build
+```
+
+**In CI**, add two repository secrets; `release.yml` loads them into a
+throwaway keychain on the Mac runners and fails a build that comes out ad hoc:
+
+| Secret | Value |
+| --- | --- |
+| `MACOS_SIGNING_CERTIFICATE` | `base64 -i ~/.tauri/nankiv-codesign.p12` |
+| `MACOS_SIGNING_CERTIFICATE_PASSWORD` | the contents of `~/.tauri/nankiv-codesign.password` |
+
+Local and released builds must use the same certificate, or moving between
+them asks once more. Check a build with `codesign -d -r- nankiv.app`: the
+requirement should name `certificate root`, not a `cdhash`. Moving from ad hoc
+to the certificate — and later from it to a Developer ID — asks one last time.
+
+The widget stays signed ad hoc: it never touches Downloads, so its signature
+has nothing to remember.
+
 ### macOS — Apple Developer Program, $99/year
 
 The highest-leverage spend in this project. Removes the warning completely.
