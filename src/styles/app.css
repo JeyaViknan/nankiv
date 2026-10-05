@@ -895,7 +895,7 @@ button.round-step:hover {
 
 .share-actions {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   animation: actions-in 0.4s ease 0.26s both;
 }
 
@@ -927,6 +927,15 @@ button.round-step:hover {
   transition:
     transform 0.12s ease,
     background 0.15s ease;
+}
+
+/* Symbol-only: a circle, sized for a pointer and a glance. */
+.float-btn.round {
+  width: 48px;
+  height: 48px;
+  min-width: 0;
+  padding: 0;
+  border-radius: 50%;
 }
 
 .float-btn:active:not(:disabled) {

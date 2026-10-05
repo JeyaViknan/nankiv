@@ -48,10 +48,14 @@ describe("sharing the card", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Copy image" })).toBeEnabled(),
     );
-    expect(screen.getByRole("button", { name: "Save…" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save image" })).toBeEnabled();
+    // Symbols only: no words on the buttons themselves.
+    for (const name of ["Copy image", "Save image"]) {
+      expect(screen.getByRole("button", { name })).toHaveTextContent("");
+    }
   });
 
-  it("confirms a copy on the button itself", async () => {
+  it("confirms a copy with a tick, and says so to a screen reader", async () => {
     // After setup, which puts its own clipboard in place.
     const user = userEvent.setup();
     const write = vi.fn().mockResolvedValue(undefined);
@@ -64,9 +68,7 @@ describe("sharing the card", () => {
     await waitFor(() => expect(copy).toBeEnabled());
     await user.click(copy);
     expect(write).toHaveBeenCalled();
-    expect(
-      await screen.findByRole("button", { name: /Copied/ }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent("Copied");
   });
 
   it("goes away with Escape, the close button, or a click outside", async () => {

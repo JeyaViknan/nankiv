@@ -37,6 +37,10 @@ const PATHS: Record<IconName, string> = {
   chevronRight: "M7.75 4.5 13.25 10l-5.5 5.5",
   close: "M5.25 5.25l9.5 9.5M14.75 5.25l-9.5 9.5",
   compare: "M7.5 4.5h-3v11h3M12.5 4.5h3v11h-3M10 3v14",
+  // Two sheets, the front one whole and the one behind showing its corner.
+  copy:
+    "M6.25 6.75h5.5a1.5 1.5 0 0 1 1.5 1.5v6.5a1.5 1.5 0 0 1-1.5 1.5h-5.5a1.5 1.5 0 0 1-1.5-1.5v-6.5a1.5 1.5 0 0 1 1.5-1.5Z" +
+    "M7.75 4.25h6a1.5 1.5 0 0 1 1.5 1.5v7",
   dash: "M5.5 10h9",
   // Eight teeth around a hub, rather than a toothed outline: a drawn gear
   // silhouette turns to mush below about 24px. The teeth start *inside* the hub
@@ -51,6 +55,10 @@ const PATHS: Record<IconName, string> = {
     "M13.5 5.4a2.05 2.05 0 0 1 0 4.1M14.4 12.15c2.2.35 2.85 1.85 2.85 4.1",
   plus: "M10 4.75v10.5M4.75 10h10.5",
   question: "M7.6 7.6a2.45 2.45 0 1 1 3.65 2.13c-.72.42-1.25.98-1.25 1.82v.3",
+  // An arrow into an open box.
+  save:
+    "M10 3.25v8.5M6.75 8.5 10 11.75l3.25-3.25" +
+    "M6.75 7.25h-1.5a1.5 1.5 0 0 0-1.5 1.5v6a1.5 1.5 0 0 0 1.5 1.5h9.5a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1.5",
   search: "M9.25 15.25a6 6 0 1 0 0-12 6 6 0 0 0 0 12ZM13.6 13.6 17 17",
   sheet:
     "M4.25 3.75h11.5a.5.5 0 0 1 .5.5v11.5a.5.5 0 0 1-.5.5H4.25a.5.5 0 0 1-.5-.5V4.25a.5.5 0 0 1 .5-.5Z" +

@@ -3,9 +3,10 @@
  *
  * No sheet, no title bar, no paragraph — the pass rises out of the blurred
  * window and settles, the way a pass is presented in Wallet, with two
- * floating actions beneath it. Escape, the close button or a click outside
- * puts it away. The actions confirm where they are pressed rather than in a
- * toast, which would sit behind the blur.
+ * floating actions beneath it: symbols only, Copy and Save. Escape, the close
+ * button or a click outside puts it away. A button confirms by showing a tick
+ * in place of its symbol for a moment, rather than with a toast, which would
+ * sit behind the blur.
  *
  * The card is drawn straight onto the canvas shown here, so there is no image
  * address for the page's security policy to refuse; Copy and Save take their
@@ -95,10 +96,11 @@ export function ShareCard({
     }
   }
 
-  const copyLabel =
-    done === "copied" || done === "copy-failed" ? SAID[done] : "Copy image";
-  const saveLabel =
-    done === "saved" || done === "save-failed" ? SAID[done] : "Save…";
+  // The symbol each button shows: its own, or for a moment the outcome.
+  const copyIcon =
+    done === "copied" ? "check" : done === "copy-failed" ? "warning" : "copy";
+  const saveIcon =
+    done === "saved" ? "check" : done === "save-failed" ? "warning" : "save";
 
   return (
     <div
@@ -118,23 +120,30 @@ export function ShareCard({
         role="img"
         aria-label={`Shortlisted — ${facts.company}, one of ${facts.total.toLocaleString()} students`}
       />
-      <div className="share-actions" aria-live="polite">
+      <div className="share-actions">
         <button
-          className="float-btn primary"
+          className="float-btn round primary"
           onClick={() => void copy()}
           disabled={!ready}
+          aria-label="Copy image"
+          title="Copy image"
         >
-          {done === "copied" && <Icon name="check" size={14} weight="bold" />}
-          {copyLabel}
+          <Icon name={copyIcon} size={20} weight="medium" />
         </button>
         <button
-          className="float-btn glass"
+          className="float-btn round glass"
           onClick={() => void saveCard()}
           disabled={!ready}
+          aria-label="Save image"
+          title="Save image"
         >
-          {done === "saved" && <Icon name="check" size={14} weight="bold" />}
-          {saveLabel}
+          <Icon name={saveIcon} size={20} weight="medium" />
         </button>
+        {/* The buttons say what happened only in symbols; this says it in
+            words, to a screen reader. */}
+        <span className="sr-only" role="status">
+          {done ? SAID[done] : ""}
+        </span>
       </div>
       <button
         className="float-close glass"
