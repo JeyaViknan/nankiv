@@ -28,7 +28,6 @@ import { MenuButton } from "../components/MenuButton";
 import { VerdictBanner, VerdictPill } from "../components/Verdict";
 import { RoundTrail, neighbour } from "../components/Rounds";
 import { ShareSheet } from "../components/ShareSheet";
-import { lateNightLine } from "../lib/eggs";
 import { MOD, chord } from "../lib/keys";
 import {
   BranchCard,
@@ -128,13 +127,8 @@ export function DriveScreen({
   /** Opens Settings when the answer is "can't tell" and a field would fix it. */
   onFix: () => void;
 }) {
-  const { showToast, openDrive, refreshDrives, stats, exportNames, fresh } =
+  const { showToast, openDrive, refreshDrives, stats, exportNames } =
     useStore();
-  // Checked just now, in the small hours: a word to go to sleep.
-  const late =
-    fresh?.driveId === outcome.drive_id
-      ? lateNightLine(new Date(fresh.at))
-      : null;
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
   const a = outcome.analysis;
@@ -201,8 +195,6 @@ export function DriveScreen({
       {sharing && (
         <ShareSheet outcome={outcome} onClose={() => setSharing(false)} />
       )}
-
-      {late && <p className="late-night">{late}</p>}
 
       {/* Provenance, stated once, quietly, directly under the answer. */}
       <div className="provenance">

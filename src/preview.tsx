@@ -173,17 +173,14 @@ const CARDS: CardFacts[] = [
   {
     company: "Siemens SISW",
     total: 149,
-    rounds: [
-      { label: "Test", current: false },
-      { label: "Interview", current: true },
-    ],
+    round: "Interview",
     ordinal: 4,
     when: new Date("2026-10-05T10:00:00Z"),
   },
   {
     company: "Deloitte Consultative Offerings",
     total: 1552,
-    rounds: [],
+    round: null,
     ordinal: 1,
     when: new Date("2026-09-12T10:00:00Z"),
   },

@@ -98,11 +98,7 @@ interface State {
   /** Said to a screen reader: the newest result, or why a drop was refused. */
   announcement: { text: string; n: number } | null;
   announce: (text: string) => void;
-  /** When the title last turned round, for the name's small surprise. */
-  nameTurnedAt: number | null;
-  turnTheName: () => void;
-  /** The drive just imported, and when — so a result can know it is new. */
-  fresh: { driveId: number; at: number } | null;
+
   dismissToast: () => void;
 }
 
@@ -133,8 +129,6 @@ export const useStore = create<State>((set, get) => ({
   importStage: { phase: "idle" },
   error: null,
   toast: null,
-  nameTurnedAt: null,
-  fresh: null,
   announcement: null,
 
   go: (view) => set({ view, error: null }),
@@ -290,7 +284,6 @@ export const useStore = create<State>((set, get) => ({
       const outcome = await call();
       get().announce(resultSentence(outcome));
       set({
-        fresh: { driveId: outcome.drive_id, at: Date.now() },
         current: outcome,
         view: "drive",
         importStage: { phase: "idle" },
@@ -448,14 +441,6 @@ export const useStore = create<State>((set, get) => ({
 
   announce: (text) =>
     set({ announcement: { text, n: (get().announcement?.n ?? 0) + 1 } }),
-
-  turnTheName: () => {
-    // Once per search, not once per keystroke after it.
-    const last = get().nameTurnedAt;
-    if (last && Date.now() - last < 4000) return;
-    set({ nameTurnedAt: Date.now() });
-    get().showToast("made by Viknan, backwards");
-  },
 
   dismissToast: () => {
     if (toastTimer) clearTimeout(toastTimer);

@@ -27,7 +27,6 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
-import { wrongFileReply } from "../lib/eggs";
 import { useStore } from "../lib/store";
 
 const SPREADSHEET = ["xlsx", "xls", "xlsm", "ods", "csv"];
@@ -117,8 +116,7 @@ export function DropSurface({
         useStore
           .getState()
           .announce(
-            wrongFileReply(chosen.file.name)?.title ??
-              `${chosen.file.name} won't work. nankiv reads spreadsheets.`,
+            `${chosen.file.name} won't work. nankiv reads spreadsheets.`,
           );
         setDrag({ phase: "invalid", name: chosen.file.name });
         window.setTimeout(() => setDrag({ phase: "idle" }), 2500);
@@ -143,8 +141,6 @@ export function DropSurface({
   if (drag.phase === "idle" || disabled) return null;
 
   const invalid = drag.phase === "invalid";
-  // A résumé or a photo gets a better line than "won't work".
-  const reply = invalid ? wrongFileReply(drag.name) : null;
 
   return (
     <div className={`drag-veil${invalid ? " invalid" : ""}`} aria-hidden="true">
@@ -153,15 +149,12 @@ export function DropSurface({
           <Icon name={invalid ? "close" : "tray"} size={38} />
         </span>
         <p className="drag-title">
-          {reply?.title ??
-            (invalid ? "That file won't work" : "Drop to analyse")}
+          {invalid ? "That file won't work" : "Drop to analyse"}
         </p>
         {drag.name && <p className="drag-name">{drag.name}</p>}
         {invalid && (
           <p className="drag-reason">
-            {reply
-              ? reply.reason
-              : "nankiv reads spreadsheets — .xlsx, .xls or .csv."}
+            nankiv reads spreadsheets — .xlsx, .xls or .csv.
           </p>
         )}
       </div>

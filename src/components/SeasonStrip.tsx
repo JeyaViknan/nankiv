@@ -10,13 +10,12 @@
  */
 
 import type { Season } from "../lib/api";
-import { Wordmark } from "./Wordmark";
 
 export function SeasonStrip({ season }: { season: Season | null }) {
   // Before the first import there is nothing to count, and a row of zeroes
   // reads as failure rather than as a beginning.
   if (!season || season.drives === 0) {
-    return <Wordmark />;
+    return <span className="wordmark">nankiv</span>;
   }
 
   const parts: { key: string; tone: string; value: number; label: string }[] = [
@@ -37,7 +36,7 @@ export function SeasonStrip({ season }: { season: Season | null }) {
       className="season"
       aria-label={`This season: ${season.drives} shortlists`}
     >
-      <Wordmark />
+      <span className="wordmark">nankiv</span>
       <span className="season-rule" aria-hidden="true" />
       {parts.map((p) => (
         <span className={`season-part ${p.tone}`} key={p.key}>

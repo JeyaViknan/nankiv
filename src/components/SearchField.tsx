@@ -20,7 +20,6 @@ import {
   type SearchResult,
 } from "../lib/api";
 import { useStore } from "../lib/store";
-import { isTheName } from "../lib/eggs";
 
 const NEO = /^(?:[A-Za-z][0-9]){4}$/;
 const REG = /^\d{2}[A-Za-z]{3}\d{4,5}$/;
@@ -40,13 +39,6 @@ export function SearchField({
 
   useEffect(() => {
     const q = query.trim();
-    // The app's name, backwards, is its maker's: the title turns round
-    // instead of a search running.
-    if (isTheName(q)) {
-      setOpen(false);
-      useStore.getState().turnTheName();
-      return;
-    }
     if (q.length < 2) {
       setByName(null);
       setById(null);

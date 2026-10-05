@@ -211,33 +211,3 @@ describe("a drive nothing could name", () => {
     expect(screen.getByLabelText("Drive name")).toHaveValue("Unnamed drive");
   });
 });
-
-describe("the small hours", () => {
-  const twoAm = new Date(2026, 9, 5, 2, 14).getTime();
-
-  it("has a word for a list checked at 2 a.m.", () => {
-    useStore.setState({ fresh: { driveId: 1, at: twoAm } });
-    render(
-      <DriveScreen
-        outcome={outcome({ status: "shortlisted" })}
-        onFix={() => {}}
-      />,
-    );
-    expect(
-      screen.getByText(
-        "It's 2:14 AM. The list will say the same thing in the morning.",
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("says nothing when opening an older list, whatever the hour", () => {
-    useStore.setState({ fresh: { driveId: 99, at: twoAm } });
-    render(
-      <DriveScreen
-        outcome={outcome({ status: "shortlisted" })}
-        onFix={() => {}}
-      />,
-    );
-    expect(screen.queryByText(/The list will say/)).not.toBeInTheDocument();
-  });
-});

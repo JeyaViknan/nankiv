@@ -82,19 +82,6 @@ describe("dragging a file over the window", () => {
     expect(onFile).not.toHaveBeenCalled();
   });
 
-  it("has a better line for a résumé, or a photo", () => {
-    render(<DropSurface onFile={vi.fn()} />);
-    act(() => {
-      window.dispatchEvent(
-        drag("drop", transfer([new File([""], "Jeya Resume.pdf")])),
-      );
-    });
-    expect(
-      screen.getByText("That's a résumé, not a shortlist."),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Good luck with it though.")).toBeInTheDocument();
-  });
-
   it("takes the spreadsheet out of a mixed drag", () => {
     const onFile = vi.fn();
     render(<DropSurface onFile={onFile} />);

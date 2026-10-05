@@ -6,10 +6,10 @@
  * preview, so no one wonders whether their ID went out with it.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { api, type ImportOutcome } from "../lib/api";
-import { cardFacts, renderCard } from "../lib/shareCard";
+import { cardFacts, cardPng, drawCard } from "../lib/shareCard";
 import { useStore } from "../lib/store";
 import { Sheet } from "./Sheet";
 
@@ -30,30 +30,25 @@ export function ShareSheet({
 }) {
   const { drives, showToast } = useStore();
   const facts = useMemo(() => cardFacts(outcome, drives), [outcome, drives]);
-  const [card, setCard] = useState<{ blob: Blob; url: string } | null>(null);
+  // The preview is the card itself: drawn straight onto this canvas, so
+  // there is no image address for the page's security policy to refuse.
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let live = true;
-    let url: string | null = null;
-    renderCard(facts)
-      .then((blob) => {
-        if (!live) return;
-        url = URL.createObjectURL(blob);
-        setCard({ blob, url });
-      })
-      .catch(() => live && setFailed(true));
-    return () => {
-      live = false;
-      if (url) URL.revokeObjectURL(url);
-    };
+    if (!canvas.current) return;
+    setReady(false);
+    drawCard(canvas.current, facts)
+      .then(() => setReady(true))
+      .catch(() => setFailed(true));
   }, [facts]);
 
   async function copy() {
-    if (!card) return;
+    if (!ready || !canvas.current) return;
     try {
       await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": card.blob }),
+        new ClipboardItem({ "image/png": cardPng(canvas.current) }),
       ]);
       showToast("Card copied — paste it into a chat or a story");
     } catch {
@@ -62,14 +57,15 @@ export function ShareSheet({
   }
 
   async function saveCard() {
-    if (!card) return;
+    if (!ready || !canvas.current) return;
     const path = await save({
       defaultPath: `${fileStem(facts.company)}-im-in.png`,
       filters: [{ name: "PNG image", extensions: ["png"] }],
     });
     if (!path) return;
     try {
-      await api.saveShareCard(path, await card.blob.arrayBuffer());
+      const png = await cardPng(canvas.current);
+      await api.saveShareCard(path, await png.arrayBuffer());
       showToast("Card saved");
     } catch {
       showToast("Couldn't save the card");
@@ -79,33 +75,33 @@ export function ShareSheet({
   return (
     <Sheet title="Share the news" onClose={onClose} width={520}>
       <div className="share-preview">
-        {card ? (
-          <img
-            src={card.url}
-            alt={`I'm in — ${facts.company}, one of ${facts.total.toLocaleString()} shortlisted`}
-          />
-        ) : (
-          <p className="hint-line">
-            {failed ? "The card couldn't be drawn." : "Drawing your card…"}
+        <canvas
+          ref={canvas}
+          role="img"
+          aria-label={`Shortlisted — ${facts.company}, one of ${facts.total.toLocaleString()} students`}
+        />
+        {failed && (
+          <p className="hint-line" role="alert">
+            The card couldn't be drawn.
           </p>
         )}
       </div>
       <p className="hint-line share-note">
-        Just the company, the round and the count. No Neo ID, no CGPA, and no
-        one else's name.
+        The company, the count, the round and the date. No Neo ID, no CGPA, and
+        no one else's name.
       </p>
       <div className="btn-row">
         <button
           className="btn primary"
           onClick={() => void copy()}
-          disabled={!card}
+          disabled={!ready}
         >
           Copy image
         </button>
         <button
           className="btn"
           onClick={() => void saveCard()}
-          disabled={!card}
+          disabled={!ready}
         >
           Save…
         </button>

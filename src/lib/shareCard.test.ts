@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DriveListItem, ImportOutcome, Verdict } from "./api";
-import { cardFacts, ordinalLabel } from "./shareCard";
+import { cardFacts, cardFields, ordinalLabel } from "./shareCard";
 
 function drive(id: number, at: string, verdict: Verdict): DriveListItem {
   return {
@@ -53,10 +53,7 @@ describe("what goes on the card", () => {
     const f = cardFacts(outcome, drives);
     expect(f.company).toBe("Siemens SISW");
     expect(f.total).toBe(149);
-    expect(f.rounds).toEqual([
-      { label: "Test", current: false },
-      { label: "Interview", current: true },
-    ]);
+    expect(f.round).toBe("Interview");
     expect(f.ordinal).toBe(3);
     expect(f.when?.toISOString()).toBe("2026-10-05T10:00:00.000Z");
   });
@@ -83,5 +80,31 @@ describe("ordinals", () => {
       "22nd",
       "103rd",
     ]);
+  });
+});
+
+describe("the fields under the tear line", () => {
+  it("are the round, the date and the season, in that order", () => {
+    const fields = cardFields(cardFacts(outcome, drives));
+    expect(fields.map(([label]) => label)).toEqual(["Round", "Date", "Season"]);
+    expect(fields[2]![1]).toBe("3rd shortlist");
+  });
+
+  it("leave out what isn't known, rather than show a blank", () => {
+    expect(
+      cardFields({
+        company: "Zluri",
+        total: 40,
+        round: null,
+        ordinal: null,
+        when: null,
+      }),
+    ).toEqual([]);
+  });
+
+  it("fall back to the stage the file named when there are no rounds", () => {
+    const single = { ...outcome, progression: null } as ImportOutcome;
+    const named = drives.map((d) => (d.id === 3 ? { ...d, round: "Test" } : d));
+    expect(cardFacts(single, named).round).toBe("Test");
   });
 });

@@ -1,31 +1,43 @@
 /**
- * The "I'm in" card.
+ * The "I'm in" card, set as a pass.
  *
- * Drawn in nankiv's own visual language rather than a template's: the indigo
- * field, the frosted sheet of rows and the green "you" row from the app icon,
- * with the company written inside that row. It says what is worth saying —
- * the company, the round, how many made it, which of the season's shortlists
- * this is for you — and nothing that is not the student's to share: no Neo
- * ID, no CGPA, no one else's name.
+ * Restraint over decoration: a near-black field, one typeface, a strict grid,
+ * and a single colour — the green of the status. The company is the hero,
+ * set large and tight; beneath a tear line, the details sit in labelled
+ * fields the way a boarding pass sets them. No gradient, no glow, no badge.
  *
- * Drawn on a canvas, locally, at 1080 × 1350 — a portrait that sits well in a
- * chat and in a story.
+ * It carries only what is the student's to share: the company, how many made
+ * the list, the round, the date, and which of the season's shortlists this is
+ * for them. No Neo ID, no CGPA, no one else's name.
+ *
+ * 1080 × 1350 — a portrait that sits well in a chat and in a story. Drawn
+ * locally on a canvas; the preview is that same canvas.
  */
 
 import type { DriveListItem, ImportOutcome } from "./api";
-import { symbolImage } from "./symbols";
 
 export const CARD = { width: 1080, height: 1350 } as const;
 
 const SANS =
   'system-ui, -apple-system, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", sans-serif';
 
+const INK = {
+  field: "#0E0E10",
+  text: "rgba(255,255,255,0.94)",
+  quiet: "rgba(255,255,255,0.56)",
+  label: "rgba(255,255,255,0.42)",
+  rule: "rgba(255,255,255,0.12)",
+  green: "#34C759",
+};
+
+const MARGIN = 96;
+
 export interface CardFacts {
   company: string;
   /** How many were shortlisted. */
   total: number;
-  /** The drive's rounds, earliest first, this one marked; empty for one. */
-  rounds: { label: string; current: boolean }[];
+  /** This list's round or stage — "Interview", "R2" — when known. */
+  round: string | null;
   /** Which of the season's shortlists you made this is — 1st, 2nd… */
   ordinal: number | null;
   /** When the list was imported. */
@@ -45,14 +57,13 @@ export function cardFacts(
   const when = record
     ? new Date(record.imported_at.replace(" ", "T") + "Z")
     : null;
+  const step = outcome.progression?.steps.find(
+    (s) => s.drive_id === outcome.drive_id,
+  );
   return {
     company: outcome.company,
     total: outcome.total_students,
-    rounds:
-      outcome.progression?.steps.map((s) => ({
-        label: s.label,
-        current: s.drive_id === outcome.drive_id,
-      })) ?? [],
+    round: step?.label ?? record?.round ?? null,
     ordinal: position >= 0 ? position + 1 : null,
     when: when && !Number.isNaN(when.getTime()) ? when : null,
   };
@@ -68,57 +79,75 @@ export function ordinalLabel(n: number): string {
   return `${n}${suffix}`;
 }
 
-/** Fits text to a width, shrinking to a floor, then shortening with "…". */
-function fit(
+/** The labelled fields under the tear line, in order, skipping the unknown. */
+export function cardFields(facts: CardFacts): [string, string][] {
+  const fields: [string, string][] = [];
+  if (facts.round) fields.push(["Round", facts.round]);
+  if (facts.when) {
+    fields.push([
+      "Date",
+      facts.when.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    ]);
+  }
+  if (facts.ordinal) {
+    fields.push(["Season", `${ordinalLabel(facts.ordinal)} shortlist`]);
+  }
+  return fields;
+}
+
+/** Small capitals, tracked out — drawn letter by letter, since canvas
+ *  letter-spacing is not everywhere yet. Returns the width drawn. */
+function caps(
   ctx: CanvasRenderingContext2D,
   text: string,
-  weight: number,
-  from: number,
-  to: number,
-  width: number,
-): { text: string; size: number } {
-  for (let size = from; size >= to; size -= 2) {
-    ctx.font = `${weight} ${size}px ${SANS}`;
-    if (ctx.measureText(text).width <= width) return { text, size };
-  }
-  let t = text;
-  while (t.length > 1 && ctx.measureText(`${t}…`).width > width) {
-    t = t.slice(0, -1);
-  }
-  return { text: `${t.trimEnd()}…`, size: to };
-}
-
-function pill(
-  ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  w: number,
-  h: number,
-) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, h / 2);
+  size: number,
+  colour: string,
+  align: "left" | "right" = "left",
+): number {
+  ctx.font = `620 ${size}px ${SANS}`;
+  ctx.fillStyle = colour;
+  const tracking = size * 0.16;
+  const chars = [...text.toUpperCase()];
+  const width =
+    chars.reduce((w, c) => w + ctx.measureText(c).width + tracking, 0) -
+    tracking;
+  let at = align === "right" ? x - width : x;
+  for (const c of chars) {
+    ctx.fillText(c, at, y);
+    at += ctx.measureText(c).width + tracking;
+  }
+  return width;
 }
 
-/** A symbol drawn in one colour, from the black-on-clear image macOS gives. */
-function tinted(image: HTMLImageElement, colour: string): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = image.naturalWidth;
-  c.height = image.naturalHeight;
-  const g = c.getContext("2d")!;
-  g.drawImage(image, 0, 0);
-  g.globalCompositeOperation = "source-in";
-  g.fillStyle = colour;
-  g.fillRect(0, 0, c.width, c.height);
-  return c;
-}
-
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = url;
-  });
+/** Breaks a name into at most two lines at `size`, or says it won't fit. */
+function lines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  size: number,
+  width: number,
+): string[] | null {
+  ctx.font = `640 ${size}px ${SANS}`;
+  const words = text.split(/\s+/);
+  const out: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width <= width) {
+      line = next;
+    } else {
+      if (!line || out.length === 1) return null;
+      out.push(line);
+      line = word;
+    }
+  }
+  out.push(line);
+  return out.every((l) => ctx.measureText(l).width <= width) ? out : null;
 }
 
 export async function drawCard(
@@ -129,157 +158,101 @@ export async function drawCard(
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
+  const inner = W - MARGIN * 2;
+  ctx.textBaseline = "alphabetic";
 
-  // The field: the icon's indigo, lit from the top left.
-  const field = ctx.createLinearGradient(0, 0, 0, H);
-  field.addColorStop(0, "#5B52F2");
-  field.addColorStop(1, "#2A2594");
-  ctx.fillStyle = field;
-  ctx.fillRect(0, 0, W, H);
-  const glow = ctx.createRadialGradient(160, 110, 0, 160, 110, 980);
-  glow.addColorStop(0, "rgba(255,255,255,0.18)");
-  glow.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = glow;
+  ctx.fillStyle = INK.field;
   ctx.fillRect(0, 0, W, H);
 
-  // The frosted sheet of rows, as on the icon, behind everything.
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.strokeStyle = "rgba(255,255,255,0.16)";
-  ctx.lineWidth = 2;
+  // Header: the name on the left, the status on the right — the only colour.
+  ctx.font = `600 34px ${SANS}`;
+  ctx.fillStyle = INK.text;
+  ctx.fillText("nankiv", MARGIN, 130);
+  const status = caps(
+    ctx,
+    "Shortlisted",
+    W - MARGIN,
+    128,
+    23,
+    INK.green,
+    "right",
+  );
+  ctx.fillStyle = INK.green;
   ctx.beginPath();
-  ctx.roundRect(660, 168, 380, 492, 56);
+  ctx.arc(W - MARGIN - status - 22, 120, 7, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.fillStyle = INK.rule;
+  ctx.fillRect(MARGIN, 178, inner, 2);
+
+  // The company, as large as it will go in two lines.
+  let size = 128;
+  let set = lines(ctx, facts.company, size, inner);
+  while (!set && size > 64) {
+    size -= 4;
+    set = lines(ctx, facts.company, size, inner);
+  }
+  if (!set) {
+    // Even small, too long: one line, shortened.
+    let t = facts.company;
+    while (t.length > 1 && ctx.measureText(`${t}…`).width > inner) {
+      t = t.slice(0, -1);
+    }
+    set = [`${t.trimEnd()}…`];
+  }
+  // The name and its one line, set at the optical centre of the space
+  // between the header rule and the tear line — a touch above the true
+  // middle, where a centred block looks centred.
+  const tear = 1060;
+  const lead = size * 1.04;
+  const capHeight = size * 0.72;
+  const below = 84; // the line under the name, from the name's last baseline
+  const block = capHeight + lead * (set.length - 1) + below;
+  const top = 180 + (tear - 180 - block) * 0.44;
+
+  ctx.font = `640 ${size}px ${SANS}`;
+  ctx.fillStyle = INK.text;
+  let y = top + capHeight;
+  for (const line of set) {
+    ctx.fillText(line, MARGIN - size * 0.04, y);
+    y += lead;
+  }
+
+  ctx.font = `400 38px ${SANS}`;
+  ctx.fillStyle = INK.quiet;
+  ctx.fillText(
+    `One of ${facts.total.toLocaleString()} students on the list`,
+    MARGIN,
+    y - lead + below,
+  );
+
+  // The tear line, and the details below it.
+  ctx.strokeStyle = INK.rule;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 10]);
+  ctx.beginPath();
+  ctx.moveTo(MARGIN, tear);
+  ctx.lineTo(W - MARGIN, tear);
   ctx.stroke();
-  ctx.fillStyle = "rgba(255,255,255,0.13)";
-  pill(ctx, 716, 262, 268, 44);
-  ctx.fill();
-  pill(ctx, 716, 484, 212, 44);
-  ctx.fill();
+  ctx.setLineDash([]);
 
-  // The wordmark, and the news.
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.font = `650 44px ${SANS}`;
-  ctx.fillText("nankiv", 96, 140);
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 172px ${SANS}`;
-  ctx.fillText("I\u2019m in.", 90, 470);
-
-  // The green row — you, on the list — with the company in it.
-  const row = { x: 96, y: 540, w: 888, h: 150 };
-  ctx.save();
-  ctx.shadowColor = "rgba(10, 8, 60, 0.35)";
-  ctx.shadowBlur = 48;
-  ctx.shadowOffsetY = 18;
-  ctx.fillStyle = "#30D158";
-  pill(ctx, row.x, row.y, row.w, row.h);
-  ctx.fill();
-  ctx.restore();
-
-  const mid = row.y + row.h / 2;
-  const symbol = await symbolImage({
-    name: "checkmark",
-    pointSize: 58,
-    weight: "bold",
+  const fields = cardFields(facts);
+  const column = inner / 3;
+  fields.forEach(([label, value], i) => {
+    const x = MARGIN + column * i;
+    caps(ctx, label, x, tear + 82, 21, INK.label);
+    ctx.font = `560 40px ${SANS}`;
+    ctx.fillStyle = INK.text;
+    let v = value;
+    while (v.length > 1 && ctx.measureText(v).width > column - 24) {
+      v = v.slice(0, -1);
+    }
+    ctx.fillText(v === value ? v : `${v.trimEnd()}…`, x, tear + 140);
   });
-  if (symbol) {
-    const img = await loadImage(symbol.url);
-    ctx.drawImage(
-      tinted(img, "#FFFFFF"),
-      row.x + 70 - symbol.width / 2,
-      mid - symbol.height / 2,
-      symbol.width,
-      symbol.height,
-    );
-  } else {
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.lineWidth = 15;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(row.x + 44, mid + 2);
-    ctx.lineTo(row.x + 64, mid + 22);
-    ctx.lineTo(row.x + 100, mid - 22);
-    ctx.stroke();
-  }
-  const name = fit(ctx, facts.company, 760, 72, 40, row.w - 150 - 56);
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `760 ${name.size}px ${SANS}`;
-  ctx.textBaseline = "middle";
-  ctx.fillText(name.text, row.x + 140, mid + 3);
-  ctx.textBaseline = "alphabetic";
-
-  // The rounds, when there are several: where this one sits.
-  let y = 800;
-  if (facts.rounds.length > 1) {
-    let x = 96;
-    ctx.font = `650 34px ${SANS}`;
-    facts.rounds.forEach((r, i) => {
-      if (i > 0) {
-        ctx.fillStyle = "rgba(255,255,255,0.6)";
-        ctx.fillText("→", x, y + 42);
-        x += 52;
-      }
-      const w = ctx.measureText(r.label).width + 52;
-      pill(ctx, x, y, w, 60);
-      if (r.current) {
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fill();
-        ctx.fillStyle = "#2E2A9E";
-      } else {
-        ctx.strokeStyle = "rgba(255,255,255,0.55)";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = "rgba(255,255,255,0.88)";
-      }
-      ctx.fillText(r.label, x + 26, y + 42);
-      x += w + 18;
-    });
-    y += 132;
-  } else {
-    y += 40;
-  }
-
-  // The facts.
-  ctx.fillStyle = "rgba(255,255,255,0.95)";
-  ctx.font = `600 48px ${SANS}`;
-  ctx.fillText(`One of ${facts.total.toLocaleString()} shortlisted`, 96, y);
-  if (facts.when) {
-    ctx.fillStyle = "rgba(255,255,255,0.62)";
-    ctx.font = `500 38px ${SANS}`;
-    ctx.fillText(
-      facts.when.toLocaleDateString(undefined, {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      96,
-      y + 64,
-    );
-  }
-
-  // Which shortlist of the season, once there is more than one to count.
-  if (facts.ordinal && facts.ordinal > 1) {
-    const text = `${ordinalLabel(facts.ordinal)} shortlist this season`;
-    ctx.font = `600 34px ${SANS}`;
-    const w = ctx.measureText(text).width + 56;
-    pill(ctx, 96, y + 120, w, 64);
-    ctx.strokeStyle = "rgba(255,255,255,0.45)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.fillText(text, 124, y + 164);
-  }
-
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
-  ctx.font = `500 30px ${SANS}`;
-  ctx.fillText("Checked offline with nankiv", 96, 1262);
 }
 
-/** The card as a PNG. */
-export async function renderCard(facts: CardFacts): Promise<Blob> {
-  const canvas = document.createElement("canvas");
-  await drawCard(canvas, facts);
+/** The card as a PNG, from the canvas it was drawn on. */
+export function cardPng(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("no image"))),
