@@ -2,8 +2,9 @@
  * "Import a recent download" — the file you just saved, without hunting for it.
  *
  * Shortlists are downloaded from an email or the placement portal and then
- * have to be found again. This lists the newest spreadsheets in Downloads,
- * marks any already imported, and imports one in a click.
+ * have to be found again. This offers the one or two spreadsheets that
+ * arrived in Downloads in the last hour, marks any already imported, and
+ * imports one in a click. Anything older is a job for the open panel.
  *
  * Downloads is read only when asked: on a Mac the first look prompts for
  * access, and that prompt should follow a click, never appear at launch.
@@ -75,7 +76,7 @@ export function RecentDownloads({ disabled }: { disabled: boolean }) {
             <p className="hint-line">Looking in Downloads…</p>
           ) : files.length === 0 ? (
             <p className="hint-line">
-              No spreadsheets downloaded in the last two weeks.
+              No spreadsheets downloaded in the last hour.
             </p>
           ) : (
             <ul className="recent-list" aria-label="Recent downloads">

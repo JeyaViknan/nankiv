@@ -27,7 +27,7 @@ beforeEach(() => {
     {
       path: "/Users/a/Downloads/Zluri.xlsx",
       name: "Zluri.xlsx",
-      modified: hoursAgo(30),
+      modified: hoursAgo(0.75),
       imported: true,
     },
   ]);

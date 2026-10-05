@@ -446,9 +446,23 @@ pub struct RecentDownload {
     pub imported: bool,
 }
 
-/// How far back "recent" reaches, and how many are offered.
-const RECENT_DAYS: i64 = 14;
-const RECENT_LIMIT: usize = 6;
+/// How far back "recent" reaches, and how many are offered. The point is
+/// the shortlist that has only just arrived — not a browse through the
+/// fortnight's downloads, which the open panel already does better.
+const RECENT_WITHIN: std::time::Duration = std::time::Duration::from_secs(60 * 60);
+const RECENT_LIMIT: usize = 2;
+
+/// The newest few, from the last hour, newest first.
+fn just_downloaded(
+    mut found: Vec<(std::time::SystemTime, PathBuf)>,
+    now: std::time::SystemTime,
+) -> Vec<(std::time::SystemTime, PathBuf)> {
+    let cutoff = now - RECENT_WITHIN;
+    found.retain(|(modified, _)| *modified >= cutoff);
+    found.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
+    found.truncate(RECENT_LIMIT);
+    found
+}
 
 /// The newest spreadsheets in the Downloads folder.
 ///
@@ -483,21 +497,15 @@ pub fn recent_downloads(
         .into_iter()
         .map(|d| d.source_filename)
         .collect();
-    let cutoff =
-        std::time::SystemTime::now() - std::time::Duration::from_secs(RECENT_DAYS as u64 * 86_400);
-
-    let mut found: Vec<(std::time::SystemTime, PathBuf)> = entries
+    let found: Vec<(std::time::SystemTime, PathBuf)> = entries
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|p| crate::desktop::spreadsheet(&p.to_string_lossy()).is_some())
         .filter_map(|p| Some((std::fs::metadata(&p).ok()?.modified().ok()?, p)))
-        .filter(|(m, _)| *m >= cutoff)
         .collect();
-    found.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
 
-    Ok(found
+    Ok(just_downloaded(found, std::time::SystemTime::now())
         .into_iter()
-        .take(RECENT_LIMIT)
         .map(|(modified, path)| {
             let name = path
                 .file_name()
@@ -1353,5 +1361,40 @@ mod dropped_file_tests {
     #[test]
     fn a_very_long_name_is_trimmed() {
         assert_eq!(safe_filename(&"a".repeat(500)).chars().count(), 200);
+    }
+}
+
+#[cfg(test)]
+mod recent_download_tests {
+    use super::*;
+    use std::time::{Duration, SystemTime};
+
+    #[test]
+    fn only_the_last_hour_and_only_two_are_offered() {
+        let now = SystemTime::now();
+        let ago = |mins: u64| now - Duration::from_secs(mins * 60);
+        let file = |name: &str| PathBuf::from(name);
+        let found = vec![
+            (ago(50), file("older.xlsx")),
+            (ago(5), file("newest.xlsx")),
+            (ago(61), file("over an hour.xlsx")),
+            (ago(20), file("middle.xlsx")),
+            (ago(60 * 24 * 3), file("days ago.xlsx")),
+        ];
+        let picked: Vec<_> = just_downloaded(found, now)
+            .into_iter()
+            .map(|(_, p)| p)
+            .collect();
+        assert_eq!(picked, [file("newest.xlsx"), file("middle.xlsx")]);
+    }
+
+    #[test]
+    fn nothing_recent_means_nothing_offered() {
+        let now = SystemTime::now();
+        let old = vec![(
+            now - Duration::from_secs(2 * 60 * 60),
+            PathBuf::from("a.xlsx"),
+        )];
+        assert!(just_downloaded(old, now).is_empty());
     }
 }

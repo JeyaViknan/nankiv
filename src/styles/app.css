@@ -731,9 +731,17 @@ button.round-step:hover {
   color: var(--text-2);
 }
 
-/* "Import a recent download", under the drop card. */
+/* "Import a recent download": the drop card's quieter second way in. Clear
+   of the card rather than tucked against its border, and on the same left
+   edge as the card and the section heading below, so it reads as belonging
+   to the card without crowding it. */
 .recent {
-  margin: -6px 0 18px;
+  margin-top: 12px;
+}
+
+/* Under the large, centred card of an empty season, centred with it. */
+.invite.large + .recent {
+  text-align: center;
 }
 
 .link-button {
@@ -766,7 +774,8 @@ button.round-step:hover {
 
 .recent-list {
   list-style: none;
-  margin: 8px 0 0;
+  margin: 10px 0 0;
+  text-align: left;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--r);
