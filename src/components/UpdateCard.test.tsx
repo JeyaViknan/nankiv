@@ -1,11 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { api } from "../lib/api";
 import { UpdateCard } from "./UpdateCard";
 
-vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("../lib/api", async () => {
   const actual =
     await vi.importActual<typeof import("../lib/api")>("../lib/api");
@@ -16,6 +14,7 @@ vi.mock("../lib/api", async () => {
       appVersion: vi.fn(),
       checkForUpdate: vi.fn(),
       installUpdate: vi.fn(),
+      openReleasesPage: vi.fn(),
     },
   };
 });
@@ -66,10 +65,44 @@ describe("about nankiv", () => {
     expect(screen.getByText(/Downloading and installing/)).toBeInTheDocument();
   });
 
-  it("falls back to the releases page, opened in the browser", async () => {
+  it("falls back to the releases page, opened by the core", async () => {
     vi.mocked(api.checkForUpdate).mockRejectedValue({
       code: "update_check_failed",
-      message: "Couldn't check for updates.",
+      message: "Couldn't reach GitHub to check for updates.",
+      detail: null,
+    });
+    vi.mocked(api.openReleasesPage).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<UpdateCard />);
+    await user.click(screen.getByRole("button", { name: "Check for updates" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Open the releases page" }),
+    );
+    expect(api.openReleasesPage).toHaveBeenCalled();
+  });
+
+  it("says plainly when no update information has been published yet", async () => {
+    vi.mocked(api.checkForUpdate).mockResolvedValue({ status: "unpublished" });
+    const user = userEvent.setup();
+    render(<UpdateCard />);
+    await user.click(screen.getByRole("button", { name: "Check for updates" }));
+    expect(
+      await screen.findByText(
+        /In-app updates start with nankiv's next release/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Open the releases page" }),
+    ).toBeInTheDocument();
+  });
+
+  it("says so if the browser couldn't be opened, rather than nothing", async () => {
+    vi.mocked(api.checkForUpdate).mockResolvedValue({ status: "unpublished" });
+    vi.mocked(api.openReleasesPage).mockRejectedValue({
+      code: "open_failed",
+      message:
+        "Couldn't open the browser. The releases page is https://github.com/JeyaViknan/nankiv/releases",
       detail: null,
     });
     const user = userEvent.setup();
@@ -78,8 +111,8 @@ describe("about nankiv", () => {
     await user.click(
       await screen.findByRole("button", { name: "Open the releases page" }),
     );
-    expect(openUrl).toHaveBeenCalledWith(
-      "https://github.com/JeyaViknan/nankiv/releases",
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Couldn't open the browser",
     );
   });
 

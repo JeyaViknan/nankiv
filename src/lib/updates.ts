@@ -10,8 +10,6 @@ import { useEffect } from "react";
 import { api } from "./api";
 import { useStore } from "./store";
 
-export const RELEASES_URL = "https://github.com/JeyaViknan/nankiv/releases";
-
 const DAY = 86_400_000;
 const STALE_AFTER = 42 * DAY;
 const QUIET_FOR = 14 * DAY;

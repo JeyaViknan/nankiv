@@ -13,8 +13,9 @@
 //! so a Mac does not ask again whether the app can be opened.
 //!
 //! Releases are signed only once the signing key is configured in CI; until
-//! then a check finds nothing to install, and the interface offers the
-//! releases page — opened in the browser, so the app itself makes no request.
+//! then there is no update information to find, the check says so plainly,
+//! and the interface offers the releases page — opened in the browser, so the
+//! app itself makes no request for it.
 
 use crate::commands::CommandError;
 use serde::Serialize;
@@ -54,13 +55,35 @@ pub enum UpdateCheck {
         version: String,
         notes: Option<String>,
     },
+    /// GitHub answered, but no release has published update information yet:
+    /// the case until the first signed release. Not a failure — newer
+    /// versions, if any, are on the releases page.
+    Unpublished,
 }
+
+pub const RELEASES_URL: &str = "https://github.com/JeyaViknan/nankiv/releases";
 
 fn unreachable_error() -> CommandError {
     CommandError::new(
         "update_check_failed",
-        "Couldn't check for updates. You can see every version on the releases page.",
+        "Couldn't reach GitHub to check for updates. Check your connection, or see every version on the releases page.",
     )
+}
+
+/// Opens the releases page in the browser. The core opens this one fixed
+/// address; the interface is not given a way to open arbitrary ones.
+#[tauri::command]
+pub fn open_releases_page(app: AppHandle) -> Result<(), CommandError> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_url(RELEASES_URL, None::<&str>)
+        .map_err(|e| {
+            CommandError::new(
+                "open_failed",
+                format!("Couldn't open the browser. The releases page is {RELEASES_URL}"),
+            )
+            .with_detail(e.to_string())
+        })
 }
 
 #[tauri::command]
@@ -72,6 +95,7 @@ pub async fn check_for_update(app: AppHandle) -> Result<UpdateCheck, CommandErro
             notes: update.body.clone(),
         }),
         Ok(None) => Ok(UpdateCheck::UpToDate),
+        Err(tauri_plugin_updater::Error::ReleaseNotFound) => Ok(UpdateCheck::Unpublished),
         Err(_) => Err(unreachable_error()),
     }
 }

@@ -189,6 +189,7 @@ pub fn run() {
             updates::app_version,
             updates::check_for_update,
             updates::install_update,
+            updates::open_releases_page,
         ])
         .build(tauri::generate_context!())
         .expect("error while building nankiv")

@@ -137,7 +137,9 @@ export interface AppVersion {
 
 export type UpdateCheck =
   | { status: "up_to_date" }
-  | { status: "available"; version: string; notes: string | null };
+  | { status: "available"; version: string; notes: string | null }
+  /** No release has published update information yet. Not a failure. */
+  | { status: "unpublished" };
 
 /** A drive as the list shows it: with your answer, and its round. */
 export interface DriveListItem extends DriveRecord {
@@ -397,6 +399,8 @@ export const api = {
   checkForUpdate: () => invoke<UpdateCheck>("check_for_update"),
   /** Downloads, verifies and installs, then restarts into the new version. */
   installUpdate: () => invoke<void>("install_update"),
+  /** The releases page, opened in the browser by the core. */
+  openReleasesPage: () => invoke<void>("open_releases_page"),
   watchDownloads: () => invoke<boolean>("watch_downloads"),
   /** Turning it on reads Downloads once, so any permission prompt follows. */
   setWatchDownloads: (on: boolean) =>

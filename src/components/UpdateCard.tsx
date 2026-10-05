@@ -9,14 +9,14 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { api, toApiError, type AppVersion } from "../lib/api";
-import { RELEASES_URL, builtLabel } from "../lib/updates";
+import { builtLabel } from "../lib/updates";
 
 type State =
   | { kind: "idle" }
   | { kind: "checking" }
   | { kind: "current" }
+  | { kind: "unpublished" }
   | { kind: "available"; version: string; notes: string | null }
   | { kind: "installing"; version: string }
   | { kind: "failed"; message: string };
@@ -40,7 +40,9 @@ export function UpdateCard({ autoCheck = false }: { autoCheck?: boolean }) {
       setState(
         r.status === "available"
           ? { kind: "available", version: r.version, notes: r.notes }
-          : { kind: "current" },
+          : r.status === "unpublished"
+            ? { kind: "unpublished" }
+            : { kind: "current" },
       );
     } catch (e) {
       setState({ kind: "failed", message: toApiError(e).message });
@@ -61,6 +63,20 @@ export function UpdateCard({ autoCheck = false }: { autoCheck?: boolean }) {
       setState({ kind: "failed", message: toApiError(e).message });
     }
   }
+
+  async function openReleases() {
+    try {
+      await api.openReleasesPage();
+    } catch (e) {
+      setState({ kind: "failed", message: toApiError(e).message });
+    }
+  }
+
+  const releasesButton = (
+    <button className="btn small" onClick={() => void openReleases()}>
+      Open the releases page
+    </button>
+  );
 
   const built = builtLabel(about?.built ?? null);
 
@@ -85,6 +101,15 @@ export function UpdateCard({ autoCheck = false }: { autoCheck?: boolean }) {
         )}
         {state.kind === "current" && (
           <p className="card-text">You have the newest version.</p>
+        )}
+        {state.kind === "unpublished" && (
+          <>
+            <p className="card-text">
+              In-app updates start with nankiv's next release. Until then, any
+              newer version is on the releases page.
+            </p>
+            {releasesButton}
+          </>
         )}
         {state.kind === "available" && (
           <>
@@ -111,12 +136,7 @@ export function UpdateCard({ autoCheck = false }: { autoCheck?: boolean }) {
             <p className="card-text" role="alert">
               {state.message}
             </p>
-            <button
-              className="btn small"
-              onClick={() => void openUrl(RELEASES_URL)}
-            >
-              Open the releases page
-            </button>
+            {releasesButton}
           </>
         )}
       </div>
