@@ -1,9 +1,20 @@
-## What's new in 0.1.2
+## What's new in 0.1.3
 
-- **Your circle always comes second.** After your answer, the next thing on
-  every result is who in your circle made it — whether you're in or not. The
-  analysis no longer jumps above your friends when the answer is no.
-- The first-launch steps for macOS are corrected for macOS 15 and later.
+- **Your answer on every row.** Each shortlist in your history says In, Not in
+  or Unknown, without opening it.
+- **See the proof.** *Why does it think I'm in?* shows your row in the file,
+  lit, with the rows around it.
+- **Rounds, linked.** A later round of the same company joins the earlier one,
+  so you can see who moved on.
+- **More ways in.** Paste a list of IDs (⌘V, or Ctrl+V on Windows), import a
+  recent download in one click, or have new shortlists in Downloads checked as
+  they arrive (off until you turn it on).
+- **Your CGPA, and only yours.** Add it in Settings to see where you stand on
+  each list. No one else's CGPA is ever shown.
+- **Share it.** An "I'm in" card to post, and a summary set for WhatsApp.
+- **Check for Updates**, in Settings.
+- Shorter wording throughout, shortlists that open at the top, and better
+  keyboard and VoiceOver support.
 
 ## Download
 
