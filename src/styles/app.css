@@ -732,10 +732,15 @@ button.round-step:hover {
 }
 
 /* "Import a recent download": the drop card's quieter second way in. Clear
-   of the card rather than tucked against its border, and centred under it,
-   as the card's own content is, so it reads as belonging to the card. */
+   of the card rather than tucked against its border, and on the same left
+   edge as the card and the section heading below, so it reads as belonging
+   to the card without crowding it. */
 .recent {
   margin-top: 12px;
+}
+
+/* Under the large, centred card of an empty season, centred with it. */
+.invite.large + .recent {
   text-align: center;
 }
 
