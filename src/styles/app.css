@@ -1015,11 +1015,10 @@ button.round-step:hover {
 .share-pass {
   height: min(64vh, 620px);
   aspect-ratio: 1080 / 1350;
-  border-radius: 22px;
-  box-shadow:
-    0 0 0 1px rgb(255 255 255 / 7%),
-    0 44px 100px rgb(0 0 0 / 55%),
-    0 12px 28px rgb(0 0 0 / 32%);
+  /* The card's corners and notches are cut out of the image itself, so the
+     shadow follows its shape rather than a box. */
+  filter: drop-shadow(0 34px 48px rgb(0 0 0 / 50%))
+    drop-shadow(0 10px 16px rgb(0 0 0 / 30%));
   transform-origin: 50% 85%;
   animation: pass-in 0.66s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

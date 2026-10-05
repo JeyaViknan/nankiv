@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DriveListItem, ImportOutcome, Verdict } from "./api";
-import { cardFacts, cardFields, ordinalLabel } from "./shareCard";
+import { LINES, cardFacts, cardFields, lineFor } from "./shareCard";
 
 function drive(id: number, at: string, verdict: Verdict): DriveListItem {
   return {
@@ -49,56 +49,54 @@ const drives = [
 ];
 
 describe("what goes on the card", () => {
-  it("is the company, the count, the round and the season", () => {
+  it("is the company, the round and the day", () => {
     const f = cardFacts(outcome, drives);
     expect(f.company).toBe("Siemens SISW");
-    expect(f.total).toBe(149);
     expect(f.round).toBe("Interview");
-    expect(f.ordinal).toBe(3);
     expect(f.when?.toISOString()).toBe("2026-10-05T10:00:00.000Z");
   });
 
   it("carries nothing that is not the student's to share", () => {
     const text = JSON.stringify(cardFacts(outcome, drives));
-    for (const leak of ["V9H0G6C4", "23BAI0002", "8.42"]) {
+    // Not who you are, not your CGPA, and not how many made the list.
+    for (const leak of ["V9H0G6C4", "23BAI0002", "8.42", "149"]) {
       expect(text).not.toContain(leak);
     }
   });
 });
 
-describe("ordinals", () => {
-  it("are written as people say them", () => {
-    expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 103].map(ordinalLabel)).toEqual([
-      "1st",
-      "2nd",
-      "3rd",
-      "4th",
-      "11th",
-      "12th",
-      "13th",
-      "21st",
-      "22nd",
-      "103rd",
-    ]);
+describe("the line under the company", () => {
+  it("is the same every time the same drive is shared", () => {
+    const a = cardFacts(outcome, drives);
+    const b = cardFacts(outcome, [...drives].reverse());
+    expect(lineFor(a)).toBe(lineFor(b));
+  });
+
+  it("moves on to another line with each turn, and comes back round", () => {
+    const f = cardFacts(outcome, drives);
+    const seen = new Set(LINES.map((_, i) => lineFor(f, i)));
+    expect(seen.size).toBe(LINES.length);
+    expect(lineFor(f, LINES.length)).toBe(lineFor(f));
+  });
+
+  it("is short, and never a number", () => {
+    for (const line of LINES) {
+      expect(line.length).toBeLessThanOrEqual(36);
+      // "Sheet1" is a name; a count on its own is not allowed.
+      expect(line).not.toMatch(/\b\d+\b/);
+    }
   });
 });
 
-describe("the fields under the tear line", () => {
-  it("are the round, the date and the season, in that order", () => {
+describe("the fields on the stub", () => {
+  it("are the round and the date, in that order", () => {
     const fields = cardFields(cardFacts(outcome, drives));
-    expect(fields.map(([label]) => label)).toEqual(["Round", "Date", "Season"]);
-    expect(fields[2]![1]).toBe("3rd shortlist");
+    expect(fields.map(([label]) => label)).toEqual(["Round", "Date"]);
   });
 
   it("leave out what isn't known, rather than show a blank", () => {
     expect(
-      cardFields({
-        company: "Zluri",
-        total: 40,
-        round: null,
-        ordinal: null,
-        when: null,
-      }),
+      cardFields({ company: "Zluri", round: null, when: null, seed: 1 }),
     ).toEqual([]);
   });
 

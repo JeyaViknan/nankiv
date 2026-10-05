@@ -2,8 +2,8 @@
  * Sharing an "I'm in" card: the card itself, presented on its own.
  *
  * No sheet, no title bar, no paragraph — the pass rises out of the blurred
- * window and settles, the way a pass is presented in Wallet, with two
- * floating actions beneath it: symbols only, Copy and Save. Escape, the close
+ * window and settles, the way a pass is presented in Wallet, with floating
+ * actions beneath it, symbols only: another line, Copy, Save. Escape, the close
  * button or a click outside puts it away. A button confirms by showing a tick
  * in place of its symbol for a moment, rather than with a toast, which would
  * sit behind the blur.
@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { api, type ImportOutcome } from "../lib/api";
 import { useDialog } from "../lib/dialog";
-import { cardFacts, cardPng, drawCard } from "../lib/shareCard";
+import { cardFacts, cardPng, drawCard, lineFor } from "../lib/shareCard";
 import { useStore } from "../lib/store";
 import { Icon } from "./Icon";
 
@@ -47,6 +47,9 @@ export function ShareCard({
 }) {
   const { drives } = useStore();
   const facts = useMemo(() => cardFacts(outcome, drives), [outcome, drives]);
+  // Each drive starts on its own line; the shuffle moves along the rest.
+  const [turn, setTurn] = useState(0);
+  const line = lineFor(facts, turn);
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
@@ -56,10 +59,10 @@ export function ShareCard({
   useEffect(() => {
     if (!canvas.current) return;
     setReady(false);
-    drawCard(canvas.current, facts)
+    drawCard(canvas.current, facts, line)
       .then(() => setReady(true))
       .catch(() => setReady(false));
-  }, [facts]);
+  }, [facts, line]);
 
   // Each confirmation stays a moment, then the button reads as itself again.
   useEffect(() => {
@@ -118,9 +121,17 @@ export function ShareCard({
         ref={canvas}
         className="share-pass"
         role="img"
-        aria-label={`Shortlisted — ${facts.company}, one of ${facts.total.toLocaleString()} students`}
+        aria-label={`Shortlisted — ${facts.company}. ${line}`}
       />
       <div className="share-actions">
+        <button
+          className="float-btn round glass"
+          onClick={() => setTurn((t) => t + 1)}
+          aria-label="Another line"
+          title="Another line"
+        >
+          <Icon name="shuffle" size={19} weight="medium" />
+        </button>
         <button
           className="float-btn round primary"
           onClick={() => void copy()}

@@ -28,6 +28,7 @@ const ALL: IconName[] = [
   "question",
   "save",
   "search",
+  "shuffle",
   "sheet",
   "trash",
   "tray",

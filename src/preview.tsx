@@ -175,7 +175,13 @@ function ShareOverlayDemo() {
 }
 
 /** The share card, drawn exactly as the app draws it. */
-function CardPreview({ facts }: { facts: CardFacts }) {
+function CardPreview({
+  facts,
+  large = false,
+}: {
+  facts: CardFacts;
+  large?: boolean;
+}) {
   const ref = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
     if (ref.current) void drawCard(ref.current, facts);
@@ -183,7 +189,7 @@ function CardPreview({ facts }: { facts: CardFacts }) {
   return (
     <canvas
       ref={ref}
-      style={{ width: 324, height: 405, borderRadius: 14 }}
+      style={large ? { width: 540, height: 675 } : { width: 324, height: 405 }}
       aria-label={`I'm in card for ${facts.company}`}
     />
   );
@@ -192,17 +198,21 @@ function CardPreview({ facts }: { facts: CardFacts }) {
 const CARDS: CardFacts[] = [
   {
     company: "Siemens SISW",
-    total: 149,
     round: "Interview",
-    ordinal: 4,
     when: new Date("2026-10-05T10:00:00Z"),
+    seed: 0,
   },
   {
     company: "Deloitte Consultative Offerings",
-    total: 1552,
     round: null,
-    ordinal: 1,
     when: new Date("2026-09-12T10:00:00Z"),
+    seed: 1,
+  },
+  {
+    company: "Axxela",
+    round: "Test",
+    when: new Date("2026-10-05T10:00:00Z"),
+    seed: 7,
   },
 ];
 
@@ -230,6 +240,27 @@ function Preview() {
     setTheme(t);
     localStorage.setItem("nankiv.theme", t);
     applyTheme(t);
+  }
+
+  // The cards alone, large, on grey: the corners and notches are cut out of
+  // the image, and only show against something.
+  if (window.location.hash === "#cards") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 32,
+          padding: 32,
+          minHeight: "100vh",
+          background: "#48484a",
+        }}
+      >
+        {CARDS.map((f) => (
+          <CardPreview key={f.company} facts={f} large />
+        ))}
+      </div>
+    );
   }
 
   return (

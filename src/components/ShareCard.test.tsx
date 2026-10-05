@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ImportOutcome } from "../lib/api";
 import { useStore } from "../lib/store";
+import { drawCard } from "../lib/shareCard";
 import { ShareCard } from "./ShareCard";
 
 // jsdom has no canvas drawing; the card's own drawing is tested elsewhere.
@@ -36,7 +37,7 @@ beforeEach(() => {
 });
 
 describe("sharing the card", () => {
-  it("presents the card on its own, with its two actions", async () => {
+  it("presents the card on its own, with its actions", async () => {
     render(<ShareCard outcome={outcome} onClose={() => {}} />);
     expect(
       screen.getByRole("dialog", { name: "Share the news" }),
@@ -50,9 +51,28 @@ describe("sharing the card", () => {
     );
     expect(screen.getByRole("button", { name: "Save image" })).toBeEnabled();
     // Symbols only: no words on the buttons themselves.
-    for (const name of ["Copy image", "Save image"]) {
+    for (const name of ["Another line", "Copy image", "Save image"]) {
       expect(screen.getByRole("button", { name })).toHaveTextContent("");
     }
+  });
+
+  it("never says how many made the list", () => {
+    render(<ShareCard outcome={outcome} onClose={() => {}} />);
+    const card = screen.getByRole("img", { name: /Shortlisted/ });
+    expect(card.getAttribute("aria-label")).not.toMatch(/149/);
+  });
+
+  it("offers another line, and draws the card again with it", async () => {
+    const user = userEvent.setup();
+    render(<ShareCard outcome={outcome} onClose={() => {}} />);
+    const card = screen.getByRole("img", { name: /Shortlisted/ });
+    const first = card.getAttribute("aria-label");
+    vi.mocked(drawCard).mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Another line" }));
+    expect(card.getAttribute("aria-label")).not.toBe(first);
+    const [, , line] = vi.mocked(drawCard).mock.lastCall!;
+    expect(card.getAttribute("aria-label")).toContain(line);
   });
 
   it("confirms a copy with a tick, and says so to a screen reader", async () => {
