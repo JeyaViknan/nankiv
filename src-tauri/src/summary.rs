@@ -182,14 +182,14 @@ mod tests {
         // Too few matched to say anything: no findings, and no blank line.
         let thin = analysis(Some(CutoffVerdict::NoCgpaFilter), &["ECE"], false);
         assert_eq!(
-            group_chat(&d, &[d.clone()], &thin),
+            group_chat(&d, std::slice::from_ref(&d), &thin),
             "*Citi*\n74 shortlisted"
         );
 
         // A branch mix like the batch's is not news.
         let plain = analysis(Some(CutoffVerdict::NoCgpaFilter), &[], true);
         assert_eq!(
-            group_chat(&d, &[d.clone()], &plain),
+            group_chat(&d, std::slice::from_ref(&d), &plain),
             "*Citi*\n74 shortlisted\n\nNo CGPA cutoff seen"
         );
     }
@@ -207,7 +207,7 @@ mod tests {
             },
             CutoffVerdict::NoCgpaFilter,
         ] {
-            let text = group_chat(&d, &[d.clone()], &analysis(Some(v), &[], true));
+            let text = group_chat(&d, std::slice::from_ref(&d), &analysis(Some(v), &[], true));
             let line = text.lines().last().unwrap().to_lowercase();
             assert!(!line.contains("official"), "{line}");
             assert!(line.contains("estimate") || line.contains("seen"), "{line}");
@@ -217,7 +217,8 @@ mod tests {
     #[test]
     fn it_never_says_how_you_did() {
         let d = drive(1, "Citi", 74);
-        let text = group_chat(&d, &[d.clone()], &analysis(None, &[], true)).to_lowercase();
+        let text =
+            group_chat(&d, std::slice::from_ref(&d), &analysis(None, &[], true)).to_lowercase();
         for word in ["you", "i'm", "not in", "shortlisted you"] {
             assert!(!text.contains(word), "{word} in {text}");
         }
