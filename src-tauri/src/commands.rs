@@ -610,7 +610,7 @@ fn record_shortlist(
         }
     }
 
-    let drive_id = s.insert_drive(
+    let drive_id = match s.insert_drive(
         &company,
         drive_date.as_deref(),
         filename,
@@ -620,7 +620,16 @@ fn record_shortlist(
         &parsed.neo_ids,
         &parsed.reg_nos,
         named.round.as_deref(),
-    )?;
+    ) {
+        // The same list again. If it was first imported before positions were
+        // kept, it has them now, and "Why does it think I'm in?" can show the
+        // file. Positions already kept are left as they were.
+        Err(crate::store::StoreError::DuplicateDrive { drive_id, company }) => {
+            s.record_origins(drive_id, &member_origins(parsed))?;
+            return Err(crate::store::StoreError::DuplicateDrive { drive_id, company }.into());
+        }
+        other => other?,
+    };
     s.record_origins(drive_id, &member_origins(parsed))?;
 
     // Harvest identity links before resolving, so this file improves its own
@@ -806,6 +815,67 @@ pub fn get_drive_detail(state: tauri::State<AppState>, id: i64) -> R<ImportOutco
     let profile = s.profile()?;
     let identity = engine::build_graph(&s)?;
     drive_outcome(&s, id, &identity, &profile)
+}
+
+/// The evidence behind a drive, finding the file again if it has to.
+///
+/// Drives imported before positions were kept can't show the lines around
+/// yours. Their file is usually still in Downloads under the name it was
+/// imported as: if one there holds exactly the drive's list, its positions
+/// are recorded, as they would have been at import. Nothing else is read, and
+/// a file with any other list is left alone. Asked for only when the student
+/// opens the evidence, so a permission prompt for Downloads follows a click.
+#[tauri::command]
+pub fn find_evidence(
+    app: tauri::AppHandle,
+    state: tauri::State<AppState>,
+    drive_id: i64,
+) -> R<engine::Evidence> {
+    use tauri::Manager;
+    let (drive, profile, evidence) = {
+        let s = store(&state);
+        let drive = s
+            .drive(drive_id)?
+            .ok_or_else(|| CommandError::new("not_found", "That drive is no longer stored."))?;
+        let profile = s.profile()?;
+        let evidence = engine::evidence(&s, &drive, &profile)?;
+        (drive, profile, evidence)
+    };
+    let yours_listed = match (&evidence.key, &evidence.yours) {
+        (Some(kind), Some(v)) => store(&state).drive_has(drive_id, *kind, v)?,
+        _ => false,
+    };
+    if !evidence.excerpt.is_empty() || !yours_listed {
+        return Ok(evidence);
+    }
+    let Ok(downloads) = app.path().download_dir() else {
+        return Ok(evidence);
+    };
+    // Read without the store held: a large sheet takes a moment to parse.
+    let Some(parsed) = original_file(&downloads, &drive) else {
+        return Ok(evidence);
+    };
+    let s = store(&state);
+    s.record_origins(drive_id, &member_origins(&parsed))?;
+    Ok(engine::evidence(&s, &drive, &profile)?)
+}
+
+/// A drive's own file, if it is still in `downloads` under the name it was
+/// imported as (or with a browser's `%20` undone) and still holds exactly the
+/// drive's list.
+fn original_file(downloads: &Path, drive: &crate::store::DriveRecord) -> Option<parse::ParsedFile> {
+    let name = drive.source_filename.as_str();
+    let mut names = vec![name.to_string()];
+    if name.contains("%20") {
+        names.push(name.replace("%20", " "));
+    }
+    names
+        .into_iter()
+        .filter(|n| !n.contains(['/', '\\']))
+        .map(|n| downloads.join(n))
+        .filter(|p| p.is_file())
+        .filter_map(|p| parse::parse_file(&p).ok())
+        .find(|p| p.content_hash == drive.content_hash)
 }
 
 /// Everything the drive screen shows for one drive.
@@ -1373,5 +1443,80 @@ mod recent_download_tests {
             PathBuf::from("a.xlsx"),
         )];
         assert!(just_downloaded(old, now).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod original_file_tests {
+    use super::*;
+    use crate::store::DriveRecord;
+
+    const LIST: &str = "S.No,Name,Neo ID\n1,Asha,A1B2C3D4\n2,Ravi,E5F6G7H8\n3,Meena,J9K0L1M2\n";
+
+    fn drive_for(name: &str, content: &str) -> DriveRecord {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("probe.csv");
+        std::fs::write(&path, content).unwrap();
+        let parsed = parse::parse_file(&path).unwrap();
+        DriveRecord {
+            id: 1,
+            company: "Zluri".into(),
+            drive_date: None,
+            imported_at: "2026-10-01 09:00:00".into(),
+            source_filename: name.into(),
+            content_hash: parsed.content_hash,
+            shape: "neo_id_only".into(),
+            primary_key: Some("neo_id".into()),
+            total_students: 3,
+            round_label: None,
+            parent_drive_id: None,
+        }
+    }
+
+    #[test]
+    fn finds_the_same_list_under_the_name_it_was_imported_as() {
+        let downloads = tempfile::tempdir().unwrap();
+        std::fs::write(downloads.path().join("Zluri shortlist.csv"), LIST).unwrap();
+        let found = original_file(downloads.path(), &drive_for("Zluri shortlist.csv", LIST))
+            .expect("the file is there");
+        let rows: Vec<_> = member_origins(&found)
+            .into_iter()
+            .map(|o| (o.value, o.row))
+            .collect();
+        assert_eq!(
+            rows,
+            vec![
+                ("A1B2C3D4".to_string(), 2),
+                ("E5F6G7H8".to_string(), 3),
+                ("J9K0L1M2".to_string(), 4),
+            ]
+        );
+    }
+
+    #[test]
+    fn undoes_a_browsers_percent_twenty() {
+        let downloads = tempfile::tempdir().unwrap();
+        std::fs::write(downloads.path().join("Zluri shortlist.csv"), LIST).unwrap();
+        assert!(
+            original_file(downloads.path(), &drive_for("Zluri%20shortlist.csv", LIST)).is_some()
+        );
+    }
+
+    #[test]
+    fn leaves_a_file_with_any_other_list_alone() {
+        // Same name, one student different: not this drive's file.
+        let downloads = tempfile::tempdir().unwrap();
+        let edited = LIST.replace("J9K0L1M2", "N3P4Q5R6");
+        std::fs::write(downloads.path().join("Zluri shortlist.csv"), edited).unwrap();
+        assert!(original_file(downloads.path(), &drive_for("Zluri shortlist.csv", LIST)).is_none());
+    }
+
+    #[test]
+    fn finds_nothing_when_the_file_is_gone_or_the_name_leaves_downloads() {
+        let downloads = tempfile::tempdir().unwrap();
+        assert!(original_file(downloads.path(), &drive_for("Zluri shortlist.csv", LIST)).is_none());
+        assert!(
+            original_file(downloads.path(), &drive_for("../Zluri shortlist.csv", LIST)).is_none()
+        );
     }
 }

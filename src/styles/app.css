@@ -494,6 +494,10 @@ p {
   user-select: text;
 }
 
+.why .why-looking {
+  color: var(--text-3);
+}
+
 /* The file around your line: its own heading, its own row numbers, yours lit.
    Set like the sheet it came from, so it reads as evidence rather than as a
    message about evidence. */

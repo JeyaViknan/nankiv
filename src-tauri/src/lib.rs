@@ -167,6 +167,7 @@ pub fn run() {
             commands::rename_drive,
             commands::set_drive_round,
             commands::get_drive_detail,
+            commands::find_evidence,
             commands::lookup_identifier,
             commands::search_students,
             commands::compare_rounds,

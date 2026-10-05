@@ -424,6 +424,11 @@ export const api = {
   getDriveDetail: (id: number) =>
     invoke<ImportOutcome>("get_drive_detail", { id }),
 
+  /** The evidence for a drive, finding its file in Downloads if a drive from
+   *  before positions were kept needs it. */
+  findEvidence: (driveId: number) =>
+    invoke<Evidence>("find_evidence", { driveId }),
+
   lookupIdentifier: (query: string) =>
     invoke<PersonResult[]>("lookup_identifier", { query }),
   searchStudents: (query: string) =>

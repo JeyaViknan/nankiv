@@ -7,6 +7,7 @@
  * so a new state cannot be added without deciding how it looks.
  */
 
+import { useState } from "react";
 import type { Evidence, Verdict, UndeterminedReason } from "../lib/api";
 import { explainVerdict, hasExcerpt } from "../lib/evidence";
 import { Excerpt } from "./Excerpt";
@@ -16,29 +17,61 @@ import { CountUp } from "./CountUp";
 /**
  * The working behind an answer, one click away. Closed by default: the answer
  * is the news, and the evidence is for whoever wants to check it. A yes shows
- * the file around your line; anything else, or a drive from before lines were
- * kept, says it in a sentence.
+ * the file around your line; anything else says it in a sentence.
+ *
+ * A yes from before positions were kept has no lines to show until its file
+ * is found again, so opening it asks for them once, and says the sentence
+ * only if the file is gone.
  */
 function Why({
   question,
   verdict,
-  evidence,
+  evidence: given,
+  findEvidence,
 }: {
   question: string;
   verdict: Verdict;
   evidence?: Evidence;
+  findEvidence?: () => Promise<Evidence>;
 }) {
+  const [found, setFound] = useState<Evidence | null>(null);
+  const [looking, setLooking] = useState(false);
+  const [looked, setLooked] = useState(false);
+  const evidence = found ?? given;
   if (!evidence) return null;
-  const shown = verdict.status === "shortlisted" && hasExcerpt(evidence);
+
+  const yes = verdict.status === "shortlisted";
+  const shown = yes && hasExcerpt(evidence);
   const text = shown ? null : explainVerdict(verdict, evidence);
   if (!shown && !text) return null;
+
+  function onToggle(e: React.SyntheticEvent<HTMLDetailsElement>) {
+    if (!e.currentTarget.open || shown || !yes || looked || !findEvidence) {
+      return;
+    }
+    setLooked(true);
+    setLooking(true);
+    findEvidence()
+      .then(setFound)
+      .catch(() => {})
+      .finally(() => setLooking(false));
+  }
+
   return (
-    <details className="why">
+    <details className="why" onToggle={onToggle}>
       <summary>
         {question}
         <Icon name="chevronRight" size={11} className="why-chevron" />
       </summary>
-      {shown ? <Excerpt evidence={evidence} /> : <p>{text}</p>}
+      {shown ? (
+        <Excerpt evidence={evidence} />
+      ) : looking ? (
+        <p className="why-looking" role="status">
+          Finding your row…
+        </p>
+      ) : (
+        <p>{text}</p>
+      )}
     </details>
   );
 }
@@ -82,6 +115,8 @@ interface BannerProps {
   onFix?: () => void;
   /** What the answer rests on. */
   evidence?: Evidence;
+  /** Finds the file again for a yes from before positions were kept. */
+  findEvidence?: () => Promise<Evidence>;
   /** Offered only for a yes: makes an "I'm in" card. */
   onShare?: () => void;
 }
@@ -93,6 +128,7 @@ export function VerdictBanner({
   totalStudents,
   onFix,
   evidence,
+  findEvidence,
   onShare,
 }: BannerProps) {
   // The answer people hope for gets the room, the motion and the one flourish
@@ -114,6 +150,7 @@ export function VerdictBanner({
               question="Why does it think I'm in?"
               verdict={verdict}
               evidence={evidence}
+              findEvidence={findEvidence}
             />
             {onShare && (
               <button className="link-button share-link" onClick={onShare}>

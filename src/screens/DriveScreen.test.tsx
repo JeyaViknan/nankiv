@@ -10,6 +10,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { api } from "../lib/api";
 import type {
   ImportOutcome,
   PersonResult,
@@ -144,20 +145,39 @@ describe("the evidence behind the answer", () => {
     expect(screen.getByText(/Matched by Neo ID/)).toBeInTheDocument();
   });
 
-  it("says it in a sentence for a drive whose lines were never kept", async () => {
+  it("finds the file again for a yes from before lines were kept", async () => {
     const user = userEvent.setup();
     const o = outcome({ status: "shortlisted" });
-    render(
-      <DriveScreen
-        outcome={{ ...o, evidence: { ...o.evidence, excerpt: [] } }}
-        onFix={() => {}}
-      />,
-    );
+    const old = { ...o.evidence, found_at: null, excerpt: [] };
+    const find = vi.spyOn(api, "findEvidence").mockResolvedValue(o.evidence);
+    render(<DriveScreen outcome={{ ...o, evidence: old }} onFix={() => {}} />);
+
     await user.click(screen.getByText("Why does it think I'm in?"));
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(find).toHaveBeenCalledWith(1);
     expect(
-      screen.getByText(/is in row 42, column C of “Round 2”/),
+      await screen.findByRole("table", { name: /Round 2/ }),
     ).toBeInTheDocument();
+
+    // Asked once: closing and opening again does not look again.
+    await user.click(screen.getByText("Why does it think I'm in?"));
+    await user.click(screen.getByText("Why does it think I'm in?"));
+    expect(find).toHaveBeenCalledTimes(1);
+    find.mockRestore();
+  });
+
+  it("says it in a sentence when the file is gone", async () => {
+    const user = userEvent.setup();
+    const o = outcome({ status: "shortlisted" });
+    const old = { ...o.evidence, found_at: null, excerpt: [] };
+    const find = vi.spyOn(api, "findEvidence").mockResolvedValue(old);
+    render(<DriveScreen outcome={{ ...o, evidence: old }} onFix={() => {}} />);
+
+    await user.click(screen.getByText("Why does it think I'm in?"));
+    expect(
+      await screen.findByText(/V9H0G6C4, is one of 96 in this file/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    find.mockRestore();
   });
 
   it("asks the other question when you're not in", () => {

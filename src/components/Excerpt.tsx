@@ -19,11 +19,11 @@ export function Excerpt({ evidence }: { evidence: Evidence }) {
 
   const key = keyName(evidence.key);
   const pasted = at.sheet === PASTED_SHEET;
+  // Sheet names arrive as typed, invisible characters and stray spaces too.
+  const sheet = at.sheet.replace(/[\u200b-\u200d\ufeff]/g, "").trim();
   const where = pasted
     ? "What you pasted"
-    : [at.sheet, at.column && `Column ${at.column}`]
-        .filter(Boolean)
-        .join(" · ");
+    : [sheet, at.column && `Column ${at.column}`].filter(Boolean).join(" · ");
   const heading = at.header ?? key.charAt(0).toUpperCase() + key.slice(1);
 
   return (

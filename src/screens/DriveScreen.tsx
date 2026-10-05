@@ -190,6 +190,7 @@ export function DriveScreen({
         totalStudents={outcome.total_students}
         onFix={onFix}
         evidence={outcome.evidence}
+        findEvidence={() => api.findEvidence(outcome.drive_id)}
         onShare={() => setSharing(true)}
       />
       {sharing && (

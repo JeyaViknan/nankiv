@@ -47,3 +47,23 @@ describe("the excerpt", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe("the sheet's name", () => {
+  it("is shown without the invisible characters a file can carry", () => {
+    const e: Evidence = {
+      ...pasted,
+      key: "neo_id",
+      found_at: {
+        kind: "neo_id",
+        value: "A1B2C3D4",
+        sheet: "​RFPIO ppt& TEST ",
+        row: 4,
+        column: "B",
+        header: "Neo ID",
+      },
+      excerpt: [{ row: 4, value: "A1B2C3D4" }],
+    };
+    render(<Excerpt evidence={e} />);
+    expect(screen.getByText("RFPIO ppt& TEST · Column B")).toBeInTheDocument();
+  });
+});
