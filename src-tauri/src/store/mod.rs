@@ -384,6 +384,37 @@ impl Store {
             .optional()?)
     }
 
+    /// The identifiers on either side of one in its sheet, in file order and
+    /// including it: the lines a student would see around theirs.
+    pub fn origins_around(
+        &self,
+        drive_id: i64,
+        at: &MemberOrigin,
+        each_side: u32,
+    ) -> Result<Vec<MemberOrigin>, StoreError> {
+        let near = |cmp: &str, order: &str| -> Result<Vec<MemberOrigin>, StoreError> {
+            let sql = format!(
+                "SELECT kind, value, sheet, row_number, col, header
+                 FROM drive_member_origins
+                 WHERE drive_id = ?1 AND kind = ?2 AND sheet = ?3 AND row_number {cmp} ?4
+                 ORDER BY row_number {order} LIMIT ?5"
+            );
+            let mut stmt = self.conn.prepare(&sql)?;
+            let rows = stmt
+                .query_map(
+                    params![drive_id, at.kind, at.sheet, at.row, each_side],
+                    map_origin,
+                )?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        };
+        let mut lines = near("<", "DESC")?;
+        lines.reverse();
+        lines.push(at.clone());
+        lines.extend(near(">", "ASC")?);
+        Ok(lines)
+    }
+
     pub fn origins(&self, drive_id: i64) -> Result<Vec<MemberOrigin>, StoreError> {
         let mut stmt = self.conn.prepare(
             "SELECT kind, value, sheet, row_number, col, header

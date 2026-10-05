@@ -14,6 +14,7 @@ const base: Evidence = {
     column: "C",
     header: "Neo ID",
   },
+  excerpt: [],
 };
 
 describe("why it thinks you're in", () => {

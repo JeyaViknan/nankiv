@@ -14,6 +14,21 @@ const KEY_NAME: Record<KeyKind, string> = {
   reg_no: "registration number",
 };
 
+/** Whether the file's own lines around yours can be shown. Not for drives
+ *  imported before lines were kept. */
+export function hasExcerpt(evidence: Evidence): boolean {
+  return (
+    evidence.key !== null &&
+    evidence.found_at !== null &&
+    evidence.excerpt.length > 0
+  );
+}
+
+/** "Neo ID", "registration number": what a file lists students by. */
+export function keyName(kind: KeyKind): string {
+  return KEY_NAME[kind];
+}
+
 /** The sheet name a pasted list is recorded under. */
 export const PASTED_SHEET = "Pasted list";
 

@@ -8,13 +8,16 @@
  */
 
 import type { Evidence, Verdict, UndeterminedReason } from "../lib/api";
-import { explainVerdict } from "../lib/evidence";
+import { explainVerdict, hasExcerpt } from "../lib/evidence";
+import { Excerpt } from "./Excerpt";
 import { Icon } from "./Icon";
 import { CountUp } from "./CountUp";
 
 /**
  * The working behind an answer, one click away. Closed by default: the answer
- * is the news, and the evidence is for whoever wants to check it.
+ * is the news, and the evidence is for whoever wants to check it. A yes shows
+ * the file around your line; anything else, or a drive from before lines were
+ * kept, says it in a sentence.
  */
 function Why({
   question,
@@ -25,15 +28,17 @@ function Why({
   verdict: Verdict;
   evidence?: Evidence;
 }) {
-  const text = evidence && explainVerdict(verdict, evidence);
-  if (!text) return null;
+  if (!evidence) return null;
+  const shown = verdict.status === "shortlisted" && hasExcerpt(evidence);
+  const text = shown ? null : explainVerdict(verdict, evidence);
+  if (!shown && !text) return null;
   return (
     <details className="why">
       <summary>
         {question}
         <Icon name="chevronRight" size={11} className="why-chevron" />
       </summary>
-      <p>{text}</p>
+      {shown ? <Excerpt evidence={evidence} /> : <p>{text}</p>}
     </details>
   );
 }

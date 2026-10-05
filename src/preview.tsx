@@ -359,11 +359,29 @@ function Preview() {
               verdict={IN}
               company="Siemens SISW"
               totalStudents={166}
+              evidence={{
+                key: "neo_id",
+                yours: "X5L6S5B8",
+                listed: 166,
+                found_at: {
+                  kind: "neo_id",
+                  value: "X5L6S5B8",
+                  sheet: "Shortlist",
+                  row: 42,
+                  column: "C",
+                  header: "Neo ID",
+                },
+                excerpt: [
+                  { row: 40, value: "H4J3V6N2" },
+                  { row: 41, value: "J2T0S6Y7" },
+                  { row: 42, value: "X5L6S5B8" },
+                  { row: 43, value: "D7J9E5J8" },
+                  { row: 44, value: "K8M2P4R6" },
+                ],
+              }}
             />
             <div className="provenance">
               <span className="name-button">Siemens SISW</span>
-              <span className="row-dot">·</span>
-              <span>166 shortlisted</span>
               <span className="row-dot">·</span>
               <span className="prov-key">keyed by Neo ID</span>
             </div>
@@ -436,7 +454,7 @@ function Preview() {
                   ]}
                   onChoose={() => {}}
                 />
-                <button className="btn">Copy summary for the group chat</button>
+                <button className="btn">Copy summary</button>
               </div>
             </div>
           </Section>

@@ -94,6 +94,14 @@ export interface Evidence {
   listed: number;
   /** Where yours appears; absent for drives imported before this was kept. */
   found_at: MemberOrigin | null;
+  /** The lines around yours in that sheet, yours among them, in file order. */
+  excerpt: ExcerptLine[];
+}
+
+/** One identifier as its line in the file has it. */
+export interface ExcerptLine {
+  row: number;
+  value: string;
 }
 
 export interface RoundStep {

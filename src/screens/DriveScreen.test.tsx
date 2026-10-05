@@ -7,7 +7,7 @@
  * you came to check on were pushed down exactly when you most wanted them.
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -54,6 +54,15 @@ function outcome(you: Verdict): ImportOutcome {
               header: "Neo ID",
             }
           : null,
+      excerpt:
+        you.status === "shortlisted"
+          ? [
+              { row: 40, value: "H4J3V6N2" },
+              { row: 41, value: "J2T0S6Y7" },
+              { row: 42, value: "V9H0G6C4" },
+              { row: 43, value: "D7J9E5J8" },
+            ]
+          : [],
     },
     progression: null,
     friends: [
@@ -105,7 +114,7 @@ describe("the result page", () => {
 });
 
 describe("the evidence behind the answer", () => {
-  it("shows the row to check, once asked", async () => {
+  it("shows the file around your line, once asked", async () => {
     const user = userEvent.setup();
     render(
       <DriveScreen
@@ -117,6 +126,35 @@ describe("the evidence behind the answer", () => {
     expect(why.closest("details")).not.toHaveAttribute("open");
     await user.click(why);
     expect(why.closest("details")).toHaveAttribute("open");
+
+    const sheet = screen.getByRole("table", { name: /Round 2/ });
+    const rows = within(sheet).getAllByRole("row");
+    // The heading as the file wrote it, then the lines in file order.
+    expect(rows.map((r) => r.textContent)).toEqual([
+      "RowNeo ID",
+      "40H4J3V6N2",
+      "41J2T0S6Y7",
+      "42V9H0G6C4You",
+      "43D7J9E5J8",
+    ]);
+    // Yours, and only yours, is the one lit.
+    expect(rows[3]).toHaveAttribute("aria-current", "true");
+    expect(rows.filter((r) => r.hasAttribute("aria-current"))).toHaveLength(1);
+    expect(screen.getByText("Round 2 · Column C")).toBeInTheDocument();
+    expect(screen.getByText(/Matched by Neo ID/)).toBeInTheDocument();
+  });
+
+  it("says it in a sentence for a drive whose lines were never kept", async () => {
+    const user = userEvent.setup();
+    const o = outcome({ status: "shortlisted" });
+    render(
+      <DriveScreen
+        outcome={{ ...o, evidence: { ...o.evidence, excerpt: [] } }}
+        onFix={() => {}}
+      />,
+    );
+    await user.click(screen.getByText("Why does it think I'm in?"));
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(
       screen.getByText(/is in row 42, column C of “Round 2”/),
     ).toBeInTheDocument();

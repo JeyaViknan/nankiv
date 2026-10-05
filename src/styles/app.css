@@ -380,10 +380,14 @@ p {
 /* The three answers are not the same size, because they are not the same news.
    A yes owns the surface; a no is calm and hands the screen to the analysis
    that explains it; a can't-tell is a task with a button on it. */
+/* The icon sits beside the headline (the title and the line under it) and
+   stays there whatever opens below: the evidence, a fix. As a flex row it
+   re-centred on the whole banner, and slid down as the evidence opened. */
 .verdict {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  column-gap: 18px;
   padding: 20px 22px;
   border-radius: var(--r-lg);
   background: var(--surface);
@@ -392,6 +396,7 @@ p {
 }
 
 .verdict-icon {
+  grid-row: 1 / span 2;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -399,6 +404,15 @@ p {
   place-items: center;
   flex: none;
   color: #fff;
+}
+
+.verdict > div:not(.verdict-icon) {
+  display: contents;
+}
+
+.verdict > div:not(.verdict-icon) > * {
+  grid-column: 2;
+  justify-self: start;
 }
 
 .verdict-title {
@@ -480,9 +494,133 @@ p {
   user-select: text;
 }
 
+/* The file around your line: its own heading, its own row numbers, yours lit.
+   Set like the sheet it came from, so it reads as evidence rather than as a
+   message about evidence. */
+.excerpt {
+  margin-top: 12px;
+  width: min(100%, 300px);
+}
+
+.why .excerpt-where {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.excerpt-sheet {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.excerpt-line {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  align-items: center;
+  min-height: 27px;
+  padding-right: 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.excerpt-line.head {
+  min-height: 25px;
+  border-top: 0;
+  background: var(--surface-2);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+
+/* The gutter, as a spreadsheet numbers it. */
+.excerpt-n {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  margin-right: 12px;
+  border-right: 1px solid var(--border-subtle);
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.excerpt-id {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Yours: lit once as the excerpt opens, and left lit. A tint and a rule, the
+   way a cell is selected — no glow, no bounce. */
+.excerpt-line.you {
+  color: var(--text);
+  font-weight: 600;
+  animation: line-lit 0.5s ease-out 0.12s both;
+}
+
+.excerpt-line.you .excerpt-n {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.excerpt-you {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ok);
+  animation: fade-in 0.4s ease-out 0.3s both;
+}
+
+@keyframes line-lit {
+  from {
+    background: transparent;
+    box-shadow: inset 0 0 0 transparent;
+  }
+  to {
+    background: var(--ok-subtle);
+    box-shadow: inset 2px 0 0 var(--ok-solid);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.why .excerpt-basis {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.excerpt-basis .sym,
+.excerpt-basis svg {
+  color: var(--ok);
+}
+
 /* A yes, at the size a yes deserves. */
 .verdict.yes {
-  gap: 22px;
+  column-gap: 22px;
   padding: 30px 30px;
 }
 

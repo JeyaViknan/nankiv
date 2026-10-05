@@ -337,7 +337,20 @@ pub struct Evidence {
     /// Where yours appears, when it does and the file's layout was recorded.
     /// Drives imported before positions were kept have none.
     pub found_at: Option<crate::store::MemberOrigin>,
+    /// The lines around yours in that sheet, yours among them, in file order.
+    /// Read from what the drive already stores; empty without `found_at`.
+    pub excerpt: Vec<ExcerptLine>,
 }
+
+/// One identifier as its line in the file has it.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ExcerptLine {
+    pub row: u32,
+    pub value: String,
+}
+
+/// How many lines the excerpt shows on each side of yours.
+const EXCERPT_SIDE: u32 = 2;
 
 /// The evidence behind your verdict on a stored drive.
 pub fn evidence(
@@ -369,11 +382,23 @@ pub fn evidence(
         Some(v) => store.origin(drive.id, kind, v)?,
         None => None,
     };
+    let excerpt = match &found_at {
+        Some(at) => store
+            .origins_around(drive.id, at, EXCERPT_SIDE)?
+            .into_iter()
+            .map(|o| ExcerptLine {
+                row: o.row,
+                value: o.value,
+            })
+            .collect(),
+        None => Vec::new(),
+    };
     Ok(Evidence {
         key,
         yours,
         listed: drive.total_students,
         found_at,
+        excerpt,
     })
 }
 
@@ -1189,6 +1214,72 @@ mod tests {
         let only = stored(&s, "Tekion", "a", &ids(0, 10), None);
         assert_eq!(progression(&s, only, &Profile::default()).unwrap(), None);
         assert!(round_labels(&s.drives().unwrap()).is_empty());
+    }
+
+    #[test]
+    fn evidence_shows_the_lines_around_yours_and_only_from_your_sheet() {
+        use crate::store::MemberOrigin;
+        let s = Store::open_in_memory().unwrap();
+        let members = ids(0, 10);
+        let id = stored(&s, "HPE", "a", &members, None);
+        let at = |value: &str, sheet: &str, row: u32| MemberOrigin {
+            kind: "neo_id".into(),
+            value: value.into(),
+            sheet: sheet.into(),
+            row,
+            column: Some("C".into()),
+            header: Some("Neo ID".into()),
+        };
+        // A gap at 5 (a blank line in the file), and a second sheet whose rows
+        // sit beside yours by number but not in the file.
+        s.record_origins(
+            id,
+            &[
+                at("A0B0C0D0", "Round 2", 2),
+                at("A0B0C0D1", "Round 2", 3),
+                at("A0B0C0D2", "Round 2", 4),
+                at("A0B0C0D3", "Round 2", 6),
+                at("A0B0C0D4", "Round 2", 7),
+                at("A0B0C0D5", "Round 2", 8),
+                at("A0B0C0D6", "Round 2", 9),
+                at("A0B0C0D7", "Other", 5),
+            ],
+        )
+        .unwrap();
+        let drive = s.drive(id).unwrap().unwrap();
+        let excerpt = |neo: &str| {
+            let profile = Profile {
+                neo_id: Some(neo.into()),
+                ..Default::default()
+            };
+            evidence(&s, &drive, &profile)
+                .unwrap()
+                .excerpt
+                .into_iter()
+                .map(|l| (l.row, l.value))
+                .collect::<Vec<_>>()
+        };
+
+        assert_eq!(
+            excerpt("A0B0C0D3"),
+            vec![
+                (3, "A0B0C0D1".to_string()),
+                (4, "A0B0C0D2".to_string()),
+                (6, "A0B0C0D3".to_string()),
+                (7, "A0B0C0D4".to_string()),
+                (8, "A0B0C0D5".to_string()),
+            ]
+        );
+        // At the top of the file there is nothing above to show.
+        assert_eq!(
+            excerpt("A0B0C0D0")
+                .iter()
+                .map(|(r, _)| *r)
+                .collect::<Vec<_>>(),
+            vec![2, 3, 4]
+        );
+        // Not on the list: no row, so nothing to show.
+        assert!(excerpt("Z9Y9X9W9").is_empty());
     }
 
     #[test]

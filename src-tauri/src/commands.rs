@@ -1105,8 +1105,8 @@ pub fn wipe_all_data(state: tauri::State<AppState>) -> R<()> {
     Ok(())
 }
 
-/// A shareable text summary. Aggregates only, and never the student's own
-/// status — that is theirs to disclose.
+/// The summary for the group chat; see `summary`. Aggregates only, and never
+/// the student's own status — that is theirs to disclose.
 #[tauri::command]
 pub fn share_summary(state: tauri::State<AppState>, drive_id: i64) -> R<String> {
     let s = store(&state);
@@ -1116,32 +1116,7 @@ pub fn share_summary(state: tauri::State<AppState>, drive_id: i64) -> R<String> 
     let profile = s.profile()?;
     let identity = engine::build_graph(&s)?;
     let a = engine::analyse_drive(&s, drive_id, &identity, &profile)?;
-
-    let mut out = format!("{} — {} shortlisted", drive.company, drive.total_students);
-    if let Some(d) = &drive.drive_date {
-        out.push_str(&format!(" ({d})"));
-    }
-    out.push('\n');
-
-    if a.sufficient {
-        if let Some(c) = &a.cutoff {
-            out.push_str(&format!("{}\n", c.statement));
-        }
-        if let Some(b) = &a.branches {
-            out.push_str(&format!("{}\n", b.statement));
-        }
-        out.push_str(&format!(
-            "Based on {} of {} students matched to CGPA data.\n",
-            a.matched_students, a.total_students
-        ));
-    } else {
-        out.push_str(&format!(
-            "Too few matched to CGPA data ({} of {}) to analyse.\n",
-            a.matched_students, a.total_students
-        ));
-    }
-    out.push_str("\nvia nankiv");
-    Ok(out)
+    Ok(crate::summary::group_chat(&drive, &s.drives()?, &a))
 }
 
 /// Returns, and forgets, a `nankiv://` link that arrived before the interface

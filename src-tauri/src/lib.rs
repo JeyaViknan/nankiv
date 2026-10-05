@@ -15,6 +15,7 @@ pub mod naming;
 pub mod parse;
 pub mod reference;
 pub mod store;
+pub mod summary;
 pub mod symbols;
 pub mod updates;
 pub mod watch;

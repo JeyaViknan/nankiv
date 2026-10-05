@@ -50,7 +50,13 @@ function outcome(id: number, company: string): ImportOutcome {
       confidence: "verified",
     },
     your_cgpa: null,
-    evidence: { key: "neo_id", yours: "V9H0G6C4", listed: 166, found_at: null },
+    evidence: {
+      key: "neo_id",
+      yours: "V9H0G6C4",
+      listed: 166,
+      found_at: null,
+      excerpt: [],
+    },
     progression: null,
     friends: [],
     analysis: {
