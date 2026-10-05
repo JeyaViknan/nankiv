@@ -62,7 +62,7 @@ describe("about nankiv", () => {
       screen.getByRole("button", { name: "Install and restart" }),
     );
     expect(api.installUpdate).toHaveBeenCalled();
-    expect(screen.getByText(/Downloading and installing/)).toBeInTheDocument();
+    expect(screen.getByText(/Installing nankiv/)).toBeInTheDocument();
   });
 
   it("falls back to the releases page, opened by the core", async () => {
@@ -87,9 +87,7 @@ describe("about nankiv", () => {
     render(<UpdateCard />);
     await user.click(screen.getByRole("button", { name: "Check for updates" }));
     expect(
-      await screen.findByText(
-        /In-app updates start with nankiv's next release/,
-      ),
+      await screen.findByText(/In-app updates start next release/),
     ).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(

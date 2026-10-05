@@ -109,7 +109,7 @@ export function SettingsSheet({
       await refreshStats();
       showToast(
         r.kind === "academic"
-          ? `Learned records for ${r.academics_learned.toLocaleString()} students`
+          ? `Added CGPA for ${r.academics_learned.toLocaleString()} students`
           : `Learned ${r.verified_links.toLocaleString()} identity links`,
       );
     } catch (e) {
@@ -128,15 +128,6 @@ export function SettingsSheet({
     <Sheet title="Settings" onClose={onClose}>
       <div className="card">
         <h2>Appearance</h2>
-        <p
-          style={{
-            fontSize: 12.5,
-            color: "var(--text-3)",
-            margin: "0 0 14px",
-          }}
-        >
-          nankiv follows your Mac's appearance by default, and switches with it.
-        </p>
         <div className="theme-picker">
           {THEMES.map((t) => (
             <button
@@ -199,8 +190,7 @@ export function SettingsSheet({
             onChange={(e) => setRegNo(e.target.value.toUpperCase())}
           />
           <span className="hint">
-            Some companies key their shortlists by this instead. Without it,
-            those files can't be answered for you.
+            Some companies list students by this instead.
           </span>
         </div>
         <div className="field">
@@ -227,7 +217,7 @@ export function SettingsSheet({
           <span className="hint" id="set-cgpa-hint">
             {cgpaError
               ? "A CGPA is out of 10 — like 8.42."
-              : "Update it after each semester. It places you on each shortlist, and only you ever see it."}
+              : "Only you see this. Update it each semester."}
           </span>
         </div>
         {error && <p className="field-error">{error.message}</p>}
@@ -239,15 +229,12 @@ export function SettingsSheet({
       <div className="card">
         <h2>Privacy</h2>
         <p className="card-text">
-          The only CGPA nankiv shows is yours, as you typed it. The cohort data
-          it ships with is used for analysis — whether a shortlist looks
-          CGPA-based, and roughly where its cutoff sits — and no screen in the
-          app displays anyone's figure, including the people in your circle.
+          The only CGPA shown is yours. Others' are used for estimates, never
+          displayed.
         </p>
         <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
-          No account, no server, no telemetry. Contact details in reference
-          sheets — phone, email, date of birth, resume links — are discarded as
-          the file is read and have nowhere to be stored.
+          No account, no server, no telemetry. Contact details in sheets are
+          never stored.
         </div>
       </div>
 
@@ -263,10 +250,7 @@ export function SettingsSheet({
           <span className="switch-text">
             <strong>Check new shortlists in Downloads</strong>
             <span>
-              While nankiv is open, a shortlist saved to your Downloads folder
-              is checked straight away. Only spreadsheets that arrive after you
-              turn this on are read; anything that isn't a shortlist is left
-              alone.
+              New ones are checked as they arrive, while nankiv is open.
             </span>
           </span>
         </label>
@@ -332,8 +316,7 @@ export function SettingsSheet({
           {confirmWipe ? (
             <div className="notice danger" style={{ marginBottom: 0 }}>
               <p style={{ margin: "0 0 11px" }}>
-                This permanently deletes every drive, friend, identity link and
-                academic record on this machine. It cannot be undone.
+                Deletes every drive, person and record. This can't be undone.
               </p>
               <div className="btn-row">
                 <button className="btn danger" onClick={wipe}>
@@ -352,20 +335,6 @@ export function SettingsSheet({
         </div>
       </div>
 
-      <p
-        style={{
-          fontSize: 11.5,
-          color: "var(--text-faint)",
-          textAlign: "center",
-          margin: "18px 0 0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 7,
-        }}
-      >
-        nankiv 0.1.0 — works offline
-      </p>
       <UpdateCard autoCheck={checkForUpdates} />
     </Sheet>
   );

@@ -118,7 +118,7 @@ describe("the evidence behind the answer", () => {
     await user.click(why);
     expect(why.closest("details")).toHaveAttribute("open");
     expect(
-      screen.getByText(/Row 42 of the sheet “Round 2” has your Neo ID/),
+      screen.getByText(/is in row 42, column C of “Round 2”/),
     ).toBeInTheDocument();
   });
 

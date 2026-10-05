@@ -19,14 +19,14 @@ const base: Evidence = {
 describe("why it thinks you're in", () => {
   it("points at the row, sheet and column to check", () => {
     expect(explainVerdict({ status: "shortlisted" }, base)).toBe(
-      "Row 42 of the sheet “Round 2” has your Neo ID, V9H0G6C4, in column C (“Neo ID”).",
+      "Your Neo ID, V9H0G6C4, is in row 42, column C of “Round 2”.",
     );
   });
 
-  it("leaves out a heading the file never gave", () => {
-    const e = { ...base, found_at: { ...base.found_at!, header: null } };
+  it("leaves out a column it never recorded", () => {
+    const e = { ...base, found_at: { ...base.found_at!, column: null } };
     expect(explainVerdict({ status: "shortlisted" }, e)).toBe(
-      "Row 42 of the sheet “Round 2” has your Neo ID, V9H0G6C4, in column C.",
+      "Your Neo ID, V9H0G6C4, is in row 42 of “Round 2”.",
     );
   });
 
@@ -41,14 +41,14 @@ describe("why it thinks you're in", () => {
       },
     };
     expect(explainVerdict({ status: "shortlisted" }, e)).toBe(
-      "Line 7 of the list you pasted is your Neo ID, V9H0G6C4.",
+      "Your Neo ID, V9H0G6C4, is on line 7 of what you pasted.",
     );
   });
 
   it("says what it can check when the row was never recorded", () => {
     const e = { ...base, found_at: null };
     expect(explainVerdict({ status: "shortlisted" }, e)).toBe(
-      "Your Neo ID, V9H0G6C4, is one of the 149 Neo IDs in this file.",
+      "Your Neo ID, V9H0G6C4, is one of 149 in this file.",
     );
   });
 });
@@ -62,7 +62,7 @@ describe("why it thinks you're not", () => {
       found_at: null,
     };
     expect(explainVerdict({ status: "not_shortlisted" }, e)).toBe(
-      "This file lists students by registration number. Yours, 23BAI0002, isn't among its 149 registration numbers — if that's not your registration number, correct it in Settings.",
+      "Your registration number, 23BAI0002, isn't among the 149 in this file. Wrong registration number? Fix it in Settings.",
     );
   });
 });

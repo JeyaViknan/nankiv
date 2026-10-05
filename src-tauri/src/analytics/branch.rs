@@ -141,14 +141,16 @@ pub fn analyse(
 
     let statement = if over_represented.is_empty() {
         let top = rows.first().map(|r| r.branch.as_str()).unwrap_or("unknown");
-        format!(
-            "Branch mix looks broadly like the batch, led by {top} (based on {matched} of {total} students)."
-        )
+        format!("Branch mix looks like the batch, led by {top}.")
     } else {
         format!(
-            "{} {} noticeably over-represented compared to the batch (based on {matched} of {total} students).",
+            "{} {} over-represented against the batch.",
             over_represented.join(" and "),
-            if over_represented.len() == 1 { "is" } else { "are" }
+            if over_represented.len() == 1 {
+                "is"
+            } else {
+                "are"
+            }
         )
     };
 
@@ -315,6 +317,5 @@ mod tests {
         let r = analyse(&shortlist, &b, 30, 200).unwrap();
         assert_eq!(r.rows.matched, 30);
         assert_eq!(r.rows.total, 200);
-        assert!(r.statement.contains("30 of 200"));
     }
 }

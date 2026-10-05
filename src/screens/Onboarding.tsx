@@ -65,8 +65,8 @@ export function OnboardingScreen() {
 
       <h1>Who are you?</h1>
       <p className="page-sub">
-        Saved on this machine only. It's what lets nankiv answer the moment a
-        shortlist lands, instead of asking you to search one.
+        Lets nankiv answer the moment a shortlist lands. Saved only on this
+        computer.
       </p>
 
       <div className="field">
@@ -100,8 +100,7 @@ export function OnboardingScreen() {
           onKeyDown={(e) => e.key === "Enter" && ready && void save()}
         />
         <span className="hint">
-          Worth adding: some companies key their shortlists by this instead, and
-          those files can't be answered for you without it.
+          Some companies list students by this instead.
         </span>
       </div>
 
@@ -128,7 +127,7 @@ export function OnboardingScreen() {
         <span className="hint" id="ob-cgpa-hint">
           {cgpaError
             ? "A CGPA is out of 10 — like 8.42."
-            : "Shows where you stand on each shortlist. Only you ever see it."}
+            : "Shows where you stand. Only you see it."}
         </span>
       </div>
 
@@ -146,8 +145,7 @@ export function OnboardingScreen() {
         Set this up later
       </button>
       <p className="onboard-note">
-        You can import shortlists without this — nankiv just won't be able to
-        say whether any of them include you.
+        Without it, nankiv can't tell you if you're in.
       </p>
     </div>
   );

@@ -125,6 +125,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn downloads_are_not_watched_until_asked() {
+        // Opt-in: a fresh install, every migration applied, has never been
+        // told to look in Downloads.
+        let s = crate::store::Store::open_in_memory().unwrap();
+        assert_eq!(s.meta(SINCE_KEY).unwrap(), None);
+    }
+
+    #[test]
     fn only_spreadsheets_a_person_saved_are_candidates() {
         for ok in ["Siemens shortlist.xlsx", "list.csv", "a.xls"] {
             assert!(is_candidate(Path::new(ok)), "{ok}");

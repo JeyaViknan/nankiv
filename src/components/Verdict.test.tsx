@@ -78,7 +78,7 @@ describe("VerdictBanner", () => {
     ).toBeInTheDocument();
     // And it must say so explicitly, because silence reads as rejection.
     expect(
-      screen.getByText(/says nothing about whether you were shortlisted/),
+      screen.getByText(/says nothing about whether you're in/),
     ).toBeInTheDocument();
   });
 

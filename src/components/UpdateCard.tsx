@@ -105,8 +105,8 @@ export function UpdateCard({ autoCheck = false }: { autoCheck?: boolean }) {
         {state.kind === "unpublished" && (
           <>
             <p className="card-text">
-              In-app updates start with nankiv's next release. Until then, any
-              newer version is on the releases page.
+              In-app updates start next release. Until then, use the releases
+              page.
             </p>
             {releasesButton}
           </>
@@ -127,8 +127,7 @@ export function UpdateCard({ autoCheck = false }: { autoCheck?: boolean }) {
         )}
         {state.kind === "installing" && (
           <p className="card-text">
-            Downloading and installing nankiv {state.version}… nankiv will
-            restart when it's done.
+            Installing nankiv {state.version}… It restarts when done.
           </p>
         )}
         {state.kind === "failed" && (

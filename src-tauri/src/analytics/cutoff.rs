@@ -128,7 +128,7 @@ pub fn estimate(
         }
     };
 
-    let statement = phrase(&verdict, dist, matched, total);
+    let statement = phrase(&verdict, dist);
 
     CutoffReport {
         verdict: Estimate::new(verdict, matched, total),
@@ -153,23 +153,23 @@ fn baseline_floor(baseline: &Baseline) -> f64 {
     (lo + hi) / 2.0
 }
 
-/// Wording. Every phrase is explicitly an estimate from a partial sample.
-fn phrase(v: &CutoffVerdict, dist: &Distribution, matched: usize, total: usize) -> String {
-    let basis = format!("based on {matched} of {total} shortlisted students we could match");
+/// Wording. Every phrase is explicitly an estimate. The sample it rests on is
+/// stated once wherever the statement is shown, rather than in each one.
+fn phrase(v: &CutoffVerdict, dist: &Distribution) -> String {
     match v {
         CutoffVerdict::HardCutoff {
             threshold,
             observed_floor,
         } => format!(
-            "Looks like a CGPA cutoff around {threshold:.1} — the lowest we found was {observed_floor:.2} ({basis}). This is an estimate, not an official cutoff."
+            "Looks like a CGPA cutoff around {threshold:.1}, lowest found {observed_floor:.2}. An estimate, not an official cutoff."
         ),
         CutoffVerdict::SoftPreference { observed_floor } => format!(
-            "No clean cutoff, but this shortlist skews high — median {:.2}, lowest found {observed_floor:.2} ({basis}). Likely a preference rather than a hard bar.",
+            "Looks like a preference, not a hard cutoff: median {:.2}, lowest found {observed_floor:.2}.",
             dist.median
         ),
-        CutoffVerdict::NoCgpaFilter => format!(
-            "No CGPA filter detected — this shortlist looks like the batch as a whole ({basis}). Selection probably happened on something else."
-        ),
+        CutoffVerdict::NoCgpaFilter => {
+            "No CGPA filter detected. It looks like the batch as a whole.".to_string()
+        }
     }
 }
 

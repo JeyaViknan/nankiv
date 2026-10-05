@@ -181,7 +181,7 @@ pub fn save_profile(state: tauri::State<AppState>, profile: Profile) -> R<()> {
         if NeoId::parse(n).is_none() {
             return Err(CommandError::new(
                 "bad_neo_id",
-                "That doesn't look like a Neo ID. They're eight characters, alternating letter and digit — like V9H0G6C4.",
+                "That's not a Neo ID. It's eight characters, like V9H0G6C4.",
             ));
         }
     }
@@ -237,7 +237,7 @@ pub fn add_friend(
     if neo.is_none() && reg.is_none() {
         return Err(CommandError::new(
             "no_identifier",
-            "Add a Neo ID or a registration number — a name alone can't be checked against a shortlist.",
+            "Add a Neo ID or registration number. A name alone can't be checked.",
         ));
     }
     let s = store(&state);
@@ -369,7 +369,7 @@ pub fn set_watch_downloads(
         if e.kind() == std::io::ErrorKind::PermissionDenied {
             CommandError::new(
                 "downloads_denied",
-                "nankiv isn't allowed to look in Downloads. Allow it in System Settings → Privacy & Security → Files and Folders, then turn this on again.",
+                "No access to Downloads. Allow it in System Settings → Privacy & Security → Files and Folders.",
             )
         } else {
             CommandError::new("no_downloads", format!("Couldn't read Downloads — {e}"))
@@ -425,11 +425,11 @@ fn read_paste(text: &str) -> R<parse::text::PastedText> {
     parse::text::parse_text(text).map_err(|e| match e {
         parse::ParseError::Empty => CommandError::new(
             "nothing_to_paste",
-            "There are no Neo IDs or registration numbers in what you pasted.",
+            "No Neo IDs or registration numbers in what you pasted.",
         ),
         parse::ParseError::TooLarge(_) => CommandError::new(
             "paste_too_large",
-            "That's too much text to be a shortlist. Save it as a spreadsheet and import the file instead.",
+            "Too much text to paste. Import it as a spreadsheet instead.",
         ),
         other => CommandError::new("parse_failed", other.to_string()),
     })
@@ -485,7 +485,7 @@ pub fn recent_downloads(
         if e.kind() == std::io::ErrorKind::PermissionDenied {
             CommandError::new(
                 "downloads_denied",
-                "nankiv isn't allowed to look in Downloads. Allow it in System Settings → Privacy & Security → Files and Folders.",
+                "No access to Downloads. Allow it in System Settings → Privacy & Security → Files and Folders.",
             )
         } else {
             CommandError::new("no_downloads", format!("Couldn't read Downloads — {e}"))
@@ -555,9 +555,7 @@ fn import_shortlist_inner(
         if parsed.neo_ids.is_empty() {
             return Err(CommandError::new(
                 "imported_reference",
-                format!(
-                    "Added academic records for {learned} students. That's a reference sheet rather than a shortlist — it improves the analysis on every drive you've imported."
-                ),
+                format!("Reference sheet added: CGPA for {learned} students"),
             )
             .with_detail(filename));
         }
@@ -591,7 +589,7 @@ fn record_shortlist(
         let headers = parsed.observed_headers.clone();
         return Err(CommandError::new(
             "file_not_understood",
-            "This file doesn't use Neo IDs or registration numbers, so nankiv can't match it to students. Nothing was recorded.",
+            "No Neo IDs or registration numbers to match. Nothing was saved.",
         )
         .with_detail(if headers.is_empty() {
             "No recognisable column was found.".to_string()
@@ -780,10 +778,7 @@ pub fn restore_drive(state: tauri::State<AppState>, snapshot: DriveSnapshot) -> 
 pub fn rename_drive(state: tauri::State<AppState>, id: i64, company: String) -> R<()> {
     let name = company.trim();
     if name.is_empty() {
-        return Err(CommandError::new(
-            "empty_name",
-            "A drive needs a name — otherwise it can't be told apart in your history.",
-        ));
+        return Err(CommandError::new("empty_name", "A drive needs a name."));
     }
     store(&state).rename_drive(id, name)?;
     state.widget_changed();
@@ -1063,7 +1058,7 @@ fn import_reference_inner(state: tauri::State<AppState>, path: String) -> R<Refe
     if !parsed.shape.is_usable() {
         return Err(CommandError::new(
             "file_not_understood",
-            "That file doesn't contain Neo IDs or registration numbers nankiv can use.",
+            "No usable Neo IDs or registration numbers in that file.",
         ));
     }
     let h = engine::harvest_identity(&s, &parsed, &filename)?;
@@ -1135,9 +1130,13 @@ pub fn share_summary(state: tauri::State<AppState>, drive_id: i64) -> R<String> 
         if let Some(b) = &a.branches {
             out.push_str(&format!("{}\n", b.statement));
         }
+        out.push_str(&format!(
+            "Based on {} of {} students matched to CGPA data.\n",
+            a.matched_students, a.total_students
+        ));
     } else {
         out.push_str(&format!(
-            "Not enough matched students ({} of {}) to analyse CGPA.\n",
+            "Too few matched to CGPA data ({} of {}) to analyse.\n",
             a.matched_students, a.total_students
         ));
     }
@@ -1297,19 +1296,22 @@ pub fn export_shortlist(
 ) -> R<crate::export::ExportSummary> {
     let s = store(&state);
     let identity = engine::build_graph(&s)?;
-    crate::export::export_drive(&s, drive_id, &identity, Path::new(&path), format).map_err(
-        |e| match e {
+    crate::export::export_drive(&s, drive_id, &identity, Path::new(&path), format).map_err(|e| {
+        match e {
             crate::export::ExportError::NotFound => {
                 CommandError::new("not_found", "That shortlist is no longer stored.")
             }
             crate::export::ExportError::Io(io) => CommandError::new(
                 "export_failed",
-                "Couldn't save the file there. Check that the folder still exists and that you can write to it.",
+                "Couldn't save there. Check the folder exists and you can write to it.",
             )
             .with_detail(io.to_string()),
-            other => CommandError::new("export_failed", format!("Couldn't create the file — {other}")),
-        },
-    )
+            other => CommandError::new(
+                "export_failed",
+                format!("Couldn't create the file — {other}"),
+            ),
+        }
+    })
 }
 
 #[cfg(test)]

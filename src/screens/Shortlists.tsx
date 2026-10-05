@@ -146,9 +146,9 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
             {empty ? "Drop a shortlist to begin" : "Drop a shortlist"}
           </span>
           <span className="invite-sub">
-            Anywhere in this window. Or press <kbd>{MOD}</kbd>
-            <kbd>O</kbd> to choose a file, or <kbd>{MOD}</kbd>
-            <kbd>V</kbd> to paste a list of IDs.
+            Anywhere in this window. <kbd>{MOD}</kbd>
+            <kbd>O</kbd> to open, <kbd>{MOD}</kbd>
+            <kbd>V</kbd> to paste IDs.
           </span>
         </span>
       </button>
@@ -163,8 +163,7 @@ export function Shortlists({ onBrowse }: { onBrowse: () => void }) {
 
       {profile && !profile.reg_no && !empty && (
         <p className="hint-line">
-          Some companies key their shortlists by registration number. Add yours
-          in Settings so those files can be answered too.
+          Some lists use registration numbers. Add yours in Settings.
         </p>
       )}
 

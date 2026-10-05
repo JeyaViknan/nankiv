@@ -66,7 +66,7 @@ pub const RELEASES_URL: &str = "https://github.com/JeyaViknan/nankiv/releases";
 fn unreachable_error() -> CommandError {
     CommandError::new(
         "update_check_failed",
-        "Couldn't reach GitHub to check for updates. Check your connection, or see every version on the releases page.",
+        "Couldn't reach GitHub. Check your connection.",
     )
 }
 
@@ -117,7 +117,7 @@ pub async fn install_update(app: AppHandle) -> Result<(), CommandError> {
         .map_err(|e| {
             CommandError::new(
                 "update_failed",
-                "The update couldn't be installed. Nothing was changed — you can download it from the releases page instead.",
+                "Couldn't install the update. Nothing was changed.",
             )
             .with_detail(e.to_string())
         })?;

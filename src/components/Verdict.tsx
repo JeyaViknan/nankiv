@@ -47,25 +47,24 @@ export function undeterminedText(r: UndeterminedReason): {
     case "no_identity_configured":
       return {
         title: "We don't know who you are yet",
-        detail: "Add your Neo ID in Settings and this will answer instantly.",
+        detail: "Add your Neo ID to get an answer.",
       };
     case "key_kind_not_configured":
       return r.file_key === "reg_no"
         ? {
             title: "Can't tell from this file",
             detail:
-              "This shortlist is keyed by registration number, and you've only saved a Neo ID. Add your registration number to check files like this one.",
+              "This list uses registration numbers. Add yours to check it.",
           }
         : {
             title: "Can't tell from this file",
-            detail:
-              "This shortlist is keyed by Neo ID, and you haven't saved one. Add it in Settings to check files like this one.",
+            detail: "This list uses Neo IDs. Add yours to check it.",
           };
     case "file_not_understood":
       return {
         title: "Couldn't read this shortlist",
         detail:
-          "It doesn't use Neo IDs or registration numbers, so there's nothing to match you against. This is not a result — it says nothing about whether you were shortlisted.",
+          "It has no Neo IDs or registration numbers to match. Not a result — this says nothing about whether you're in.",
       };
   }
 }
@@ -103,7 +102,7 @@ export function VerdictBanner({
         <div>
           <p className="verdict-title">You're in</p>
           <p className="verdict-detail">
-            {company} — <CountUp value={totalStudents} /> students shortlisted
+            {company} — <CountUp value={totalStudents} /> shortlisted
           </p>
           <div className="verdict-links">
             <Why
@@ -131,8 +130,7 @@ export function VerdictBanner({
         <div>
           <p className="verdict-title">Not this time</p>
           <p className="verdict-detail">
-            You're not on the {company} shortlist of{" "}
-            {totalStudents.toLocaleString()}. What it took is below.
+            {company} — {totalStudents.toLocaleString()} shortlisted
           </p>
           <Why question="Why not?" verdict={verdict} evidence={evidence} />
         </div>

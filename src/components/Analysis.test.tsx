@@ -60,7 +60,7 @@ const cutoff: CutoffReport = {
     },
   ],
   statement:
-    "Looks like a CGPA cutoff around 9.0 — the lowest we found was 8.94 (based on 25 of 166 shortlisted students we could match). This is an estimate, not an official cutoff.",
+    "Looks like a CGPA cutoff around 9.0, lowest found 8.94. An estimate, not an official cutoff.",
 };
 
 const dist: Distribution = {
@@ -103,8 +103,7 @@ const branches: BranchReport = {
     total: 166,
   },
   over_represented: ["ECE"],
-  statement:
-    "ECE is noticeably over-represented compared to the batch (based on 25 of 166 students).",
+  statement: "ECE is over-represented against the batch.",
 };
 
 describe("coverage disclosure", () => {
@@ -131,12 +130,14 @@ describe("insufficient samples", () => {
     // The Elgi case: one matched student out of 125.
     render(<InsufficientSample analysis={gated} />);
     expect(screen.getByText(/Not enough data to analyse/)).toBeInTheDocument();
-    expect(screen.getByText(/isn't going to guess/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/too few to estimate a cutoff/),
+    ).toBeInTheDocument();
   });
 
   it("reassures that membership is unaffected", () => {
     render(<InsufficientSample analysis={gated} />);
-    expect(screen.getByText(/Membership above is exact/)).toBeInTheDocument();
+    expect(screen.getByText(/results above are exact/)).toBeInTheDocument();
   });
 });
 
@@ -159,7 +160,9 @@ describe("cutoff card", () => {
   it("shows its working against the batch baseline", () => {
     render(<CutoffCard report={cutoff} />);
     expect(
-      screen.getByText(/three quarters of the batch already clears 8.5/i),
+      screen.getByText(
+        /few on the list fall below it, while many in the batch/i,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("cutoff here")).toBeInTheDocument();
   });
@@ -200,9 +203,7 @@ describe("distribution card", () => {
 describe("branch card", () => {
   it("surfaces an over-represented branch with its lift", () => {
     render(<BranchCard report={branches} />);
-    expect(
-      screen.getByText(/ECE is noticeably over-represented/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/ECE is over-represented/)).toBeInTheDocument();
     expect(screen.getByText("4.3x")).toBeInTheDocument();
   });
 

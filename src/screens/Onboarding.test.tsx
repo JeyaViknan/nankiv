@@ -139,7 +139,7 @@ describe("agency", () => {
   it("says plainly what skipping costs", () => {
     render(<OnboardingScreen />);
     expect(
-      screen.getByText(/won't be able to say whether any of them include you/i),
+      screen.getByText(/can't tell you if you're in/i),
     ).toBeInTheDocument();
   });
 

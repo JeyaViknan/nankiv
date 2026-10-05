@@ -50,7 +50,7 @@ describe("failure", () => {
   it("states plainly that this is not a result", () => {
     render(<ImportStatus />);
     expect(
-      screen.getByText(/says nothing about whether you were shortlisted/i),
+      screen.getByText(/says nothing about whether you're in/i),
     ).toBeInTheDocument();
   });
 

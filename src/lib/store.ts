@@ -110,7 +110,7 @@ export function resultSentence(outcome: ImportOutcome): string {
     case "shortlisted":
       return `You're in. ${outcome.company}, one of ${n} shortlisted.`;
     case "not_shortlisted":
-      return `Not this time. You're not on the ${outcome.company} shortlist of ${n}.`;
+      return `Not this time. ${outcome.company}, ${n} shortlisted.`;
     case "undetermined":
       return `${undeterminedText(v).title}. ${outcome.company}.`;
   }
@@ -339,7 +339,7 @@ export const useStore = create<State>((set, get) => ({
     if (cur) await get().openDrive(cur.drive_id);
     get().showToast(
       r.kind === "academic"
-        ? `Added academic records for ${r.academics_learned.toLocaleString()} students`
+        ? `Added CGPA for ${r.academics_learned.toLocaleString()} students`
         : `Learned ${r.verified_links.toLocaleString()} identity links`,
     );
   },

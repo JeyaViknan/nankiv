@@ -199,8 +199,13 @@ export function DriveScreen({
       {/* Provenance, stated once, quietly, directly under the answer. */}
       <div className="provenance">
         <EditableName id={outcome.drive_id} name={outcome.company} />
-        <span className="row-dot">·</span>
-        <span>{outcome.total_students.toLocaleString()} shortlisted</span>
+        {/* A yes or a no already says how many; "can't tell" does not. */}
+        {outcome.you.verdict.status === "undetermined" && (
+          <>
+            <span className="row-dot">·</span>
+            <span>{outcome.total_students.toLocaleString()} shortlisted</span>
+          </>
+        )}
         <span className="row-dot">·</span>
         <span className="prov-key">
           keyed by {outcome.primary_key === "reg_no" ? "reg number" : "Neo ID"}
@@ -218,9 +223,8 @@ export function DriveScreen({
         </div>
         {outcome.friends.length === 0 ? (
           <p className="search-note">
-            Add people once and they're checked on every shortlist from then on.
-            Press <kbd>{MOD}</kbd>
-            <kbd>D</kbd> to open your circle.
+            Add friends with <kbd>{MOD}</kbd>
+            <kbd>D</kbd> and they're checked on every list.
           </p>
         ) : (
           <div className="list">
@@ -340,13 +344,13 @@ export function DriveScreen({
             onChoose={(id) => void exportNames(id as ExportFormat)}
           />
           <button className="btn" onClick={copySummary}>
-            {copied ? "Copied" : "Copy summary for the group chat"}
+            {copied ? "Copied" : "Copy summary"}
           </button>
         </div>
         {outcome.learned_verified > 0 && (
           <p className="foot-note">
-            This file taught nankiv {outcome.learned_verified.toLocaleString()}{" "}
-            verified identity links.
+            Learned {outcome.learned_verified.toLocaleString()} identity links
+            from this file.
           </p>
         )}
       </footer>

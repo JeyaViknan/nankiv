@@ -49,8 +49,8 @@ export function NeedsReference({ compact }: { compact?: boolean }) {
     return (
       <div className="notice accent setup-line">
         <span>
-          <strong>Analysis isn't set up yet.</strong> Add the CGPA sheet your
-          batch circulated and nankiv can estimate cutoffs.
+          <strong>Analysis isn't set up.</strong> Add your batch's CGPA sheet to
+          estimate cutoffs.
         </span>
         <button className="btn small" onClick={choose} disabled={busy}>
           {busy ? "Reading…" : "Add sheet"}
@@ -67,14 +67,12 @@ export function NeedsReference({ compact }: { compact?: boolean }) {
       <div className="setup-body">
         <h3>Analysis isn't set up yet</h3>
         <p>
-          Membership above is exact — it comes straight from the file. But
-          nankiv doesn't hold any academic records yet, so there's nothing to
-          compare this shortlist against.
+          The results above are exact. Add your batch's CGPA sheet to estimate
+          cutoffs.
         </p>
         <p className="setup-sub">
-          Add the CGPA sheet your batch already circulated. Only registration
-          number, name, CGPA and branch are read — phone numbers, emails and
-          resume links are discarded as the file is read.
+          Only registration number, name, CGPA and branch are read. Contact
+          details are discarded.
         </p>
         {error && <p className="field-error">{error}</p>}
         <button className="btn primary" onClick={choose} disabled={busy}>

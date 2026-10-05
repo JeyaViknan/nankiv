@@ -70,7 +70,7 @@ const cutoff: CutoffReport = {
     },
   ],
   statement:
-    "Looks like a CGPA cutoff around 9.0 — the lowest we found was 8.94 (based on 25 of 166 shortlisted students we could match). This is an estimate, not an official cutoff.",
+    "Looks like a CGPA cutoff around 9.0, lowest found 8.94. An estimate, not an official cutoff.",
 };
 
 const dist: Distribution = {
@@ -115,8 +115,7 @@ const branches: BranchReport = {
     total: 166,
   },
   over_represented: ["ECE"],
-  statement:
-    "ECE is noticeably over-represented compared to the batch (based on 25 of 166 students).",
+  statement: "ECE is over-represented against the batch.",
 };
 
 const analysis: DriveAnalysis = {

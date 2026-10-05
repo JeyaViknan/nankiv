@@ -138,7 +138,7 @@ export function SearchField({
           {!busy && byName?.kind === "ambiguous" && (
             <>
               <p className="pop-note warn">
-                More than one match — nankiv won't guess between them.
+                Several match. Pick the right one.
               </p>
               {byName.candidates.map((c) => (
                 <button
@@ -157,17 +157,11 @@ export function SearchField({
           )}
 
           {!busy && byName?.kind === "not_found" && (
-            <p className="pop-note">
-              No confident match. nankiv only knows students it has learned from
-              files you've imported.
-            </p>
+            <p className="pop-note">Not in your imported files.</p>
           )}
 
           {!busy && byId && byId.length === 0 && (
-            <p className="pop-note">
-              Not on any shortlist you've imported. That only covers the drives
-              in your history.
-            </p>
+            <p className="pop-note">Not on any shortlist you've imported.</p>
           )}
 
           {!busy &&

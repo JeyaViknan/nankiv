@@ -101,8 +101,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="Circle" onClose={onClose} width={520}>
       <p className="sheet-lede">
-        Added once, then checked on every shortlist. Search by name — you don't
-        need to know anyone's Neo ID.
+        Add someone once and they're checked on every shortlist.
       </p>
 
       <div className="search-add">
@@ -150,8 +149,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
       {result?.kind === "ambiguous" && (
         <>
           <p className="search-note warn">
-            More than one student matches that name. nankiv won't guess — pick
-            the right one.
+            Several students match. Pick the right one.
           </p>
           <div className="result-list">
             {result.candidates.map((c) => (
@@ -175,8 +173,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
 
       {result?.kind === "not_found" && (
         <p className="search-note">
-          No confident match. nankiv only knows students it has learned from
-          files you've imported — if you have their Neo ID, paste it above.
+          Not in your imported files. Try their Neo ID.
         </p>
       )}
 
@@ -189,10 +186,7 @@ export function CircleSheet({ onClose }: { onClose: () => void }) {
         </div>
 
         {friends.length === 0 ? (
-          <p className="search-note">
-            Nobody yet. Everyone you add is checked automatically on every
-            shortlist you import.
-          </p>
+          <p className="search-note">Nobody yet.</p>
         ) : (
           <div className="list">
             {friends.map((f) => (

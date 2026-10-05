@@ -24,10 +24,8 @@ export function CoverageNotice({ analysis }: { analysis: DriveAnalysis }) {
   return (
     <div className={`notice ${tone}`}>
       Based on <strong>{m.toLocaleString()}</strong> of{" "}
-      <strong>{t.toLocaleString()}</strong> shortlisted students we could match
-      to academic data ({pct(coverage)}).{" "}
-      {coverage < 0.4 &&
-        "Import more reference data to raise this — every file you add improves it permanently."}
+      <strong>{t.toLocaleString()}</strong> students matched to CGPA data (
+      {pct(coverage)}).{coverage < 0.4 && " More reference sheets raise this."}
     </div>
   );
 }
@@ -37,14 +35,12 @@ export function InsufficientSample({ analysis }: { analysis: DriveAnalysis }) {
     <div className="card">
       <h2>Not enough data to analyse</h2>
       <div className="notice warn">
-        We matched <strong>{analysis.matched_students}</strong> of{" "}
-        <strong>{analysis.total_students}</strong> shortlisted students to
-        academic records ({pct(analysis.coverage)}). That's too few to say
-        anything honest about a CGPA cutoff, so nankiv isn't going to guess.
+        Only <strong>{analysis.matched_students}</strong> of{" "}
+        <strong>{analysis.total_students}</strong> matched to CGPA data (
+        {pct(analysis.coverage)}) — too few to estimate a cutoff.
       </div>
       <p style={{ fontSize: 13, color: "var(--text-3)", margin: 0 }}>
-        Membership above is exact and unaffected — it comes straight from the
-        file. Only the statistics need a bigger sample.
+        The results above are exact; they come straight from the file.
       </p>
     </div>
   );
@@ -58,6 +54,14 @@ export function CutoffCard({ report }: { report: CutoffReport }) {
       : v.kind === "soft_preference"
         ? "Skews high, no hard cutoff"
         : "No CGPA filter detected";
+  // The headline says what was found; this, only what it rests on. The full
+  // statement, which says both, is for the copied summary.
+  const detail =
+    v.kind === "hard_cutoff"
+      ? `Lowest found ${v.observed_floor.toFixed(2)}. An estimate, not an official cutoff.`
+      : v.kind === "soft_preference"
+        ? `Lowest found ${v.observed_floor.toFixed(2)}. Likely a preference, not a hard bar.`
+        : "It looks like the batch as a whole.";
 
   return (
     <div className="card">
@@ -66,15 +70,13 @@ export function CutoffCard({ report }: { report: CutoffReport }) {
         <span className="pill quiet">estimate</span>
       </div>
       <p style={{ fontSize: 13.5, color: "var(--text-2)", margin: "0 0 14px" }}>
-        {report.statement}
+        {detail}
       </p>
 
       <h3 style={{ marginTop: 18 }}>How this was worked out</h3>
       <p style={{ fontSize: 12.5, color: "var(--text-3)", margin: "0 0 10px" }}>
-        A cutoff shows up as a floor: almost nobody on the shortlist below it,
-        while a real share of the batch sits below it. Comparing against the
-        batch is what stops "most people are above 8.5" being mistaken for a
-        cutoff — three quarters of the batch already clears 8.5.
+        A cutoff is a floor: few on the list fall below it, while many in the
+        batch do.
       </p>
       <div className="table-wrap">
         <table>
@@ -277,9 +279,7 @@ export function StandingPrompt({ onAdd }: { onAdd: () => void }) {
     <div className="card card-row">
       <div>
         <h2>Where you stand</h2>
-        <p className="card-text">
-          Add your CGPA to see how it compares with this list.
-        </p>
+        <p className="card-text">See how your CGPA compares with this list.</p>
       </div>
       <button className="btn small" onClick={onAdd}>
         Add your CGPA
@@ -297,9 +297,8 @@ export function StandingCard({
     <div className="card">
       <h2>Where you stand</h2>
       <p style={{ fontSize: 13.5, color: "var(--text-2)", margin: 0 }}>
-        Your CGPA is higher than <strong>{pct(percentile.value)}</strong> of the
-        shortlisted students we could match ({percentile.matched} of{" "}
-        {percentile.total}).
+        Your CGPA is above <strong>{pct(percentile.value)}</strong> of this list
+        ({percentile.matched} of {percentile.total} matched).
       </p>
     </div>
   );

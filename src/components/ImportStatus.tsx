@@ -46,8 +46,7 @@ export function ImportStatus() {
           {error.detail && <p className="import-detail">{error.detail}</p>}
           {/* Said plainly, because silence here reads as a verdict. */}
           <p className="import-reassure">
-            This isn't a result — it says nothing about whether you were
-            shortlisted.
+            Not a result — this says nothing about whether you're in.
           </p>
         </div>
         <button className="btn small" onClick={dismissImport}>

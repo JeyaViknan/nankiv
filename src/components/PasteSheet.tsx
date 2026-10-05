@@ -91,8 +91,7 @@ export function PasteSheet({
               onKeyDown={(e) => e.key === "Enter" && void check()}
             />
             <span className="hint" id="paste-company-hint">
-              Only the IDs are kept. Names, and everything else in what you
-              pasted, are ignored.
+              Only the IDs are kept.
             </span>
           </div>
           <div className="btn-row">

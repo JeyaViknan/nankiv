@@ -34,7 +34,7 @@ beforeEach(() => {
 describe("the not-set-up surface", () => {
   it("says analysis isn't set up, not that data is insufficient", () => {
     render(<NeedsReference />);
-    expect(screen.getByText(/Analysis isn't set up yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Analysis isn't set up/i)).toBeInTheDocument();
     expect(screen.queryByText(/too few/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/bigger sample/i)).not.toBeInTheDocument();
   });
@@ -49,19 +49,24 @@ describe("the not-set-up surface", () => {
   it("reassures that membership is unaffected", () => {
     // The shortlist itself is fine. Nothing here casts doubt on the verdict.
     render(<NeedsReference />);
-    expect(screen.getByText(/Membership above is exact/i)).toBeInTheDocument();
+    expect(screen.getByText(/results above are exact/i)).toBeInTheDocument();
   });
 
   it("states the data minimisation up front, where consent is given", () => {
     render(<NeedsReference />);
     expect(
-      screen.getByText(/discarded as the file is read/i),
+      screen.getByText(
+        /Only registration number, name, CGPA and branch are read/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Contact details are discarded/i),
     ).toBeInTheDocument();
   });
 
   it("has a compact form that still carries the action", () => {
     render(<NeedsReference compact />);
-    expect(screen.getByText(/Analysis isn't set up yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Analysis isn't set up/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Add sheet/i }),
     ).toBeInTheDocument();
@@ -88,8 +93,8 @@ describe("the two are never confused", () => {
       render(<InsufficientSample analysis={thinSample} />).container
         .textContent ?? "";
     expect(a).not.toEqual(b);
-    // Only one of them asks for a bigger sample; only one offers a fix.
-    expect(b).toMatch(/bigger sample/i);
-    expect(a).not.toMatch(/bigger sample/i);
+    // Only one of them blames the sample; only one offers a fix.
+    expect(b).toMatch(/too few/i);
+    expect(a).not.toMatch(/too few/i);
   });
 });
