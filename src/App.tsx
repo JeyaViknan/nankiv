@@ -37,6 +37,7 @@ import { usePastedShortlist } from "./lib/paste";
 import { useWatchedImports } from "./lib/watched";
 import { useUpdateReminder } from "./lib/updates";
 import { chord } from "./lib/keys";
+import { HOME, usePageScroll } from "./lib/scroll";
 import { Shortlists } from "./screens/Shortlists";
 
 export default function App() {
@@ -59,6 +60,11 @@ export default function App() {
   const [pasted, setPasted] = useState<string | null>(null);
   const [keysOpen, setKeysOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
+  const onContentScroll = usePageScroll(
+    contentRef,
+    view === "drive" && current ? `drive:${current.drive_id}` : HOME,
+  );
 
   useEffect(() => {
     void bootstrap();
@@ -232,7 +238,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="content">
+      <main className="content" ref={contentRef} onScroll={onContentScroll}>
         {error && (
           <div className="banner" role="alert">
             <span>{error.message}</span>
