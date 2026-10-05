@@ -845,27 +845,141 @@ button.round-step:hover {
   overflow: auto;
 }
 
-/* The card, previewed at a size that fits the sheet. A hairline keeps its
-   dark field from dissolving into a dark sheet. */
-.share-preview {
-  position: relative;
+/* Sharing: the pass alone on the blurred window, with floating actions.
+   It is a dark object over a dark veil in either theme, so its colours are
+   its own rather than the theme's. */
+.share-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  background: rgb(9 9 11 / 58%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  backdrop-filter: blur(20px) saturate(120%);
+  perspective: 1600px;
+  animation: veil 0.2s ease;
+}
+
+.share-stage:focus {
+  outline: none;
+}
+
+/* The pass rises out of the window and settles flat, the way Wallet
+   presents one: from a little below, a little small, tipped back. */
+.share-pass {
+  height: min(64vh, 620px);
   aspect-ratio: 1080 / 1350;
-  height: min(52vh, 460px);
-  margin: 0 auto 12px;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  box-shadow: 0 0 0 1px var(--border);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 7%),
+    0 44px 100px rgb(0 0 0 / 55%),
+    0 12px 28px rgb(0 0 0 / 32%);
+  transform-origin: 50% 85%;
+  animation: pass-in 0.66s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.share-preview canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
+@keyframes pass-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.93) rotateX(16deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.share-note {
-  margin: 0 0 14px;
-  text-align: center;
+.share-actions {
+  display: flex;
+  gap: 12px;
+  animation: actions-in 0.4s ease 0.26s both;
+}
+
+@keyframes actions-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.float-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  min-width: 136px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 21px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.15s ease;
+}
+
+.float-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.float-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.float-btn:focus-visible,
+.float-close:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 90%);
+  outline-offset: 3px;
+}
+
+.float-btn.primary {
+  background: #ffffff;
+  color: #111113;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 35%);
+}
+
+.float-btn.primary:hover:not(:disabled) {
+  background: #ececee;
+}
+
+/* Frosted: a lighter pane of the blur behind it. */
+.glass {
+  background: rgb(255 255 255 / 13%);
+  color: #ffffff;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%);
+}
+
+.float-btn.glass:hover:not(:disabled),
+.float-close:hover {
+  background: rgb(255 255 255 / 20%);
+}
+
+.float-close {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  animation: actions-in 0.4s ease 0.26s both;
 }
 
 /* Keyboard shortcuts: what, and which keys. */

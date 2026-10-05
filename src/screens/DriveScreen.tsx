@@ -27,7 +27,7 @@ import { NeedsReference } from "../components/NeedsReference";
 import { MenuButton } from "../components/MenuButton";
 import { VerdictBanner, VerdictPill } from "../components/Verdict";
 import { RoundTrail, neighbour } from "../components/Rounds";
-import { ShareSheet } from "../components/ShareSheet";
+import { ShareCard } from "../components/ShareCard";
 import { MOD, chord } from "../lib/keys";
 import {
   BranchCard,
@@ -193,7 +193,7 @@ export function DriveScreen({
         onShare={() => setSharing(true)}
       />
       {sharing && (
-        <ShareSheet outcome={outcome} onClose={() => setSharing(false)} />
+        <ShareCard outcome={outcome} onClose={() => setSharing(false)} />
       )}
 
       {/* Provenance, stated once, quietly, directly under the answer. */}

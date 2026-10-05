@@ -26,11 +26,13 @@ import { MenuButton } from "./components/MenuButton";
 import { Icon, type IconName } from "./components/Icon";
 import { applyTheme, getThemeChoice, type ThemeChoice } from "./lib/theme";
 import { drawCard, type CardFacts } from "./lib/shareCard";
+import { ShareCard } from "./components/ShareCard";
 import type {
   BranchReport,
   CutoffReport,
   Distribution,
   DriveAnalysis,
+  ImportOutcome,
   Verdict,
 } from "./lib/api";
 import "./styles/app.css";
@@ -153,6 +155,25 @@ const friends: { label: string; id: string; v: Verdict; cgpa?: number }[] = [
   { label: "Kabir Sharma", id: "T2D4R9N9", v: OUT },
   { label: "Nisha Iyer", id: "Q2X9B4S6", v: UNKNOWN },
 ];
+
+/** The share overlay, as the drive screen opens it. */
+function ShareOverlayDemo() {
+  const [open, setOpen] = useState(false);
+  const outcome = {
+    drive_id: 1,
+    company: "Siemens SISW",
+    total_students: 149,
+    progression: null,
+  } as unknown as ImportOutcome;
+  return (
+    <>
+      <button className="btn" onClick={() => setOpen(true)}>
+        Open the share card
+      </button>
+      {open && <ShareCard outcome={outcome} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
 
 /** The share card, drawn exactly as the app draws it. */
 function CardPreview({ facts }: { facts: CardFacts }) {
@@ -304,6 +325,10 @@ function Preview() {
                 </span>
               </div>
             </div>
+          </Section>
+
+          <Section title="Share — the overlay">
+            <ShareOverlayDemo />
           </Section>
 
           <Section title="Share card — I'm in">
