@@ -732,15 +732,10 @@ button.round-step:hover {
 }
 
 /* "Import a recent download": the drop card's quieter second way in. Clear
-   of the card rather than tucked against its border, and on the same left
-   edge as the card and the section heading below, so it reads as belonging
-   to the card without crowding it. */
+   of the card rather than tucked against its border, and centred under it,
+   as the card's own content is, so it reads as belonging to the card. */
 .recent {
   margin-top: 12px;
-}
-
-/* Under the large, centred card of an empty season, centred with it. */
-.invite.large + .recent {
   text-align: center;
 }
 
@@ -1301,13 +1296,20 @@ kbd {
    The invitation
    =========================================================================== */
 
+/* The drop target. The column is 664pt wide at every window size, and at
+   two lines of text the card was a strip, 8:1; at about 140pt tall it is
+   nearer 5:1 — enough to read as a place to drop something, not so much
+   that the list beneath starts a screen lower. At that height a side-by-side
+   layout leaves its content floating, so it stacks and centres: the same
+   layout as the empty season's larger card, which differs only in size. */
 .invite {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
   width: 100%;
-  text-align: left;
-  padding: 16px 18px;
+  text-align: center;
+  padding: 26px 28px;
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--r-lg);
   background: var(--surface);
@@ -1329,8 +1331,6 @@ kbd {
 }
 
 .invite.large {
-  flex-direction: column;
-  text-align: center;
   gap: 12px;
   padding: 56px 28px;
   margin-top: 28px;
@@ -1349,13 +1349,14 @@ kbd {
 .invite-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 3px;
   min-width: 0;
 }
 
 .invite-title {
   font-family: var(--display);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 620;
   letter-spacing: -0.022em;
 }
@@ -1371,9 +1372,6 @@ kbd {
   align-items: center;
   gap: 3px;
   flex-wrap: wrap;
-}
-
-.invite.large .invite-sub {
   justify-content: center;
 }
 
