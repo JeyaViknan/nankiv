@@ -1,243 +1,178 @@
-# nankiv
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/icon-dark.png">
+    <img src="docs/images/icon-light.png" width="128" height="128" alt="The nankiv icon: a shortlist with your row pulled forward in green and ticked">
+  </picture>
+</p>
 
-A desktop app that answers **"am I shortlisted?"** in under two seconds, then
-tells you what the shortlist actually reveals about how the company chose.
+<h1 align="center">nankiv</h1>
 
-Placement season means a shortlist a day, sometimes more. Each one arrives as a
-spreadsheet keyed by an eight-character alphanumeric Neo ID that nobody can
-remember — least of all their friends'. The current routine is: download the
-attachment, wait for Excel, Ctrl+F your own ID, then message four people to ask
-whether they made it, then collectively guess at the cutoff from whoever replies.
+<p align="center">
+  <b>Am I on the shortlist?</b><br>
+  Drop the file. Know in a second.
+</p>
 
-nankiv collapses that into: drop the file, read one line.
+<p align="center">
+  <a href="https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-apple-silicon.dmg"><b>Download for Mac</b></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-windows-setup.exe"><b>Download for Windows</b></a>
+  <br>
+  <sub>Free&nbsp;&nbsp;·&nbsp;&nbsp;Works offline&nbsp;&nbsp;·&nbsp;&nbsp;No account&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#download">Intel Mac and other files</a></sub>
+</p>
 
-**Everything runs on your machine.** No account, no server, no telemetry, no
-network calls. It works with the wifi off.
+<br>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
+    <img src="docs/images/hero-light.png" width="880" alt="nankiv saying You're in for a Siemens interview shortlist, with your circle and the rounds below">
+  </picture>
+</p>
+
+Placement season is a shortlist a day. Each one lands as a spreadsheet of
+eight-character Neo IDs nobody remembers. So you open Excel, Ctrl+F yourself,
+and message four friends to ask if they made it.
+
+**nankiv does all of that the moment the file lands.** Your answer, your
+friends' answers, and what the list says about how the company chose.
+
+<br>
+
+## Your answer, before Excel opens
+
+Drop a shortlist anywhere on the window, or on nankiv's icon in the Dock. Paste
+a list of IDs straight from an email. Or let nankiv check new shortlists in
+your Downloads as they arrive.
+
+You get one line: **You're in**, **Not this time**, or **Can't tell**, when a
+file uses an ID it can't match you on. It never turns "can't tell" into a no.
+
+## Your circle, in the same pass
+
+Add your friends once, by name or Neo ID. Every shortlist after that answers
+for them too, right under your own result. When a company runs rounds, nankiv
+links them, so you can see who moved from the test to the interview.
+
+<br>
+
+<h3 align="center">Your whole season, at a glance</h3>
+<p align="center">Every shortlist you've had, with your answer on its row.</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/season-dark.png">
+    <img src="docs/images/season-light.png" width="760" alt="The season list: every shortlist with In, Not in or Unknown on its row">
+  </picture>
+</p>
+
+<br>
+
+<h3 align="center">Don't take its word for it</h3>
+<p align="center">
+  Ask why, and nankiv shows you the file at your row: the column as it was
+  headed, the rows on either side, yours lit. A wrong match is worse than none,
+  so when two people could be you, it refuses to guess.
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/proof-dark.png">
+    <img src="docs/images/proof-light.png" width="620" alt="Why does it think I'm in? The file's rows around yours, with row 42 lit and Matched by Neo ID">
+  </picture>
+</p>
+
+<br>
+
+<h3 align="center">What it took</h3>
+<p align="center">
+  nankiv compares the list with your batch. It tells you when a CGPA cutoff is
+  likely and roughly where it sits, which branches the list leaned towards, and
+  where you stand. Always labelled an estimate. Never passed off as official.
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/cutoff-dark.png">
+    <img src="docs/images/cutoff-light.png" width="620" alt="CGPA cutoff around 8.0, labelled as an estimate, with the comparison against the batch">
+  </picture>
+</p>
+
+<br>
+
+<h3 align="center">Made it? Say so.</h3>
+<p align="center">
+  Turn a yes into a card worth posting, with a line for the occasion. It
+  carries the company, the round and the day, and never your Neo ID, your CGPA
+  or how many made the list. Or copy a summary set for the group chat.
+</p>
+
+<p align="center">
+  <img src="docs/images/card.png" width="340" alt="A black share card: Siemens, Mom, I'm in the Excel., round Interview">
+</p>
+
+<br>
+
+<h3 align="center">On your desktop</h3>
+<p align="center">
+  Your latest result as a widget, in four sizes on macOS. Click it and nankiv
+  opens that shortlist.
+</p>
+
+<p align="center">
+  <img src="docs/images/widgets.png" width="760" alt="nankiv's desktop widgets in three sizes, showing You're in, the estimated cutoff and your circle">
+</p>
+
+<br>
+
+## Private by design
+
+- **Everything stays on your computer.** No account, no server, no telemetry.
+  nankiv only goes online when you ask it to check for updates.
+- **The only CGPA it shows is yours.** It knows your batch's academic data, so
+  the analysis works from your first file, but uses it only for aggregates. No
+  screen shows anyone else's figure, not even your friends'.
+- **It reads what it needs and nothing more.** Phone numbers, emails, dates of
+  birth and resume links in a sheet are never read, and there is nowhere in
+  nankiv to keep them.
+- **One click forgets everything,** with a list of exactly what's stored.
+
+The full reasoning is in [docs/PRIVACY.md](docs/PRIVACY.md). If you're setting
+nankiv up for your batch, tell your placement cell first: it's their data, and
+your classmates'.
 
 ## Download
 
-| Your machine | Download |
+| Your machine | File |
 | --- | --- |
-| **Mac** with Apple Silicon — M1 or later | [nankiv-macos-apple-silicon.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-apple-silicon.dmg) |
+| **Mac** with Apple Silicon (M1 or later) | [nankiv-macos-apple-silicon.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-apple-silicon.dmg) |
 | **Mac** with an Intel processor | [nankiv-macos-intel.dmg](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-macos-intel.dmg) |
 | **Windows** 10 or 11 | [nankiv-windows-setup.exe](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-windows-setup.exe) |
 | **Windows**, for IT deployment | [nankiv-windows.msi](https://github.com/JeyaViknan/nankiv/releases/latest/download/nankiv-windows.msi) |
 
-Which Mac do you have? Apple menu → *About This Mac*. "Apple M1" or similar is
-Apple Silicon; anything saying "Intel" is the other one.
+Not sure which Mac you have? Apple menu → *About This Mac*.
 
-First launch shows a security warning, because these builds are not code signed
-yet. On macOS, open nankiv once and close the warning, then go to *System
+**First launch.** nankiv isn't code signed yet, so your computer warns you the
+first time. On a Mac, open nankiv once and close the warning, then go to *System
 Settings → Privacy & Security* and click *Open Anyway* (on macOS 14 or earlier,
-right-click the app and choose *Open* instead). On Windows click *More info* →
-*Run anyway*. Once only. Every version is on the
-[releases page](https://github.com/JeyaViknan/nankiv/releases).
+right-click the app and choose *Open*). On Windows, click *More info*, then *Run
+anyway*. You only do this once.
+
+**Getting started.** Tell nankiv your Neo ID, and your registration number,
+since some companies list students by that instead. Then drop your first
+shortlist. To add the widget on a Mac, right-click the desktop, choose *Edit
+Widgets* and search for nankiv.
+
+Every version is on the [releases page](https://github.com/JeyaViknan/nankiv/releases).
+
+<br>
 
 ---
 
-## What it does
-
-**Always works** — exact, never inferred:
-
-- Your verdict, the moment the file lands
-- Everyone in your circle checked in the same pass
-- Round-to-round diffs: who advanced, who dropped, who is new
-- History of every drive you've imported, with duplicate detection
-
-**Works where identity is known:**
-
-- Names next to Neo IDs, so a shortlist reads as people rather than codes
-- Search a classmate by name to find their Neo ID
-- Reference-sheet import that permanently improves every past and future drive
-
-**On your desktop:**
-
-- A widget showing your latest result, glanceable without opening anything
-- Four sizes on macOS, each showing a different amount: the answer, the
-  estimated cutoff, your circle, the season
-- A click opens that shortlist in nankiv, not the front page
-
-**Statistical, and always labelled as such:**
-
-- CGPA distribution against the batch baseline
-- Cutoff estimation with the reasoning shown
-- Branch over-representation, which is often the real filter
-- Where you stand within the shortlist
-
----
-
-## Two rules the code enforces
-
-These are not guidelines. They are enforced by the type system and covered by
-tests that fail loudly.
-
-**1. "Unknown" is never rendered as "not shortlisted."**
-
-Some shortlists are keyed by registration number rather than Neo ID. One in the
-sample corpus uses a TCS-internal reference ID that matches no student identifier
-at all. In those cases your absence from the file says *nothing* about you, and
-nankiv says exactly that. `Verdict` is a three-way enum with no `Default` and no
-boolean coercion, so collapsing the cases requires writing a deliberate match arm.
-
-**2. An estimated cutoff is never presented as an official one.**
-
-Every statistic is wrapped in an `Estimate` that cannot be constructed without
-its sample size, and nothing statistical is published below 20 matched students
-and 15% coverage. During development a single matched student produced a
-confident "cutoff ≈ 9.0" — that case is now a regression test.
-
-A related rule governs matching: **a wrong student match is far worse than an
-unresolved one.** If the best name candidate doesn't clearly beat the runner-up,
-the match is refused. `Shresth Kumar Gupta` and `Niraj Kumar Gupta` score
-identically to `Sujal Chhajed` and `Sujal Sanjay Chhajed` — one pair is two
-people, the other is one person, and no score separates them.
-
----
-
-## Install
-
-Take the file for your machine from [Download](#download) above.
-
-- **macOS** — open the `.dmg` and drag nankiv to Applications. Open it once
-  and close the warning, then go to *System Settings → Privacy & Security* and
-  click *Open Anyway*. On macOS 14 or earlier, right-click it and choose *Open*
-  instead. Once only.
-- **Windows** — run the installer. SmartScreen will warn; click *More info*,
-  then *Run anyway*. Once only.
-
-Both warnings are there because the builds are not code signed. See
-[docs/RELEASING.md](docs/RELEASING.md) for enabling signing, and for cutting a
-release.
-
-Linux is built on every push to keep the code portable, but is not a release
-target yet; build it yourself with `npm run app:build`.
-
----
-
-## Using it
-
-1. **Tell it who you are** — your Neo ID, and your registration number if you
-   have it. Some companies key shortlists by the latter, and without it those
-   files can't be answered.
-2. **Add reference data** (optional) — drop in the roster or CGPA sheets you
-   already received. nankiv ships with no student data in it.
-3. **Add your circle** (optional) — a name and a Neo ID each, once.
-4. **Drop shortlists.** Onto the window, or onto the nankiv icon in the Dock —
-   either imports straight away. That's the whole daily loop.
-5. **Add the widget** (optional, macOS) — right-click the desktop, choose *Edit
-   Widgets*, search for nankiv, and pick a size. It updates itself whenever the
-   app does anything, and never reads your database — see
-   [widgets/README.md](widgets/README.md).
-
-Every file that carries two identifier types at once permanently improves the
-identity graph, so nankiv gets better at naming people the more you use it.
-
----
-
-## Development
-
-Requires [Rust](https://rustup.rs) and Node 20+.
-
-```bash
-npm install
-npm run app:dev
-```
-
-| Command | What it does |
-| --- | --- |
-| `npm run app:dev` | Run the app with hot reload |
-| `npm run app:build` | Build installers for the current platform |
-| `npm run check:all` | Typecheck, lint and every test, both sides |
-| `npm run test` | Frontend component tests |
-| `npm run rust:test` | Rust unit, regression, integration and property tests |
-| `npm run widget:test` | The macOS widget's model, against the shared fixtures |
-| `npm run widget:renders` | Draw every widget state, size and appearance to PNG |
-| `npm run widget:build` | Build the widget extension that ships inside the app |
-
-### Layout
-
-```
-src/                  React interface — renders, holds no business logic
-  components/         Verdict and analytics rendering
-  screens/            One module per screen
-  lib/api.ts          Typed bridge to the core
-src-tauri/src/
-  model.rs            Domain types; the reliability hierarchy lives here
-  parse/              Spreadsheet reading, format-driven column election
-  identity/           Normalisation, matching, the identifier graph
-  analytics/          Baseline comparison, cutoff, branch lift
-  store/              SQLite schema, migrations, repository
-  engine.rs           Wires the above together
-  commands.rs         The IPC surface
-  widget.rs           The desktop widget's snapshot, and nankiv:// links
-widgets/              The desktop widgets (macOS WidgetKit, Windows widgets)
-  fixtures/           Shared snapshots, generated by the Rust tests
-```
-
-The interface holds no business logic. It renders what the core returns and
-sends back user intent, which is what keeps personal data behind a single
-boundary — and what would make a CLI a matter of adding a frontend.
-
-### Testing
-
-```bash
-npm run check:all
-```
-
-- **Parser regression** against anonymised copies of all fifteen real-world
-  shortlist formats, including the empty-sheet, foreign-ID and duplicate-file
-  cases. Any change to a parse count fails.
-- **Integration** covering import → harvest → verdict → analytics, with the
-  negative paths (unreadable file, wrong key type) asserted explicitly.
-- **Property tests** generating name collisions to prove the ambiguity gate
-  holds for cases nobody thought to write down.
-- **Component tests** proving the four verdict states never render alike.
-
-### Fixtures
-
-The fixtures in `src-tauri/tests/fixtures/` are structure-preserving
-anonymisations of real shortlists: layout, headers, sheet quirks and cross-file
-relationships are intact; every identifier and name is synthetic. Regenerate
-with:
-
-```bash
-python3 scripts/make_fixtures.py ~/Downloads src-tauri/tests/fixtures
-python3 scripts/verify_fixtures.py ~/Downloads Global
-```
-
-The second command is a privacy guard and must pass before committing. Real
-spreadsheets are gitignored and CI fails if one is ever committed.
-
----
-
-## Privacy
-
-nankiv is built so that the careless path is also the safe one. See
-[docs/PRIVACY.md](docs/PRIVACY.md) for the full reasoning.
-
-- **Ships with the cohort's academic data**, so a student gets an answer on
-  their first import rather than being asked to supply a sheet the maintainer
-  already holds. Only registration number, name, CGPA and branch are included.
-- **Minimises at ingestion.** Phone numbers, email addresses, dates of birth,
-  gender and resume links are never extracted — from the bundled sheets or from
-  anything a student imports — and the database has no column for them, so they
-  could not be stored even by mistake. A test asserts the shipped pack contains
-  no address, phone number or document link.
-- **Exports names, never records.** A shortlist can be downloaded as a list of
-  who is on it, as Excel or CSV. That list carries the identifier from the file
-  and a name — no CGPA, no branch, and no registration number the file did not
-  already contain — and a name only where the match is confident. Every student
-  still gets a row, so a partly named list cannot pass for a complete one. There
-  is no export of the underlying academic data anywhere in the app.
-- **Friends' CGPA is off by default.** The cutoff analysis needs aggregates, not
-  per-person disclosure.
-- **One-click wipe**, with a visible inventory of exactly what is stored.
-
-If you are deploying this for your own batch, tell your placement cell first.
-You are handling their data and your peers'.
-
----
-
-## Licence
-
-MIT
+<p align="center">
+  <sub>
+    Built with Rust, Tauri and React, and native SwiftUI for the widget.
+    <a href="docs/DEVELOPMENT.md">Build it yourself</a>&nbsp;·&nbsp;<a href="docs/PRIVACY.md">Privacy</a>&nbsp;·&nbsp;MIT licence
+    <br>
+    The screenshots show an invented season. Nobody in them is real.
+  </sub>
+</p>
