@@ -1,8 +1,8 @@
 {
   "fill": {
     "linear-gradient": [
-      "srgb:0.17255,0.17647,0.19608,1.00000",
-      "srgb:0.04314,0.04314,0.05098,1.00000"
+      "srgb:1.00000,1.00000,1.00000,1.00000",
+      "srgb:0.91373,0.91765,0.93333,1.00000"
     ]
   },
   "fill-specializations": [
@@ -10,26 +10,49 @@
       "appearance": "dark",
       "value": {
         "linear-gradient": [
-          "srgb:0.09804,0.09804,0.10980,1.00000",
-          "srgb:0.01176,0.01176,0.01569,1.00000"
+          "srgb:0.16471,0.16471,0.18039,1.00000",
+          "srgb:0.04314,0.04314,0.05098,1.00000"
         ]
       }
     }
   ],
   "groups": [
     {
+      "name": "You",
       "layers": [
         {
+          "name": "mark",
+          "image-name": "mark.svg",
+          "glass": false,
+          "fill-specializations": [
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:0.22000,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "name": "row",
+          "image-name": "row.svg",
+          "glass": true,
           "fill-specializations": [
             {
               "value": {
-                "solid": "srgb:0.20392,0.82353,0.36078,1.00000"
+                "linear-gradient": [
+                  "srgb:0.27059,0.82745,0.40000,1.00000",
+                  "srgb:0.08627,0.61961,0.24706,1.00000"
+                ]
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:0.18824,0.81961,0.34510,1.00000"
+                "linear-gradient": [
+                  "srgb:0.33333,0.90588,0.43922,1.00000",
+                  "srgb:0.13333,0.66275,0.20392,1.00000"
+                ]
               }
             },
             {
@@ -38,79 +61,55 @@
                 "solid": "extended-gray:1.00000,1.00000"
               }
             }
-          ],
-          "glass": true,
-          "image-name": "you.svg",
-          "name": "you"
-        },
-        {
-          "glass": false,
-          "hidden": false,
-          "image-name": "glow.svg",
-          "name": "glow",
-          "opacity-specializations": [
-            {
-              "value": 0.55
-            },
-            {
-              "appearance": "dark",
-              "value": 0.7
-            },
-            {
-              "appearance": "tinted",
-              "value": 0.33
-            }
           ]
         }
       ],
-      "name": "You",
       "shadow": {
         "kind": "layer-color",
         "opacity": 0.5
       },
-      "specular": true,
+      "specular": false,
       "translucency": {
         "enabled": true,
-        "value": 0.1
+        "value": 0.0
       }
     },
     {
+      "name": "List",
       "layers": [
         {
+          "name": "rows",
+          "image-name": "rows.svg",
+          "glass": false,
           "fill-specializations": [
             {
               "value": {
-                "solid": "srgb:0.38431,0.39608,0.42745,1.00000"
+                "solid": "srgb:0.83529,0.84706,0.87059,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:0.27059,0.27843,0.30588,1.00000"
+                "solid": "srgb:0.23922,0.24314,0.26667,1.00000"
               }
             },
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:0.80000,1.00000"
+                "solid": "extended-gray:0.50000,1.00000"
               }
             }
-          ],
-          "glass": true,
-          "image-name": "batch.svg",
-          "name": "batch",
-          "opacity": 0.55
+          ]
         }
       ],
-      "name": "Batch",
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.1
+        "opacity": 0.0
       },
       "specular": true,
       "translucency": {
         "enabled": true,
-        "value": 0.25
+        "value": 0.0
       }
     }
   ],
