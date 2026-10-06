@@ -1,20 +1,8 @@
-## What's new in 0.1.3
+## What's new in 0.1.4
 
-- **Your answer on every row.** Each shortlist in your history says In, Not in
-  or Unknown, without opening it.
-- **See the proof.** *Why does it think I'm in?* shows your row in the file,
-  lit, with the rows around it.
-- **Rounds, linked.** A later round of the same company joins the earlier one,
-  so you can see who moved on.
-- **More ways in.** Paste a list of IDs (⌘V, or Ctrl+V on Windows), import a
-  recent download in one click, or have new shortlists in Downloads checked as
-  they arrive (off until you turn it on).
-- **Your CGPA, and only yours.** Add it in Settings to see where you stand on
-  each list. No one else's CGPA is ever shown.
-- **Share it.** An "I'm in" card to post, and a summary set for WhatsApp.
-- **Check for Updates**, in Settings.
-- Shorter wording throughout, shortlists that open at the top, and better
-  keyboard and VoiceOver support.
+- **A new icon, drawn for macOS 27.** A shortlist, with your row pulled
+  forward in green and ticked. White in Light, black in Dark, and at home in
+  the Tinted and Clear icon styles too.
 
 ## Download
 

@@ -21,7 +21,7 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap uap3 com rescap">
 
-  <Identity Name="app.nankiv.desktop" Publisher="CN=nankiv" Version="0.1.3.0" />
+  <Identity Name="app.nankiv.desktop" Publisher="CN=nankiv" Version="0.1.4.0" />
 
   <Properties>
     <DisplayName>nankiv</DisplayName>
